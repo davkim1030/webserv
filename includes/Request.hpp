@@ -33,6 +33,8 @@ class Request
 
 		int	status;
 		int	type;
+		void	parse_request(void);
+
 };
 
 

@@ -56,15 +56,12 @@ Request &				Request::operator=( Request const & rhs )
 ** --------------------------------- METHODS ----------------------------------
 */
 
-	std::string key = "Content-Length: ";
-	std::size_t found = this->raw_header.find(key);
+void Request::parse_request(void)
+{
+	this->raw_header = this->raw_request.substr(this->raw_request.find("\r\n") + 1, this->raw_request.find("\r\n\r\n"));
 
-	if (found != std::string::npos)
-	{
-		std::size_t target_pos = found + key.length();
 
-		this->content_length = this->raw_header.substr(target_pos, this->raw_header.find("\r\n", target_pos) - target_pos);
-	}
+}
 
 
 
