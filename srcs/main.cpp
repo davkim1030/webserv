@@ -12,9 +12,9 @@
 
 #include "webserv.h"
 
-#define PORT 8888
+#define PORT 8080
 
-int		main(void)
+int		main(int argc, char **argv)
 {
 	int serv_sock;
 	int clnt_sock;
@@ -38,12 +38,20 @@ int		main(void)
 		std::cout << "error : listen error" << std::endl;
 
 	clnt_addr_size = sizeof(clnt_addr);
-	clnt_sock = accept(serv_sock, (struct sockaddr *)&clnt_addr, &clnt_addr_size);
-	if (clnt_sock == -1)
-		std::cout << "error : client accept error" << std::endl;
-	char message[] = "Hello test world\n";
-	write(clnt_sock, message, sizeof(message));
+	while(1)
+	{
+		clnt_sock = accept(serv_sock, (struct sockaddr *)&clnt_addr, &clnt_addr_size);
+		if (clnt_sock == -1)
+			std::cout << "error : client accept error" << std::endl;
 
+		// 클라이언트 인풋 read
+		// 처리
+
+		//result -> 클라이언트에 write
+		char message[] = "Hello test world\n";
+		write(clnt_sock, message, sizeof(message));
+
+	}
 	close(clnt_sock);
 	close(serv_sock);
 
