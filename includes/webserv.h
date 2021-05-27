@@ -6,7 +6,7 @@
 /*   By: hyukim <hyukim@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/05/25 15:11:41 by hyukim            #+#    #+#             */
-/*   Updated: 2021/05/25 15:11:51 by hyukim           ###   ########.fr       */
+/*   Updated: 2021/05/27 21:43:22 by hyukim           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,5 +39,6 @@
 # include <sys/socket.h>
 
 # include "libft.h"
+# include "Response.hpp"
 
 #endif
