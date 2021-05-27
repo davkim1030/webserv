@@ -14,7 +14,6 @@
 
 int		main(void)
 {
-	struct sockaddr_in  server_addr;
 
 	return (0);
 }
