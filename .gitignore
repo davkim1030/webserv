@@ -1,4 +1,6 @@
 *.o
 *.out
 *.a
+.vscode
+./include/libft.h
 webserv
