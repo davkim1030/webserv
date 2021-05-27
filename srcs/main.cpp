@@ -26,7 +26,7 @@ int		main(void)
 	serv_sock = socket(PF_INET, SOCK_STREAM, 0);
 	if (serv_sock == -1)
 		std::cout << "error : sock error" << std::endl;
-	memset(&serv_addr, 0, sizeof(serv_addr));
+	ft_memset(&serv_addr, 0, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	serv_addr.sin_port = htons(PORT);
