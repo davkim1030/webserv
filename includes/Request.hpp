@@ -5,7 +5,6 @@
 # include <string>
 # include "webserv.h"
 
-
 class Request
 {
 	public:
@@ -17,7 +16,12 @@ class Request
 
 		Request &		operator=( Request const & rhs );
 
-		static const std::string HEADER_LIST[];
+		std::string getMethod(void) const;
+		std::string getUri(void) const;
+		std::string getHttpVersion(void) const;
+		std::string getRawHeader(void) const;
+		std::map<std::string, std::string> getHeader(void) const;
+		std::string getRawBody(void) const;
 
 	private:
 		std::string	rawRequest;
@@ -31,8 +35,14 @@ class Request
 
 		std::string	rawBody;
 
+		void	initRequest(void);
+		void	setRawRequest(std::string);
+
 		void	parseRequest(void);
-		void	setRawRequest( std::string );
+		std::string parseMethod(void);
+		std::string parseUri(void);
+		std::string parseHttpVersion(void);
+		std::map<std::string, std::string> parseHeader(void);
 };
 
 
