@@ -6,27 +6,47 @@
 */
 
 
-
-
 Request::Request()
 {
-	this->raw_request.clear();
+	this->rawRequest.clear();
 
 	this->method.clear();
 	this->uri.clear();
-	this->http_version.clear();
+	this->httpVersion.clear();
 
-	this->raw_header.clear();
+	this->rawHeader.clear();
 	this->header.clear();
 
-	this->raw_body.clear();
-
-	this->status = 0;
-	this->type = 0;
+	this->rawBody.clear();
 }
 
-Request::Request( const Request & src )
+Request::Request(std::string const data)
 {
+	setRawRequest(data);
+
+	this->method.clear();
+	this->uri.clear();
+	this->httpVersion.clear();
+
+	this->rawHeader.clear();
+	this->header.clear();
+
+	this->rawBody.clear();
+}
+
+Request::Request( const Request & src ) :
+{
+	setRawRequest(src.rawHeader);
+
+	this->method.clear();
+	this->uri.clear();
+	this->httpVersion.clear();
+
+	this->rawHeader.clear();
+	this->header.clear();
+
+	this->rawBody.clear();
+
 }
 
 
@@ -56,20 +76,32 @@ Request &				Request::operator=( Request const & rhs )
 ** --------------------------------- METHODS ----------------------------------
 */
 
-void Request::parse_request(void)
+void Request::parseRequest(void)
 {
-	this->raw_header = this->raw_request.substr(this->raw_request.find("\r\n") + 1, this->raw_request.find("\r\n\r\n"));
+	this->rawHeader = this->rawRequest.substr(this->rawRequest.find("\r\n") + 1, this->rawRequest.find("\r\n\r\n"));
 
+	std::string key = "Content-Length: ";
+	std::size_t found = this->rawHeader.find(key);
+
+	if (found != std::string::npos)
+	{
+		std::size_t target_pos = found + key.length();
+
+		this->content_length = this->rawHeader.substr(target_pos, this->rawHeader.find("\r\n", target_pos) - target_pos);
+	}
 
 }
 
-
+void Request::setRawRequest(std::string data)
+{
+	this->rawRequest = data;
+}
 
 /*
 ** --------------------------------- ACCESSOR ---------------------------------
 */
 
-const std::string Request::header_list[] = {
+const std::string Request::HEADER_LIST[] = {
 		"Accept-Charsets",
 		"Accept-Language",
 		"Allow",

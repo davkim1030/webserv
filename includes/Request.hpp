@@ -3,38 +3,36 @@
 
 # include <iostream>
 # include <string>
-# include <map>
+# include "webserv.h"
 
 
 class Request
 {
-
 	public:
 
 		Request();
+		Request( std::string const );
 		Request( Request const & src );
 		~Request();
 
 		Request &		operator=( Request const & rhs );
 
-		static const std::string header_list[];
+		static const std::string HEADER_LIST[];
 
 	private:
-		std::string	raw_request;
+		std::string	rawRequest;
 
 		std::string	method;
 		std::string	uri;
-		std::string	http_version;
+		std::string	httpVersion;
 
-		std::string raw_header;
+		std::string rawHeader;
 		std::map<std::string, std::string> header;
 
-		std::string	raw_body;
+		std::string	rawBody;
 
-		int	status;
-		int	type;
-		void	parse_request(void);
-
+		void	parseRequest(void);
+		void	setRawRequest( std::string );
 };
 
 
