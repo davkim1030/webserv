@@ -14,8 +14,19 @@
 
 #define PORT 8080
 
+// FD_ZERO(fd_set* set);        //fdset을초기화
+// FD_SET(int fd, fd_set* set);  //fd를 set에 등록
+// FD_CLR(int fd, fd_set* set);  //fd를 set에서 삭제
+// FD_ISSET(int fd, fd_set* set);//fd가 준비되었는지 확인
+
+
 int		main(int argc, char **argv)
 {
+
+	if (argc != 2)
+		std::cout << "Error : argument error" << std::endl;
+
+
 	int serv_sock;
 	int clnt_sock;
 
@@ -37,19 +48,57 @@ int		main(int argc, char **argv)
 	if (listen(serv_sock, 5) == -1)
 		std::cout << "error : listen error" << std::endl;
 
-	clnt_addr_size = sizeof(clnt_addr);
+	fd_set reads;
+	fd_set copyReads;
+
+	fd_set writes;
+	fd_set copyWrite;
+	struct timeval timeout;
+
+	int fd_max, str_len, fd_num;
+
+	FD_ZERO(&reads); // fd_set 테이블 초기화
+	FD_SET(serv_sock, &reads);
+
+	fd_max = serv_sock;
 	while(1)
 	{
-		clnt_sock = accept(serv_sock, (struct sockaddr *)&clnt_addr, &clnt_addr_size);
-		if (clnt_sock == -1)
-			std::cout << "error : client accept error" << std::endl;
+		copyReads = reads;
+		copyWrite = writes;
+		timeout.tv_sec = 5;
+		timeout.tv_usec = 5000;
 
-		// 클라이언트 인풋 read
-		// 처리
+		if ((fd_num = select(fd_max + 1, &copyReads, &copyWrite, 0, &timeout)) == -1 )
+		{
+			std::cout << "select error" << std::endl;
+			exit();
+		}
+		if (fd_num == 0)
+			continue;
 
-		//result -> 클라이언트에 write
-		char message[] = "Hello test world\n";
-		write(clnt_sock, message, sizeof(message));
+		for (int i = 0; i <= fd_max; i++)
+		{
+			if (FD_ISSET(fd, &copyReads))
+			{
+				if (i == serv_sock)
+				{
+					clnt_addr_size = sizeof(clnt_addr);
+					clnt_sock = accept(serv_sock, (struct sockaddr *)&clnt_addr, &clnt_addr_size);
+					if (clnt_sock == -1)
+						std::cout << "error : client accept error" << std::endl;
+
+					// 클라이언트 인풋 read
+					// 처리
+
+					//result -> 클라이언트에 write
+					char message[] = "Hello test world\n";
+					write(clnt_sock, message, sizeof(message));
+				}
+			}
+
+
+
+		}
 
 	}
 	close(clnt_sock);
