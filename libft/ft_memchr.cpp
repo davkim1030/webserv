@@ -1,32 +1,31 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_memccpy.c                                       :+:      :+:    :+:   */
+/*   ft_memchr.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: sunpark <sunpark@student.42.kr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2020/02/26 13:31:19 by sunpark           #+#    #+#             */
-/*   Updated: 2020/04/03 23:13:58 by sunpark          ###   ########.fr       */
+/*   Created: 2020/02/26 19:56:06 by sunpark           #+#    #+#             */
+/*   Updated: 2021/05/27 15:14:17 by hyukim           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "libft.h"
 
-void	*ft_memccpy(void *dst, const void *src, int c, size_t n)
+void	*ft_memchr(const void *s, int c, size_t n)
 {
-	size_t	locate;
+	size_t			locate;
+	unsigned char	*find;
 
-	if (!dst && !src)
-		return (dst);
-	locate = 0;
-	while (locate < n)
+	locate = -1;
+	find = (unsigned char *)s;
+	while (++locate < n)
 	{
-		((unsigned char *)dst)[locate] = ((unsigned char *)src)[locate];
-		if (((unsigned char *)dst)[locate] == (unsigned char)c)
+		if (*find == (unsigned char)c)
 			break ;
-		locate++;
+		find++;
 	}
 	if (locate == n)
-		return ((void *)0);
-	return (dst + locate + 1);
+		return (NULL);
+	return ((void *)find);
 }

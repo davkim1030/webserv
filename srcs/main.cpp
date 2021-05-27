@@ -6,7 +6,7 @@
 /*   By: hyukim <hyukim@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/05/25 15:12:02 by hyukim            #+#    #+#             */
-/*   Updated: 2021/05/25 15:14:28 by hyukim           ###   ########.fr       */
+/*   Updated: 2021/05/27 15:21:39 by hyukim           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,16 +14,10 @@
 
 int		main(void)
 {
-	// int serv_sock;
-	// int clnt_sock;
+	char	*a;
 
-	// struct sockaddr_in serv_addr;
-	// struct sockaddr_in clnt_addr;
-
-	// serv_sock = socket(PF_INET, SOCK_STREAM, 0);
-	// if (serv_sock == -1)
-	// 	std::cout << "error : sock error" << std::endl;
-	
+	a = (char *)malloc(sizeof(11));
+	ft_memset((void *)a, 0, 11);
 
 	return (0);
 }

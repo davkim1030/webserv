@@ -6,7 +6,7 @@
 #    By: hyukim <hyukim@student.42seoul.kr>         +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2020/11/22 22:02:20 by hyukim            #+#    #+#              #
-#    Updated: 2021/05/25 15:12:54 by hyukim           ###   ########.fr        #
+#    Updated: 2021/05/27 15:27:33 by hyukim           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -41,11 +41,11 @@ $(LIBNAME):
 all:		$(NAME)
 
 clean:
-			$(RM) $(OBJS)
+			$(RM) $(OBJS) $(LIBNAME) $(addprefix $(INCDIR), $(LIBH))
+			$(MAKE) -C $(LIBDIR) fclean
 
 fclean:		clean
-			$(RM) $(NAME) $(LIBNAME)
-			$(MAKE) -C $(LIBDIR) fclean
+			$(RM) $(NAME)
 
 re:			fclean all
 
