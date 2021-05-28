@@ -119,25 +119,93 @@ void startServer()
 	close(serv_sock);
 }
 
+class Location
+{
+	private:
+
+		// not used constructor
+		Location(Location const &co);
+		Location &operator=(Location const &co);
+
+
+	public:
+		Location() {}
+		~Location() {}
+};
+
+class Server
+{
+	private:
+		std::map<std::string, std::string> option;
+
+
+		// not used constructor
+		Server(Server const &co);
+		Server &operator=(Server const &co);
+
+
+	public:
+		//std::string 형태로 인자 받아서 바로 파싱해서 저장하자
+		Server() {}
+		~Server() {}
+};
+
+class ServerConfig
+{
+	private:
+		std::string strs;
+		std::map<std::string, std::string> config; // 기본 config 저장
+		std::vector<Server> server;
+
+		// not used constructor
+		ServerConfig(ServerConfig const &co);
+		ServerConfig &operator=(ServerConfig const &co);
+
+	public:
+		ServerConfig() {}
+		~ServerConfig() {}
+
+		void saveConfig(int fd)
+		{
+			int quoteFlag = 0;
+			char *line;
+			std::cout << fd << std::endl;
+			while (get_next_line(fd, &line))
+			{
+				// flag == 0 이고 줄에 중괄호가 없으면 config에 값 저장
+				// 줄에 { -> 중괄호 시작이 있으면 flag += 1 && line저장 시작
+				// flag > 0 이고 줄에 중괄호가 없으면 line 저장 후 한번에 하위 저장클래스에 넘겨주기
+				// flag > 0 이고 중괄호 } 가 나오면 flag -= 1 이 때 flag 가 0이되면 이대로 끝내서 하위클래스에 패스
+			}
+
+			std::cout << strs << std::endl;
+			/*
+				어떻게 저장을 할까?
+				config file은 기본 정보 + server블럭만 가지고 있도록 -> 나머지는 아예 없다고 상정
+				line을 가져와서 읽은 후에 server가 아닐 경우 config에 key value 형태로 저장
+					- #이 있으면 그 뒤는 전부 주석이므로 그 전까지로 잡고 첫 space가 있기 전까지가 key 나머지가 value
+				
+			*/
+		}
+
+};
+
 int		main(int argc, char **argv)
 {
+	ServerConfig serverConfig;
 	char *line;
 	if (argc > 2)
 	{
 		std::cout << "Error : argument error" << std::endl;
 		exit(1);
 	}
-	int nginxFd;
+	int configFd;
 	if (argc == 2)
-		nginxFd = open(argv[1], O_RDONLY);
+		configFd = open(argv[1], O_RDONLY);
 	else
-		nginxFd = open(CONFIG_PATH, O_RDONLY);
-	std::cout << nginxFd << std::endl;
-
-	while (get_next_line(nginxFd, &line))
-	{
-		std::cout << line << std::endl;
-	}
+		configFd = open(CONFIG_PATH, O_RDONLY);
+	
+	serverConfig.saveConfig(configFd);
 
 
 
