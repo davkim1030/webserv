@@ -10,5 +10,5 @@ This is when you finally understand why a url start with HTTP
 - 주 4회는 반드시 출근하기
 - 매 주 목표 정하고 확인하기
 
-# [참고 ] (https://www.notion.so/skamo/c75950ced50f495ca0f86b91ac15ce36)
+# [참고 링크 모음](https://www.notion.so/skamo/c75950ced50f495ca0f86b91ac15ce36)
 

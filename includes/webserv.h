@@ -29,5 +29,6 @@
 
 # include "libft.h"
 # include "Response.hpp"
+# include "Request.hpp"
 
 #endif
