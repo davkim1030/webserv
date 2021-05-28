@@ -1,8 +1,6 @@
 #ifndef REQUEST_HPP
 # define REQUEST_HPP
 
-# include <iostream>
-# include <string>
 # include "webserv.h"
 
 class Request
