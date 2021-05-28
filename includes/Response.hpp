@@ -6,7 +6,7 @@
 /*   By: hyukim <hyukim@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/05/27 17:55:55 by hyukim            #+#    #+#             */
-/*   Updated: 2021/05/27 21:52:13 by hyukim           ###   ########.fr       */
+/*   Updated: 2021/05/28 14:36:00 by hyukim           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,12 +79,20 @@ public:
     static const std::string    _503;   // Service Unavailable
     static const std::string    _504;   // Gateway Time-out
     static const std::string    _505;   // HTTP Version not supported
-    
+
+    /*
+     * 지원하지 않는 상태코드를 넣을 경우 발생되는 예외
+     */
+    class UnsupportedStatusCodeException : public std::exception
+    {
+    public:
+        virtual const char *what() const throw();
+    };
+
     // Constructors & destructor
     Response(const Response &other);
-    Response(int statusCode, std::map<std::string, std::string> header, std::string body);
-    Response(int statusCode, std::string statusMessage,
-        std::map<std::string, std::string> header, std::string body, std::string version="1.1");
+    Response(int statusCode, std::map<std::string, std::string> header,
+            std::string body, std::string version="1.1");
     ~Response();
 
     // Operator overloading

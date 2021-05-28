@@ -6,18 +6,47 @@
 /*   By: hyukim <hyukim@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/05/27 19:47:48 by hyukim            #+#    #+#             */
-/*   Updated: 2021/05/27 21:41:04 by hyukim           ###   ########.fr       */
+/*   Updated: 2021/05/28 14:40:32 by hyukim           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 
+// Constructors & Destructors
+
+/*
+ * 기본 생성자.
+ * 외부에서 사용 못 하게 private으로 제한
+ */
 Response::Response()
 {
 }
 
-Response::Response(int statusCode, std::map<std::string, std::string> header, std::string body)
-    : version("1.1"), statusCode(statusCode), header(header), body(body)
+/*
+ * 복사 생성자
+ */
+Response::Response(const Response &other)
+{
+    *this = other;
+}
+
+/*
+ * 사용할 수 있는 가장 기본적인 생성자
+ * @param int statusCode: request를 처리한 후의 상태 코드
+ * @param std::map<std::string, std::string> header: 헤더 데이터를 저장할 map
+ * @param std::string body: request 처리 후 반환하는 본문
+ * @throws UnsupportedStatusCodeException : statusCode 인자에 지원하지 않는 값을 넣으면 발생
+ * @param std::string version: 지정할 HTTP 버전
+ * 지원 Code :
+ *   - 100 ~ 101
+ *   - 200 ~ 206
+ *   - 300 ~ 305, 307
+ *   - 400 ~ 417
+ *   - 500 ~ 505
+ */
+Response::Response(int statusCode, std::map<std::string, std::string> header,
+        std::string body, std::string version)
+    : version(version), statusCode(statusCode), header(header), body(body)
 {
     switch (statusCode)
     {
@@ -138,25 +167,23 @@ Response::Response(int statusCode, std::map<std::string, std::string> header, st
         case 505:
             statusMessage = Response::_505;
             break ;
+        default:
+            throw UnsupportedStatusCodeException();
     }
 }
 
-Response::Response(const Response &other)
-{
-    *this = other;
-}
-
-Response::Response(int statusCode, std::string statusMessage,
-        std::map<std::string, std::string> header, std::string body, std::string version)
-        : version(version), statusCode(statusCode),
-        statusMessage(statusMessage), header(header), body(body)
-{
-}
-
+/*
+ * 소멸자
+ */
 Response::~Response()
 {
 }
 
+// Operator Overloadings
+/*
+ * 할당 연산자 오버로딩
+ * 깊은 복사 연산
+ */
 Response &Response::operator=(const Response &other)
 {
     if (this != &other)
@@ -170,6 +197,16 @@ Response &Response::operator=(const Response &other)
     return (*this);
 }
 
+// Exceptions
+/*
+ *
+ */
+const char *Response::UnsupportedStatusCodeException::what() const throw()
+{
+    return "[ERROR] UnsupportedStatusCodeException. Input status code is unsupported. Refer to RFC2616";
+}
+
+// Member Methods
 /*
  * HTTP 리스폰스 메시지를 만들어서 리턴
  */

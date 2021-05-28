@@ -6,7 +6,7 @@
 /*   By: hyukim <hyukim@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/05/25 15:11:41 by hyukim            #+#    #+#             */
-/*   Updated: 2021/05/27 21:43:22 by hyukim           ###   ########.fr       */
+/*   Updated: 2021/05/28 14:12:34 by hyukim           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@
 # include <queue>
 # include <list>
 # include <algorithm>
+# include <exception>
 
 # include <fcntl.h>
 # include <stdlib.h>
