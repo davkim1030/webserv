@@ -211,12 +211,3 @@ int		main(int argc, char **argv)
 
 	return (0);
 }
-
-
-
-
-git config --global user.name "John Doe"
-$ git config --global user.email johndoe@example.com
-
-
-출처: https://goodtogreate.tistory.com/entry/Git-config-설정-계정설정 [GOOD to GREAT]
