@@ -1,5 +1,5 @@
 
-#include "../includes/Request.hpp"
+#include "webserv.h"
 
 /*
 ** ------------------------------- CONSTRUCTOR --------------------------------
