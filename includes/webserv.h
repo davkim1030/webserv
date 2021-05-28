@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   webserv.h                                          :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: seohchoi <seohchoi@student.42seoul.kr>     +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2021/05/25 15:11:41 by hyukim            #+#    #+#             */
-/*   Updated: 2021/05/28 16:57:58 by seohchoi         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #ifndef WEBSERV_H
 # define WEBSERV_H
 
@@ -21,6 +9,7 @@
 # include <queue>
 # include <list>
 # include <algorithm>
+# include <exception>
 
 # include <fcntl.h>
 # include <stdlib.h>
@@ -39,6 +28,7 @@
 # include <sys/socket.h>
 
 # include "libft.h"
+# include "Response.hpp"
 # include "Request.hpp"
 
 #endif

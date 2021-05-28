@@ -1,17 +1,4 @@
-# **************************************************************************** #
-#                                                                              #
-#                                                         :::      ::::::::    #
-#    Makefile                                           :+:      :+:    :+:    #
-#                                                     +:+ +:+         +:+      #
-#    By: seohchoi <seohchoi@student.42seoul.kr>     +#+  +:+       +#+         #
-#                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2020/11/22 22:02:20 by hyukim            #+#    #+#              #
-#    Updated: 2021/05/28 14:17:17 by seohchoi         ###   ########.fr        #
-#                                                                              #
-# **************************************************************************** #
-
-SRC		=	main.cpp\
-			Request.cpp
+SRC		=	main.cpp Response.cpp Request.cpp
 
 SRCDIR	=	./srcs/
 SRCS	=	$(addprefix $(SRCDIR), $(SRC))
