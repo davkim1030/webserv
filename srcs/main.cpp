@@ -3,21 +3,91 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: hyukim <hyukim@student.42.fr>              +#+  +:+       +#+        */
+/*   By: seohchoi <seohchoi@student.42seoul.kr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/05/25 15:12:02 by hyukim            #+#    #+#             */
-/*   Updated: 2021/05/27 15:21:39 by hyukim           ###   ########.fr       */
+/*   Updated: 2021/05/28 15:56:52 by seohchoi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "webserv.h"
+#include "../includes/Request.hpp"
 
-int		main(void)
+#include <stdio.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <netinet/in.h>
+#include <string.h>
+
+#define PORT 8380
+int main(void)
 {
-	char	*a;
 
-	a = (char *)malloc(sizeof(11));
-	ft_memset((void *)a, 0, 11);
+    int server_fd, new_socket; long valread;
+    struct sockaddr_in address;
+    int addrlen = sizeof(address);
+
+    char *hello = strdup("Hello from server");
+
+    // Creating socket file descriptor
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
+    {
+        perror("In socket");
+        exit(EXIT_FAILURE);
+    }
+
+
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons( PORT );
+
+    memset(address.sin_zero, '\0', sizeof address.sin_zero);
+
+
+    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address))<0)
+    {
+        perror("In bind");
+        exit(EXIT_FAILURE);
+    }
+    if (listen(server_fd, 10) < 0)
+    {
+        perror("In listen");
+        exit(EXIT_FAILURE);
+    }
+    while(1)
+    {
+        printf("\n+++++++ Waiting for new connection ++++++++\n\n");
+        if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0)
+        {
+            perror("In accept");
+            exit(EXIT_FAILURE);
+        }
+
+        char buffer[30000] = {0};
+        valread = read( new_socket , buffer, 30000);
+        // printf("%s\n",buffer );
+		Request Req(buffer);
+
+		Req.parseRequest();
+		std::cout << Req.getMethod() << std::endl;
+		std::cout << Req.getUri() << std::endl;
+		std::cout << Req.getHttpVersion() << std::endl;
+		std::cout << "------" << std::endl << Req.getRawHeader() << std::endl << "------" << std::endl;
+		std::map<std::string, std::string> header = Req.getHeader();
+		std::map<std::string, std::string>::iterator iter;
+		for( iter = header.begin(); iter != header.end(); iter++)
+		{
+			std::cout << "Key : " << iter->first << " Value : " << iter->second << std::endl;
+		}
+		std::cout << Req.getRawBody() << std::endl ;
+
+
+
+        write(new_socket , hello , strlen(hello));
+        printf("------------------Hello message sent-------------------\n");
+        close(new_socket);
+    }
+
 
 	return (0);
 }
