@@ -136,7 +136,6 @@ std::map<std::string, std::string> Request::parseHeader(std::string rawHeader)
 		valueStartPos = keyEndPos + 2;
 		valueEndPos = currHeader.find("\r\n");
 		header[key] = currHeader.substr(valueStartPos, valueEndPos - valueStartPos);
-        std::cout << "Key : " << key << " Value : " << header[key] << std::endl;
 		currHeader = currHeader.substr(valueEndPos + 2, currHeader.length() - (valueEndPos + 2));
 		if ((currHeader.find("\r\n")) == std::string::npos)
 			break ;
