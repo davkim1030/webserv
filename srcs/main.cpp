@@ -3,21 +3,34 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: hyukim <hyukim@student.42.fr>              +#+  +:+       +#+        */
+/*   By: seohchoi <seohchoi@student.42seoul.kr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/05/25 15:12:02 by hyukim            #+#    #+#             */
-/*   Updated: 2021/05/27 15:21:39 by hyukim           ###   ########.fr       */
+/*   Updated: 2021/05/28 15:34:07 by seohchoi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "webserv.h"
+#include "../includes/Request.hpp"
 
 int		main(void)
 {
-	char	*a;
+	Request Req("GET /cgi-bin/http_trace.pl HTTP/1.1\r\na: b\r\nb: c\r\nc: d\r\n\r\n>_<");
 
-	a = (char *)malloc(sizeof(11));
-	ft_memset((void *)a, 0, 11);
+	Req.parseRequest();
+	std::cout << Req.getMethod() << std::endl;
+	std::cout << Req.getUri() << std::endl;
+	std::cout << Req.getHttpVersion() << std::endl;
+	std::cout << "------" << std::endl << Req.getRawHeader() << std::endl << "------" << std::endl;
+
+	std::map<std::string, std::string> header = Req.getHeader();
+    std::map<std::string, std::string>::iterator iter;
+
+    for( iter = header.begin(); iter != header.end(); iter++)
+    {
+        std::cout << "Key : " << iter->first << " Value : " << iter->second << std::endl;
+    }
+
+	std::cout << Req.getRawBody() << std::endl ;
 
 	return (0);
 }
