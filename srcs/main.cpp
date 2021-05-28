@@ -13,21 +13,17 @@
 #include "webserv.h"
 
 #define PORT 8080
+# define BUF_SIZE 100
+# define CONFIG_PATH "./default.nginx"
 
 // FD_ZERO(fd_set* set);        //fdset을초기화
 // FD_SET(int fd, fd_set* set);  //fd를 set에 등록
 // FD_CLR(int fd, fd_set* set);  //fd를 set에서 삭제
 // FD_ISSET(int fd, fd_set* set);//fd가 준비되었는지 확인
 
-
-int		main(int argc, char **argv)
+void startServer()
 {
-
-	if (argc != 2)
-		std::cout << "Error : argument error" << std::endl;
-
-
-	int serv_sock;
+		int serv_sock;
 	int clnt_sock;
 
 	struct sockaddr_in serv_addr;
@@ -63,6 +59,7 @@ int		main(int argc, char **argv)
 	fd_max = serv_sock;
 	while(1)
 	{
+		char	buf[BUF_SIZE];
 		copyReads = reads;
 		copyWrite = writes;
 		timeout.tv_sec = 5;
@@ -71,14 +68,14 @@ int		main(int argc, char **argv)
 		if ((fd_num = select(fd_max + 1, &copyReads, &copyWrite, 0, &timeout)) == -1 )
 		{
 			std::cout << "select error" << std::endl;
-			exit();
+			exit(0);
 		}
 		if (fd_num == 0)
 			continue;
 
 		for (int i = 0; i <= fd_max; i++)
 		{
-			if (FD_ISSET(fd, &copyReads))
+			if (FD_ISSET(i, &copyReads))
 			{
 				if (i == serv_sock)
 				{
@@ -86,23 +83,62 @@ int		main(int argc, char **argv)
 					clnt_sock = accept(serv_sock, (struct sockaddr *)&clnt_addr, &clnt_addr_size);
 					if (clnt_sock == -1)
 						std::cout << "error : client accept error" << std::endl;
+					FD_SET(clnt_sock, &reads);
+					FD_SET(clnt_sock, &writes);
+					if (fd_max < clnt_sock)
+						fd_max = clnt_sock;
 
+					//클라이언트 연결만 허용
+					
+					char message[] = "Hello test world\n";
+					write(clnt_sock, message, sizeof(message));
+				}
+				else
+				{
+					str_len = read(i, buf, BUF_SIZE);
+					// str_len == 0
+					// 	disconnnect
+					
 					// 클라이언트 인풋 read
 					// 처리
 
 					//result -> 클라이언트에 write
-					char message[] = "Hello test world\n";
-					write(clnt_sock, message, sizeof(message));
+					FD_CLR(i, &reads);
+					close(i);
+					std::cout << "close file : " << i << std::endl;
 				}
 			}
-
-
-
+			else if (FD_ISSET(i, &copyWrite))
+			{
+				// write(clnt_sock, buf, size);
+			}
 		}
 
 	}
 	close(clnt_sock);
 	close(serv_sock);
+}
+
+int		main(int argc, char **argv)
+{
+	char *line;
+	if (argc > 2)
+	{
+		std::cout << "Error : argument error" << std::endl;
+		exit(1);
+	}
+	int nginxFd;
+	if (argc == 2)
+		nginxFd = open(argv[1], O_RDONLY);
+	else
+		nginxFd = open(CONFIG_PATH, O_RDONLY);
+	std::cout << nginxFd << std::endl;
+
+	while (get_next_line(nginxFd, &line))
+	{
+		std::cout << line << std::endl;
+	}
+
 
 
 	return (0);
