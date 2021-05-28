@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   webserv.h                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: hyukim <hyukim@student.42.fr>              +#+  +:+       +#+        */
+/*   By: seohchoi <seohchoi@student.42seoul.kr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/05/25 15:11:41 by hyukim            #+#    #+#             */
-/*   Updated: 2021/05/25 15:11:51 by hyukim           ###   ########.fr       */
+/*   Updated: 2021/05/28 16:57:58 by seohchoi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,5 +39,6 @@
 # include <sys/socket.h>
 
 # include "libft.h"
+# include "Request.hpp"
 
 #endif
