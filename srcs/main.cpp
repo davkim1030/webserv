@@ -51,24 +51,7 @@ int main(void)
         char buffer[30000] = {0};
         valread = read( new_socket , buffer, 30000);
         // printf("%s\n",buffer );
-		Request Req(buffer);
-
-		Req.parseRequest();
-		std::cout << Req.getMethod() << std::endl;
-		std::cout << Req.getUri() << std::endl;
-		std::cout << Req.getHttpVersion() << std::endl;
-		std::cout << "------" << std::endl << Req.getRawHeader() << std::endl << "------" << std::endl;
-		std::map<std::string, std::string> header = Req.getHeader();
-		std::map<std::string, std::string>::iterator iter;
-		for( iter = header.begin(); iter != header.end(); iter++)
-		{
-			std::cout << "Key : " << iter->first << " Value : " << iter->second << std::endl;
-		}
-		std::cout << Req.getRawBody() << std::endl ;
-
-
-
-        write(new_socket , hello , strlen(hello));
+	    write(new_socket , hello , strlen(hello));
         printf("------------------Hello message sent-------------------\n");
         close(new_socket);
     }

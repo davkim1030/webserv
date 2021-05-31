@@ -1,4 +1,4 @@
-SRC		=	main.cpp Response.cpp Request.cpp
+SRC		=	main.cpp Response.cpp Request.cpp RequestHandler.cppp
 
 SRCDIR	=	./srcs/
 SRCS	=	$(addprefix $(SRCDIR), $(SRC))
