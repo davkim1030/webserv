@@ -7,7 +7,6 @@ class Request
 {
 	public:
 
-		Request();
 		Request( std::string const );
 		Request( Request const & src );
 		~Request();
@@ -26,6 +25,8 @@ class Request
 		void	parseRequest(void);
 
 	private:
+		Request();
+		
 		std::string	rawRequest;
 
 		std::string	method;

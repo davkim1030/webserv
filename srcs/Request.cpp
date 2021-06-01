@@ -7,8 +7,6 @@
 
 Request::Request()
 {
-	this->rawRequest.clear();
-	initRequest();
 }
 
 Request::Request(std::string const data)
@@ -27,7 +25,6 @@ Request::Request( const Request & src )
 	this->header = src.getHeader();
 	this->rawBody = src.getRawBody();
 }
-
 
 /*
 ** -------------------------------- DESTRUCTOR --------------------------------
