@@ -1,19 +1,5 @@
-# **************************************************************************** #
-#                                                                              #
-#                                                         :::      ::::::::    #
-#    Makefile                                           :+:      :+:    :+:    #
-#                                                     +:+ +:+         +:+      #
-#    By: hyukim <hyukim@student.42seoul.kr>         +#+  +:+       +#+         #
-#                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2020/11/22 22:02:20 by hyukim            #+#    #+#              #
-#    Updated: 2021/05/27 15:27:33 by hyukim           ###   ########.fr        #
-#                                                                              #
-# **************************************************************************** #
-
 SRC		=	main.cpp \
-			ServerConfig.cpp \
-			Server.cpp \
-			Location.cpp
+			Socket.cpp
 
 SRCDIR	=	./srcs/
 SRCS	=	$(addprefix $(SRCDIR), $(SRC))
@@ -27,7 +13,7 @@ LIBH	=	libft.h
 INCDIR	=	./includes/
 
 GPP		=	clang++
-GPPFLAG	=	-g #-Wall -Wextra -Werror
+GPPFLAG	=	-g -Wall -Wextra -Werror
 RM		=	rm -f
 
 %.o:		%.cpp

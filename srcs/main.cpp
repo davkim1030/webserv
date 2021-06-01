@@ -1,151 +1,121 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   main.cpp                                           :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: hyukim <hyukim@student.42.fr>              +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2021/05/25 15:12:02 by hyukim            #+#    #+#             */
-/*   Updated: 2021/05/25 15:14:28 by hyukim           ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "webserv.h"
-#include "Location.hpp"
-#include "Server.hpp"
-#include "ServerConfig.hpp"
 
-#define PORT 8080
-# define BUF_SIZE 100
-# define CONFIG_PATH "./default.nginx"
+#define PORT 80
 
-// FD_ZERO(fd_set* set);        //fdset을초기화
-// FD_SET(int fd, fd_set* set);  //fd를 set에 등록
-// FD_CLR(int fd, fd_set* set);  //fd를 set에서 삭제
-// FD_ISSET(int fd, fd_set* set);//fd가 준비되었는지 확인
-
-void startServer()
+void operateIo(int maxSize, fd_set rfds, fd_set wfds, fd_set efds)
 {
-		int serv_sock;
-	int clnt_sock;
+    int fd = 0;
+	int opVal;
+	fd_set tmpFds;
+	char	buffer[100] = { 0, };
+	size_t	bufferSize = 100;
 
-	struct sockaddr_in serv_addr;
-	struct sockaddr_in clnt_addr;
-	socklen_t clnt_addr_size;
-
-	serv_sock = socket(PF_INET, SOCK_STREAM, 0);
-	if (serv_sock == -1)
-		std::cout << "error : sock error" << std::endl;
-	ft_memset(&serv_addr, 0, sizeof(serv_addr));
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-	serv_addr.sin_port = htons(PORT);
-
-	if (bind(serv_sock, (struct sockaddr*) &serv_addr, sizeof(serv_addr)) == 1)
-		std::cout << "error : bing error" << std::endl;
-	
-	if (listen(serv_sock, 5) == -1)
-		std::cout << "error : listen error" << std::endl;
-
-	fd_set reads;
-	fd_set copyReads;
-
-	fd_set writes;
-	fd_set copyWrite;
-	struct timeval timeout;
-
-	int fd_max, str_len, fd_num;
-
-	FD_ZERO(&reads); // fd_set 테이블 초기화
-	FD_SET(serv_sock, &reads);
-
-	fd_max = serv_sock;
-	while(1)
-	{
-		char	buf[BUF_SIZE];
-		copyReads = reads;
-		copyWrite = writes;
-		timeout.tv_sec = 5;
-		timeout.tv_usec = 5000;
-
-		if ((fd_num = select(fd_max + 1, &copyReads, &copyWrite, 0, &timeout)) == -1 )
-		{
-			std::cout << "select error" << std::endl;
-			exit(0);
-		}
-		if (fd_num == 0)
-			continue;
-
-		for (int i = 0; i <= fd_max; i++)
-		{
-			if (FD_ISSET(i, &copyReads))
+    while (fd < maxSize)
+    {
+		std::cout << fd << std::endl;
+		std::cout << FD_ISSET(fd, &rfds) << std::endl;
+		FD_ZERO(&tmpFds);
+        if (FD_ISSET(fd, &rfds))
+        {
+			opVal = read(fd, buffer, bufferSize);
+			std::cout << opVal << std::endl;
+			if (opVal >= 0)
 			{
-				if (i == serv_sock)
-				{
-					clnt_addr_size = sizeof(clnt_addr);
-					clnt_sock = accept(serv_sock, (struct sockaddr *)&clnt_addr, &clnt_addr_size);
-					if (clnt_sock == -1)
-						std::cout << "error : client accept error" << std::endl;
-					FD_SET(clnt_sock, &reads);
-					FD_SET(clnt_sock, &writes);
-					if (fd_max < clnt_sock)
-						fd_max = clnt_sock;
-
-					//클라이언트 연결만 허용
-					
-					char message[] = "Hello test world\n";
-					write(clnt_sock, message, sizeof(message));
-				}
-				else
-				{
-					str_len = read(i, buf, BUF_SIZE);
-					// str_len == 0
-					// 	disconnnect
-					
-					// 클라이언트 인풋 read
-					// 처리
-
-					//result -> 클라이언트에 write
-					FD_CLR(i, &reads);
-					close(i);
-					std::cout << "close file : " << i << std::endl;
-				}
+				// read file
+				std::cout << "[read] " << buffer;
+				ft_memset(buffer, '\0', 100);
 			}
-			else if (FD_ISSET(i, &copyWrite))
+			else
 			{
-				// write(clnt_sock, buf, size);
+				// connection closed
+				close(fd);
 			}
-		}
-
-	}
-	close(clnt_sock);
-	close(serv_sock);
+			break ;
+        }
+        else if (FD_ISSET(fd, &wfds))
+        {
+			opVal = write(fd, buffer, bufferSize);
+			if (opVal >= 0)
+			{
+				// read file
+				std::cout << "[write] " << buffer;
+				ft_memset(buffer, '\0', 100);
+			}
+			else
+			{
+				// connection closed
+				close(fd);
+			}
+			break ;
+        }
+        else if (FD_ISSET(fd, &efds))
+        {
+			std::cout << "except fdset" << std::endl;
+			break ;
+        }
+		fd++;
+    }
 }
 
-
-int		main(int argc, char **argv)
+int main(void)
 {
-	ServerConfig serverConfig;
+    int server_fd, new_socket;
+    struct sockaddr_in address;
+    int addrlen = sizeof(address);
 
-	std::vector<int> ser;
+    // Creating socket file descriptor
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
+    {
+        perror("In socket");
+        exit(EXIT_FAILURE);
+    }
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons( PORT );
 
-	ser.push_back(2);
+    ft_memset(address.sin_zero, '\0', sizeof address.sin_zero);
 
-	char *line;
-	if (argc > 2)
-	{
-		std::cout << "Error : argument error" << std::endl;
-		exit(1);
-	}
-	int configFd;
-	if (argc == 2)
-		configFd = open(argv[1], O_RDONLY);
-	else
-		configFd = open(CONFIG_PATH, O_RDONLY);
-	
-	serverConfig.saveConfig(configFd);
+    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) == -1)
+    {
+        perror("In bind");
+        exit(EXIT_FAILURE);
+    }
+    if (listen(server_fd, 5) < 0)
+    {
+        perror("In listen");
+        exit(EXIT_FAILURE);
+    }
 
-
-
+    fd_set readfds, writefds, exceptfds;
+    while(1)
+    {
+        if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0)
+        {
+            perror("In accept");
+            exit(EXIT_FAILURE);
+        }
+		FD_ZERO(&readfds);
+		FD_ZERO(&writefds);
+		FD_ZERO(&exceptfds);
+		FD_SET(new_socket, &readfds);
+		FD_SET(new_socket, &writefds);
+		FD_SET(new_socket, &exceptfds);
+        struct timeval timeout;
+        timeout.tv_sec = 5;
+        timeout.tv_usec = 0;
+        int selval = select(new_socket + 1, &readfds, &writefds, &exceptfds, &timeout);
+        if (selval > 0)
+        {
+            // do I/O operation
+			std::cout << selval << std::endl;
+			operateIo(new_socket + 1, readfds, writefds, exceptfds);
+        }
+        else if (selval < 0)
+        {
+            // handle error
+			std::cout << "nothing selected" << std::endl;
+        }
+        close(new_socket);
+    }
 	return (0);
 }
