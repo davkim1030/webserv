@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SOCKET_HPP
+#define SOCKET_HPP
 
 #include "webserv.h"
 
@@ -33,3 +34,5 @@ class Socket
 
 		void initServer(int);
 };
+
+#endif

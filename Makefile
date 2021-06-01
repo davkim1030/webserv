@@ -10,7 +10,10 @@
 #                                                                              #
 # **************************************************************************** #
 
-SRC		=	main.cpp
+SRC		=	main.cpp \
+			ServerConfig.cpp \
+			Server.cpp \
+			Location.cpp
 
 SRCDIR	=	./srcs/
 SRCS	=	$(addprefix $(SRCDIR), $(SRC))
