@@ -16,7 +16,7 @@ class ResponseHandler
 		//std::string getBody(void) const;
 		//std::string getVersion(void) const;
 		//std::map<std::string, std::string> getResponseHeader(void) const;
-		
+
 		//void setRequest(Request);
 		//void setStatusCode(int);
 		//void setBody(std::string);
@@ -26,7 +26,7 @@ class ResponseHandler
 		void makeResponse(void);
 
 		/*----------ResponseHeader.cpp------------*/
-		
+
 		void addResponseHeader(std::string, std::string);
 
 		void addDateHeader(void);
@@ -42,13 +42,13 @@ class ResponseHandler
 	private:
 		ResponseHandler(void);
 		Request _Req;
-		
+
 		//int _statusCode;
 		//std::string _body;
 		//std::string _version;
-		std::map<std::string, std::string> _responseHeader; 
+		std::map<std::string, std::string> _responseHeader;
 
-		void _makeGetResponse(void);
+		void _makeGetResponse(bool);
 };
 
 #endif

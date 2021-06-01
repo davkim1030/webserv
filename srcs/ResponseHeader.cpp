@@ -6,7 +6,7 @@ void ResponseHandler::addResponseHeader(std::string key, std::string value)
 }
 
 void ResponseHandler::addDateHeader(void)
-{	
+{
 	time_t rawtime;
 	char buffer[80];
 	struct tm* timeinfo;
@@ -18,12 +18,13 @@ void ResponseHandler::addDateHeader(void)
 	addResponseHeader("Date", std::string(buffer));
 }
 
-void addServerHeader(void)
+void ResponseHandler::addServerHeader(void)
 {
-	
+	this->_responseHeader["server"] = "FDB";
+
 }
 
 void addLastModifiedHeader(void)
 {
-	
+
 }
