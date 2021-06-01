@@ -66,6 +66,8 @@ void ResponseHandler::makeResponse()
 
 	if (_Req.getMethod() == "GET" || _Req.getMethod() == "POST")
 		_makeGetResponse();
+
+	_responseHeader.clear();
 }
 
 /*
@@ -83,14 +85,29 @@ void ResponseHandler::_makeGetResponse()
 	addDateHeader();
 	addServerHeader();
 	
-	
-	
-	addLastModifiedHeader();
+	//file 경로면
+	if (isFile(_Req.getUri()))
+	{
+
+		
+		//URI가 유효한지 검사할것
+		//uri가 유효하면 open 후 구조체에 파일 객체 담기. 그 후 body에 객체를 담기
+		//파일을 어떻게 body에 담는지 공부필요
+
+		
+		addContentTypeHeader();
+		addContentLanguageHeader();
+		addContentLocationHeader();
+		addContentLengthHeader();
+		addLastModifiedHeader();
+
+	}
+	if (notExist(_Req.getUri()))
+		//404출력하고 에러페이지 호출
 	
 	
 	Response Res(statusCode, _responseHeader, body, version);
 	Res.getMessage();
-	_responseHeader.clear();
 }
 
 //리다이렉트 기본헤더 : Location
