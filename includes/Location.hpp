@@ -14,8 +14,11 @@ class Location
 	public:
 		Location();
 		Location(Location const &lo);
+		Location(std::list<std::string> &line);
 		Location &operator=(Location const &lo);
 		~Location();
+
+		void configParse(std::string line);
 };
 
 #endif

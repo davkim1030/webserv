@@ -31,28 +31,21 @@ int ServerConfig::checkLine(std::string line)
 
 void ServerConfig::configParse(std::string line)
 {
-	int index;
-	if ((index = line.find('#')) != -1)
-	{
-		line = line.substr(0, index);
-	}
-	if (checkLine(line))
+	if (checkLine(line)) // 공백 들어간 라인 제거
+		return ;
+	line = line.substr(0, line.find('#')).substr(0, line.find(';'));
+	char *cLine = std::strtok((char *)line.c_str(), " \t");
+	if (cLine == NULL)
 		return ;
 	std::pair<std::string, std::string> res;
-	line = line.substr(0, line.find(';'));
-
-	char *test = std::strtok((char *)line.c_str(), " \t");
-	if (test == NULL)
-		return ;
-	res.first = std::string(test);
-
-	test = std::strtok(NULL, " \t");
+	res.first = std::string(cLine);
+	cLine = std::strtok(NULL, " \t");
 	line.clear();
-	while (test != 0)
+	while (cLine != 0)
 	{
-		line.append(test);
-		test = std::strtok(NULL, " \t");
-		if (test != 0)
+		line.append(cLine);
+		cLine = std::strtok(NULL, " \t");
+		if (cLine != 0)
 			line.append(" ");
 	}
 	res.second = line;
@@ -65,38 +58,35 @@ void ServerConfig::saveConfig(int fd)
 {
 	int parenFlag = 0;
 	char *line;
-	std::string stdline;
+	std::list<std::string> save;
 	while (get_next_line(fd, &line))
 	{
-		std::string test(line);
-		if (test.find('{') != -1)
+		std::string stdline(line);
+		if (stdline.find('{') != -1)
 		{
-			stdline.append(test + '\n');
+			save.push_back(stdline);
 			parenFlag++;
 		}
-		else if (test.find('}') != -1)
+		else if (stdline.find('}') != -1)
 		{
-			stdline.append(test + '\n');
+			save.push_back(stdline);
 			parenFlag--;
 			if (parenFlag == 0)
 			{
-				server.push_back(Server(stdline));
-				stdline.clear();
+				server.push_back(Server(save));
+				save.clear();
 			}
 		}
 		else if (parenFlag > 0)
-		{
-			stdline.append(test + '\n');
-		}
+			save.push_back(stdline);
 		else
-		{
-			configParse(test);
-		}
+			configParse(stdline);
 		free(line);
 	}
-
-	std::map<std::string, std::string>::iterator it;
-
-	for(it = option.begin(); it != option.end(); it++)
-		std::cout << "{" << it->first << "} {" << it->second << "}" << std::endl;
+	// parenFlag != 0 -> error
+	
+	// std::cout << "-----------config option print----------" << std::endl;
+	// for (std::map<std::string, std::string>::iterator bit = option.begin(); bit != option.end(); bit++)
+	// 	std::cout << "option : {" << bit->first << "} {" << bit->second << "}" << std::endl;
+	
 }

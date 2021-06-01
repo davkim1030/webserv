@@ -16,10 +16,13 @@ class Server
 	public:
 		//std::string 형태로 인자 받아서 바로 파싱해서 저장하자
 		Server();
-		Server(const std::string &str);
+		Server(std::list<std::string> &save);
 		Server(Server const &serv);
 		Server &operator=(Server const &co);
 		~Server();
+
+        int checkLine(std::string line);
+        void configParse(std::string line);
 };
 
 
