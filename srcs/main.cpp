@@ -24,8 +24,6 @@ int		main(int argc, char **argv)
 	std::vector<int> ser;
 
 	ser.push_back(2);
-
-	char *line;
 	if (argc > 2)
 	{
 		std::cout << "Error : argument error" << std::endl;

@@ -62,12 +62,12 @@ void ServerConfig::saveConfig(int fd)
 	while (get_next_line(fd, &line))
 	{
 		std::string stdline(line);
-		if (stdline.find('{') != -1)
+		if (stdline.find('{') != std::string::npos)
 		{
 			save.push_back(stdline);
 			parenFlag++;
 		}
-		else if (stdline.find('}') != -1)
+		else if (stdline.find('}') != std::string::npos)
 		{
 			save.push_back(stdline);
 			parenFlag--;
@@ -84,7 +84,7 @@ void ServerConfig::saveConfig(int fd)
 		free(line);
 	}
 	// parenFlag != 0 -> error
-	
+
 	// std::cout << "-----------config option print----------" << std::endl;
 	// for (std::map<std::string, std::string>::iterator bit = option.begin(); bit != option.end(); bit++)
 	// 	std::cout << "option : {" << bit->first << "} {" << bit->second << "}" << std::endl;

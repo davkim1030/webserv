@@ -68,12 +68,12 @@ Server::Server(std::list<std::string> &strlst)
 
 	for (std::list<std::string>::iterator it = strlst.begin(); it != strlst.end(); it++)
 	{
-		if (it->find('{') != -1 && it->find("server") == -1)
+		if (it->find('{') != std::string::npos && it->find("server") == std::string::npos)
 		{
 			// save.push_back(*it);
 			parenFlag++;
 		}
-		else if (it->find('}') != -1)
+		else if (it->find('}') != std::string::npos)
 		{
 			// save.push_back(*it);
 			parenFlag--;
