@@ -37,6 +37,7 @@ class ResponseHandler
 		void addContentLocationHeader(void);
 		void addContentTypeHeader(void);
 		void addLastModifiedHeader(void);
+		/*---------------------------------------*/
 
 
 	private:
@@ -48,7 +49,11 @@ class ResponseHandler
 		//std::string _version;
 		std::map<std::string, std::string> _responseHeader;
 
-		void _makeGetResponse(bool);
+
+		void _makeGetResponse(int);
+		std::string makeErrorPage(int);
+		enum statusCode { NOT_FOUND, SERVER_ERR, FORBIDDEN, HEAD_METHOD};
+
 };
 
 #endif
