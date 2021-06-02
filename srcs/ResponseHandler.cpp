@@ -86,7 +86,6 @@ void ResponseHandler::_makeGetResponse(bool send_body)
 
 	addDateHeader();
 	addServerHeader();
-
 	try{
 
 		//uri가 유효하면 open 후 구조체에 파일 객체 담기. 그 후 body에 객체를 담기
@@ -97,7 +96,6 @@ void ResponseHandler::_makeGetResponse(bool send_body)
 		// headers["Content-Type"] = _getMIMEType(ressource_path);
 		pathType(ressource_path, &file_date);
 		// headers["Last-Modified"] = _formatTimestamp(file_date);
-
 		addContentTypeHeader();
 		addContentLanguageHeader();
 		addContentLocationHeader();
