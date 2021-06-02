@@ -43,16 +43,18 @@ class ResponseHandler
 	private:
 		ResponseHandler(void);
 		Request _Req;
-
-		//int _statusCode;
-		//std::string _body;
-		//std::string _version;
+		std::string _resourcePath;
 		std::map<std::string, std::string> _responseHeader;
 
-
 		void _makeGetResponse(int);
-		std::string makeErrorPage(int);
+
+		std::string _makeErrorPage(int);
+		int _checkPath(std::string);
+
+
 		enum statusCode { NOT_FOUND, SERVER_ERR, FORBIDDEN, HEAD_METHOD};
+		#define ISFILE 1
+		#define ISDIR 2
 
 };
 

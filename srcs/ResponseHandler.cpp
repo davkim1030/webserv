@@ -26,9 +26,7 @@ ResponseHandler & ResponseHandler::operator=( ResponseHandler const & rhs )
 	{
 		this->_Req = rhs._Req;
 		this->_responseHeader = rhs._responseHeader;
-		//this->_statusCode = rhs.getStatusCode();
-		//this->_body = rhs.getBody();
-		//this->_version = rhs.getVersion();
+		this->_resourcePath = rhs._resourcePath;
 	}
 	return *this;
 }
@@ -37,40 +35,23 @@ ResponseHandler & ResponseHandler::operator=( ResponseHandler const & rhs )
 ** --------------------------------- METHODS ----------------------------------
 */
 
-//Request ResponseHandler::getRequest(void) const { return this->_Req; }
-//int ResponseHandler::getStatusCode(void) const { return this->_statusCode; }
-//std::string ResponseHandler::getBody(void) const { return this->_body; }
-//std::string ResponseHandler::getVersion(void) const { return this->_version; }
-//std::map<std::string, std::string> ResponseHandler::getResponseHeader(void) const { return this->_responseHeader; }
-
-//void ResponseHandler::setResponseHeader(std::map<std::string, std::string> header) { this->_responseHeader = header; };
-//void ResponseHandler::setRequest(Request Req) { this->_Req = Req; };
-//void ResponseHandler::setStatusCode(int code) { this->_statusCode = code; };
-//void ResponseHandler::setBody(std::string body) { this->_body = body; };
-//void ResponseHandler::setVersion(std::string version) { this->_version = version; };
-
 
 /*
-
  * Check if a path is non-existent, a file, or a directory, and get its last-modified date
- * @param path the path to check
- * @param file_date a time_t value that will be set to the date of modification of the file
- * @return 0 if the path is non-existant, 1 if the path is a file, 2 if the path is a directory
+ * @param 체크할 경로
+ * @return 경로가 존재하지 않을 경우 0 반환, 파일일 경우 1 반환, 디렉토리일경우 2 반환
  */
-int checkPath(std::string path)
+int ResponseHandler::_checkPath(std::string path)
 {
 	struct stat buffer;
 
 	int exist = stat(path.c_str(), &buffer);
-	if (exist == 0)
-	{
-		if (S_ISREG(buffer.st_mode))
-			return (1);
-		else
-			return (2);
-	}
-	else
-		return (0);
+	if (exist != 0)
+		return (NOT_FOUND);
+	if (S_ISREG(buffer.st_mode))
+		return (ISFILE);
+	else if (S_ISDIR(buffer.st_mode))
+		return (ISDIR);
 }
 
 /*
@@ -86,12 +67,39 @@ void ResponseHandler::makeResponse()
 
 		또한 Host 헤더가 들어오면, Host헤더의 value 포트로 이동하게 해주세요!
 	*/
-	checkPath(_Req.getUri());
+	try{
+		_resourcePath = _Req.getUri(); //나중에 root 들어오면 앞에 붙여주세요
 
-	if (_Req.getMethod() == "GET" || _Req.getMethod() == "POST")
-		_makeGetResponse(0);
-	if (_Req.getMethod() == "HEAD")
-		_makeGetResponse(HEAD_METHOD);
+		//디렉토리면
+		if (_checkPath(_resourcePath) == ISDIR)
+		{
+			//URI 마지막에 '/' 없으면 '/'넣어주고 이것저것 해주셔야함
+
+			if ()//가진 html중에 이름이 일치하는 페이지 있으면 그걸 보여주기
+
+			else if (오토인덱스면)
+				//오토인덱스 보내주고 여기서 끝내버림
+				throw Response(200, _responseHeader, _Req.getMethod() != "HEAD" ? _makeAutoIndexPage(_resourcePath) : "", _Req.getHttpVersion());
+				//_makeAutoIndexPage 함수 만들기
+
+		}
+		//경로 한번 더 검사-> 존재 안하면
+		if (_checkPath(_resourcePath) == NOT_FOUND && _Req.getMethod != "PUT" && _Req.getMethod != "POST")
+				throw Response(404, _responseHeader, _makeErrorPage(404), _Req.getHttpVersion());
+
+			//CGI 검사
+
+		if (_Req.getMethod() == "GET" || _Req.getMethod() == "POST")
+			_makeGetResponse(0);
+		if (_Req.getMethod() == "HEAD")
+			_makeGetResponse(HEAD_METHOD);
+
+	}
+	catch (Response &e)
+	{
+		e.getMessage();
+		return ;
+	}
 
 	_responseHeader.clear();
 }
@@ -112,12 +120,14 @@ void ResponseHandler::_makeGetResponse(int httpStatus)
 
 	addDateHeader();
 	addServerHeader();
-	try{
+
 
 		//uri가 유효하면 open 후 구조체에 파일 객체 담기. 그 후 body에 객체를 담기
 		//파일을 어떻게 body에 담는지 공부필요
+		if (fd = open(file.c_str(), O_RDONLY) < 0)
+			throw Response(500, _responseHeader, _makeErrorPage(500), version);
+		//contentlength만큼 파일에 우겨넣기 필요
 
-		open();
 
 		addContentTypeHeader();
 		addContentLanguageHeader();
@@ -125,29 +135,23 @@ void ResponseHandler::_makeGetResponse(int httpStatus)
 		addContentLengthHeader();
 		addLastModifiedHeader();
 
-		switch (httpStatus)
-		{
-			case NOT_FOUND:
-				throw Response(404, _responseHeader, makeErrorPage(404), version);
-			case SERVER_ERR:
-				throw Response(500, _responseHeader, makeErrorPage(500), version);
-			case FORBIDDEN:
-				throw Response(403, _responseHeader, makeErrorPage(403), version);
-			case HEAD_METHOD:
-				throw Response(200, _responseHeader, "", version);
-			default:
-				throw Response(200, _responseHeader, body, version);
-		}
-	}
-	catch (Response &e)
+	switch (httpStatus)
 	{
-		e.getMessage();
-		return ;
+		case NOT_FOUND:
+			throw Response(404, _responseHeader, _makeErrorPage(404), version);
+		case SERVER_ERR:
+			throw Response(500, _responseHeader, _makeErrorPage(500), version);
+		case FORBIDDEN:
+			throw Response(403, _responseHeader, _makeErrorPage(403), version);
+		case HEAD_METHOD:
+			throw Response(200, _responseHeader, "", version);
+		default:
+			throw Response(200, _responseHeader, body, version);
 	}
 }
 
 
-std::string ResponseHandler::makeErrorPage(int statusCode)
+std::string ResponseHandler::_makeErrorPage(int statusCode)
 {
 	std::string body;
 	addContentTypeHeader(".html");
