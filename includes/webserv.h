@@ -39,5 +39,8 @@
 # include <sys/socket.h>
 
 # include "libft.h"
+# include "Exception.hpp"
+
+# define CONFIG_PATH "./default.nginx"
 
 #endif

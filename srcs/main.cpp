@@ -15,28 +15,22 @@
 #include "Server.hpp"
 #include "ServerConfig.hpp"
 
-# define CONFIG_PATH "./default.nginx"
-
 int		main(int argc, char **argv)
 {
-	ServerConfig serverConfig;
-
-	std::vector<int> ser;
-
-	ser.push_back(2);
 	if (argc > 2)
 	{
 		std::cout << "Error : argument error" << std::endl;
 		exit(1);
 	}
-	int configFd;
-	if (argc == 2)
-		configFd = open(argv[1], O_RDONLY);
-	else
-		configFd = open(CONFIG_PATH, O_RDONLY);
-	
-	serverConfig.saveConfig(configFd);
 
-
+	try
+	{
+		ServerConfig::getInstance()->saveConfig(argc, argv[1]);
+		ServerConfig::getInstance()->printItem();
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+	}
 	return (0);
 }

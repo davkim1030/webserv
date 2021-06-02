@@ -6,6 +6,11 @@
 
 class Location;
 
+/*
+	server 블럭 저장 클래스
+	@member variable -> option : server가 가질 기본 정보 저장
+	@member variable -> location : location 블럭이 저장된 vector 컨테이너
+*/
 class Server
 {
 	private:
@@ -21,8 +26,12 @@ class Server
 		Server &operator=(Server const &co);
 		~Server();
 
+		std::vector<Location> getLocation();
+
         int checkLine(std::string line);
         void configParse(std::string line);
+
+		void printItem();
 };
 
 

@@ -13,7 +13,8 @@
 SRC		=	main.cpp \
 			ServerConfig.cpp \
 			Server.cpp \
-			Location.cpp
+			Location.cpp \
+			Exception.cpp
 
 SRCDIR	=	./srcs/
 SRCS	=	$(addprefix $(SRCDIR), $(SRC))

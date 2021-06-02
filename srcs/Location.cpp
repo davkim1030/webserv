@@ -3,10 +3,8 @@
 
 Location::Location() {}
 
-Location::Location(Location const &lo)
-{
-	option = lo.option;
-}
+Location::Location(Location const &lo) : path(lo.path), option(lo.option)
+{}
 
 Location &Location::operator=(Location const &lo)
 {
@@ -17,6 +15,10 @@ Location &Location::operator=(Location const &lo)
 
 Location::~Location() {}
 
+/*
+	line을 받아 key value 형태로 저장
+	@param -> std::string line : 중괄호 내부의 location이 가져야 할 옵션을 가진 문자열
+*/
 void Location::configParse(std::string line)
 {
 	line = line.substr(0, line.find('#')).substr(0, line.find(';'));
@@ -40,12 +42,52 @@ void Location::configParse(std::string line)
 	option[res.first] = res.second;
 }
 
+/*
+	location 뒤로 붙은 path를 저장해주는 함수
+	location /path { 의 형태로 들어오고 여기서 "/path" 만 저장
+	@param -> std::string line -> 파싱에 쓰일 문자열
+*/
+void Location::saveLocation(std::string line)
+{
+	line = line.substr(0, line.find('{'));
+	char *cLine = std::strtok((char *)line.c_str(), " \t");
+	if (cLine == NULL)
+		return ;
+	cLine = std::strtok(NULL, " \t");
+	line.clear();
+	while (cLine != 0)
+	{
+		line.append(cLine);
+		cLine = std::strtok(NULL, " \t");
+		if (cLine != 0)
+			line.append(" ");
+	}
+	path = std::string(line);
+}
+
+/*
+	Server에서 만든 location블럭을 받아 파싱 및 생성해주는 생성자
+	줄이 location으로 시작하면 saveLocation 함수로 전달
+	그 외에는 configParse 함수로 줄 전달
+	@param -> std::list<std::string> line -> 파싱에 쓰일 location 저장한 list 개행 단위로 잘라 한 노드로 저장되어있음
+*/
 Location::Location(std::list<std::string> &line)
 {
 	for (std::list<std::string>::iterator it = line.begin(); it != line.end(); it++)
-		configParse(*it);
+	{
+		if (it->find("location") != std::string::npos)
+			saveLocation(*it);
+		else
+			configParse(*it);
+	}
+}
 
-	// std::cout << "-----------location option print----------" << std::endl;
-	// for (std::map<std::string, std::string>::iterator bit = option.begin(); bit != option.end(); bit++)
-	// 	std::cout << "option : {" << bit->first << "} {" << bit->second << "}" << std::endl;
+/*
+	location의 이름 path 출력 후 내부 option 순환하며 모두 출력
+*/
+void Location::printItem()
+{
+	std::cout << "-----------location {" << path << "} option print----------" << std::endl;
+	for (std::map<std::string, std::string>::iterator bit = option.begin(); bit != option.end(); bit++)
+		std::cout << "option : {" << bit->first << "} {" << bit->second << "}" << std::endl;
 }
