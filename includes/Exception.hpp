@@ -3,12 +3,12 @@
 
 #include <iostream>
 
-class WrongFileFormat : public std::exception
+class WrongFileFormatException : public std::exception
 {
 	const char *what() const throw();
 };
 
-class FileDoesNotExist : public std::exception
+class FileDoesNotExistException : public std::exception
 {
     const char *what() const throw();
 };

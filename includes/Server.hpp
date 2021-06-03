@@ -26,7 +26,7 @@ class Server
 		Server &operator=(Server const &co);
 		~Server();
 
-		std::vector<Location> getLocation();
+		std::vector<Location> getLocations();
 
         int checkLine(std::string line);
         void configParse(std::string line);

@@ -71,8 +71,10 @@ void Server::configParse(std::string line)
 /*
 	private 멤버 변수 location 반환 getter
 */
-std::vector<Location> Server::getLocation()
-{ return location; }
+std::vector<Location> Server::getLocations()
+{
+	return location;
+}
 
 /*
 	ServerConfig에서 만든 server블럭을 받아 파싱 및 생성해주는 생성자
@@ -114,7 +116,7 @@ Server::Server(std::list<std::string> &strlst)
 	}
 	// parenFlag != -1 -> error
 	if (parenFlag != -1)
-		throw WrongFileFormat();
+		throw WrongFileFormatException();
 }
 
 /*

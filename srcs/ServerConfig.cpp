@@ -35,8 +35,10 @@ ServerConfig* ServerConfig::getInstance()
 /*
 	private 멤버 변수 server 반환 getter
 */
-std::vector<Server> ServerConfig::getServer()
-{ return server; }
+std::vector<Server> ServerConfig::getServers()
+{
+	return server;
+}
 
 /*
 	줄이 공백만 존재하는지 체크
@@ -100,7 +102,7 @@ int	ServerConfig::openfile(int argc, char *path)
 	else
 		fd = open(CONFIG_PATH, O_RDONLY);
 	if (fd == -1)
-		throw FileDoesNotExist();
+		throw FileDoesNotExistException();
 	return fd;
 }
 
@@ -149,7 +151,7 @@ void ServerConfig::saveConfig(int argc, char *path)
 		free(line);
 	close(fd);
 	if (parenFlag != 0)
-		throw WrongFileFormat();
+		throw WrongFileFormatException();
 }
 
 /*
