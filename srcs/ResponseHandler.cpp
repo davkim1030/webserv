@@ -5,10 +5,69 @@
 */
 
 ResponseHandler::ResponseHandler(Request &Req)
-:_Req(Req) {};
+:_Req(Req) {
+	this->_mimeType[".aac"] = "audio/aac";
+	this->_mimeType[".abw"] = "application/x-abiword";
+	this->_mimeType[".arc"] = "application/octet-stream";
+	this->_mimeType[".avi"] = "video/x-msvideo";
+	this->_mimeType[".azw"] = "application/vnd.amazon.ebook";
+	this->_mimeType[".bin"] = "application/octet-stream";
+	this->_mimeType[".bz"] = "application/x-bzip";
+	this->_mimeType[".bz2"] = "application/x-bzip2";
+	this->_mimeType[".csh"] = "application/x-csh";
+	this->_mimeType[".css"] = "text/css";
+	this->_mimeType[".csv"] = "text/csv";
+	this->_mimeType[".doc"] = "application/msword";
+	this->_mimeType[".epub"] = "application/epub+zip";
+	this->_mimeType[".gif"] = "image/gif";
+	this->_mimeType[".htm"] = "text/html";
+	this->_mimeType[".html"] = "text/html";
+	this->_mimeType[".ico"] = "image/x-icon";
+	this->_mimeType[".ics"] = "text/calendar";
+	this->_mimeType[".jar"] = "Temporary Redirect";
+	this->_mimeType[".jpeg"] = "image/jpeg";
+	this->_mimeType[".jpg"] = "image/jpeg";
+	this->_mimeType[".js"] = "application/js";
+	this->_mimeType[".json"] = "application/json";
+	this->_mimeType[".mid"] = "audio/midi";
+	this->_mimeType[".midi"] = "audio/midi";
+	this->_mimeType[".mpeg"] = "video/mpeg";
+	this->_mimeType[".mpkg"] = "application/vnd.apple.installer+xml";
+	this->_mimeType[".odp"] = "application/vnd.oasis.opendocument.presentation";
+	this->_mimeType[".ods"] = "application/vnd.oasis.opendocument.spreadsheet";
+	this->_mimeType[".odt"] = "application/vnd.oasis.opendocument.text";
+	this->_mimeType[".oga"] = "audio/ogg";
+	this->_mimeType[".ogv"] = "video/ogg";
+	this->_mimeType[".ogx"] = "application/ogg";
+	this->_mimeType[".pdf"] = "application/pdf";
+	this->_mimeType[".ppt"] = "application/vnd.ms-powerpoint";
+	this->_mimeType[".rar"] = "application/x-rar-compressed";
+	this->_mimeType[".rtf"] = "application/rtf";
+	this->_mimeType[".sh"] = "application/x-sh";
+	this->_mimeType[".svg"] = "image/svg+xml";
+	this->_mimeType[".swf"] = "application/x-shockwave-flash";
+	this->_mimeType[".tar"] = "application/x-tar";
+	this->_mimeType[".tif"] = "image/tiff";
+	this->_mimeType[".tiff"] = "image/tiff";
+	this->_mimeType[".ttf"] = "application/x-font-ttf";
+	this->_mimeType[".vsd"] = " application/vnd.visio";
+	this->_mimeType[".wav"] = "audio/x-wav";
+	this->_mimeType[".weba"] = "audio/webm";
+	this->_mimeType[".webm"] = "video/webm";
+	this->_mimeType[".webp"] = "image/webp";
+	this->_mimeType[".woff"] = "application/x-font-woff";
+	this->_mimeType[".xhtml"] = "application/xhtml+xml";
+	this->_mimeType[".xls"] = "application/vnd.ms-excel";
+	this->_mimeType[".xml"] = "application/xml";
+	this->_mimeType[".xul"] = "application/vnd.mozilla.xul+xml";
+	this->_mimeType[".zip"] = "application/zip";
+	this->_mimeType[".3gp"] = "video/3gpp audio/3gpp";
+	this->_mimeType[".3g2"] = "video/3gpp2 audio/3gpp2";
+	this->_mimeType[".7z"] = "application/x-7z-compressed";
+};
 
 ResponseHandler::ResponseHandler(const ResponseHandler & src)
-:_Req(src._Req) {};
+:_Req(src._Req), _mimeType(src._mimeType) {};
 
 /*
 ** -------------------------------- DESTRUCTOR --------------------------------
@@ -61,33 +120,30 @@ void ResponseHandler::makeResponse()
 {
 	/*
 		여기에는...
-		메소드에 따라 CGI 호출 여부를 결정하는 부분이 추가되어야 합니다.
-		또한 입력으로 특정한 헤더가 들어오면, 컨텐츠 협상을 통해서 언어를 정하거나(Accept-Charset, Accept-Language),
+		특정한 헤더가 들어오면, 컨텐츠 협상을 통해서 언어를 정하거나(Accept-Charset, Accept-Language),
 		클라이언트의 소프트웨어 정보를 보내주거나(User-Agent) 하는 부분이 추가되어야 합니다.
-
 		또한 Host 헤더가 들어오면, Host헤더의 value 포트로 이동하게 해주세요!
 	*/
 	try{
-		_resourcePath = _Req.getUri(); //나중에 root 들어오면 앞에 붙여주세요
+		_resourcePath = 루트변수 + _Req.getUri(); //나중에 root 들어오면 앞에 붙여주세요
 
 		//디렉토리면
 		if (_checkPath(_resourcePath) == ISDIR)
 		{
-			//URI 마지막에 '/' 없으면 '/'넣어주고 이것저것 해주셔야함
-
-			if ()//가진 html중에 이름이 일치하는 페이지 있으면 그걸 보여주기
-
-			else if (오토인덱스면)
-				//오토인덱스 보내주고 여기서 끝내버림
+			if (_resourcePath[_resourcePath.length() - 1] != '/')
+                this->_resourcePath += '/';
+			if (오토인덱스변수)
 				throw Response(200, _responseHeader, _Req.getMethod() != "HEAD" ? _makeAutoIndexPage(_resourcePath) : "", _Req.getHttpVersion());
-				//_makeAutoIndexPage 함수 만들기
+				//_makeAutoIndexPage 함수 제작중
 
 		}
 		//경로 한번 더 검사-> 존재 안하면
-		if (_checkPath(_resourcePath) == NOT_FOUND && _Req.getMethod != "PUT" && _Req.getMethod != "POST")
+		if (_checkPath(_resourcePath) == NOT_FOUND && _Req.getMethod() != "PUT" && _Req.getMethod() != "POST")
 				throw Response(404, _responseHeader, _makeErrorPage(404), _Req.getHttpVersion());
 
-			//CGI 검사
+		/*
+		* 여기에는 메소드에 따라 CGI 호출 여부를 결정하는 부분이 추가되어야 합니다.
+		*/
 
 		if (_Req.getMethod() == "GET" || _Req.getMethod() == "POST")
 			_makeGetResponse(0);
@@ -121,19 +177,17 @@ void ResponseHandler::_makeGetResponse(int httpStatus)
 	addDateHeader();
 	addServerHeader();
 
-
-		//uri가 유효하면 open 후 구조체에 파일 객체 담기. 그 후 body에 객체를 담기
-		//파일을 어떻게 body에 담는지 공부필요
+		//open 후 read-> 구조체에 파일 객체 담기. 그 후 body에 객체를 담기
 		if (fd = open(file.c_str(), O_RDONLY) < 0)
 			throw Response(500, _responseHeader, _makeErrorPage(500), version);
 		//contentlength만큼 파일에 우겨넣기 필요
 
 
-		addContentTypeHeader();
-		addContentLanguageHeader();
-		addContentLocationHeader();
-		addContentLengthHeader();
-		addLastModifiedHeader();
+	addContentTypeHeader(_resourcePath);
+	addContentLanguageHeader();
+	addContentLocationHeader();
+	addContentLengthHeader();
+	addLastModifiedHeader();
 
 	switch (httpStatus)
 	{
@@ -150,6 +204,13 @@ void ResponseHandler::_makeGetResponse(int httpStatus)
 	}
 }
 
+/*
+* 오토인덱스 페이지를 만든다.
+* 미작성
+*/
+std::string ResponseHandler::_makeAutoIndexPage(std::string _resourcePath)
+{
+}
 
 std::string ResponseHandler::_makeErrorPage(int statusCode)
 {
@@ -167,5 +228,3 @@ std::string ResponseHandler::_makeErrorPage(int statusCode)
 	body += "</html>";
 	return body ;
 }
-
-//리다이렉트 기본헤더 : Location

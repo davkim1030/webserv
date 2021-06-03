@@ -13,7 +13,6 @@ void ResponseHandler::addDateHeader(void)
 
 	time(&rawtime);
 	timeinfo = localtime(&rawtime);
-	//Mon, 18 Jul 2016 16:06:00 GMT
 	strftime(buffer, 80, "%a, %d, %b %Y %X GMT", timeinfo);
 	addResponseHeader("Date", std::string(buffer));
 }
@@ -21,10 +20,21 @@ void ResponseHandler::addDateHeader(void)
 void ResponseHandler::addServerHeader(void)
 {
 	this->_responseHeader["server"] = "FDB";
+}
+
+void ResponseHandler::addLastModifiedHeader(void)
+{
 
 }
 
-void addLastModifiedHeader(void)
+//mime-type과 들어온 확장자를 대조해서 헤더를 추가해주는 함수
+void ResponseHandler::addContentTypeHeader(std::string extension)
 {
+	size_t i = extension.find_first_of('.');
+	std::string filePath = std::string(extension, i + 1, extension.size() - i);
 
+	if (i == std::string::npos || _mimeType.count(filePath) == 0)
+		addResponseHeader("Content-Type: ", _mimeType["text/plain"]);
+	else
+		addResponseHeader("Content-Type: ", _mimeType[filePath]);
 }
