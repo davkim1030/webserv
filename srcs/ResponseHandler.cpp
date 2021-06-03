@@ -73,7 +73,7 @@ ResponseHandler::ResponseHandler(const ResponseHandler & src)
 ** -------------------------------- DESTRUCTOR --------------------------------
 */
 
-ResponseHandler::~ResponseHandler() { };
+ResponseHandler::~ResponseHandler() {};
 
 /*
 ** --------------------------------- OVERLOAD ---------------------------------
@@ -94,9 +94,8 @@ ResponseHandler & ResponseHandler::operator=( ResponseHandler const & rhs )
 ** --------------------------------- METHODS ----------------------------------
 */
 
-
 /*
- * Check if a path is non-existent, a file, or a directory, and get its last-modified date
+ * 경로가 존재하는지 / 파일인지 / 경로인지 판별합니다. 
  * @param 체크할 경로
  * @return 경로가 존재하지 않을 경우 0 반환, 파일일 경우 1 반환, 디렉토리일경우 2 반환
  */
@@ -135,7 +134,6 @@ void ResponseHandler::makeResponse()
 			if (오토인덱스변수)
 				throw Response(200, _responseHeader, _Req.getMethod() != "HEAD" ? _makeAutoIndexPage(_resourcePath) : "", _Req.getHttpVersion());
 				//_makeAutoIndexPage 함수 제작중
-
 		}
 		//경로 한번 더 검사-> 존재 안하면
 		if (_checkPath(_resourcePath) == NOT_FOUND && _Req.getMethod() != "PUT" && _Req.getMethod() != "POST")
@@ -173,21 +171,19 @@ void ResponseHandler::_makeGetResponse(int httpStatus)
 	std::string body;
 	std::string version = _Req.getHttpVersion();
 
-
 	addDateHeader();
 	addServerHeader();
 
-		//open 후 read-> 구조체에 파일 객체 담기. 그 후 body에 객체를 담기
-		if (fd = open(file.c_str(), O_RDONLY) < 0)
-			throw Response(500, _responseHeader, _makeErrorPage(500), version);
-		//contentlength만큼 파일에 우겨넣기 필요
-
+	//open 후 read-> 구조체에 파일 객체 담기. 그 후 body에 객체를 담기
+	if (fd = open(file.c_str(), O_RDONLY) < 0)
+		throw Response(500, _responseHeader, _makeErrorPage(500), version);
+	//contentlength만큼 파일에 우겨넣기 필요
 
 	addContentTypeHeader(_resourcePath);
 	addContentLanguageHeader();
 	addContentLocationHeader();
 	addContentLengthHeader();
-	addLastModifiedHeader();
+	addLastModifiedHeader(_resourcePath);
 
 	switch (httpStatus)
 	{
@@ -205,16 +201,20 @@ void ResponseHandler::_makeGetResponse(int httpStatus)
 }
 
 /*
-* 오토인덱스 페이지를 만든다.
+* 오토인덱스 페이지를 만듭니다.
 * 미작성
 */
 std::string ResponseHandler::_makeAutoIndexPage(std::string _resourcePath)
 {
 }
 
+/*
+* 스테이터스 코드를 출력하는 에러 페이지를 만듭니다.
+*/
 std::string ResponseHandler::_makeErrorPage(int statusCode)
 {
 	std::string body;
+
 	addContentTypeHeader(".html");
 	body += "<!DOCTYPE html>\n";
 	body += "<html>\n";
@@ -226,5 +226,5 @@ std::string ResponseHandler::_makeErrorPage(int statusCode)
 	body += "<h1>\n";
 	body += "</body>\n";
 	body += "</html>";
-	return body ;
+	return (body);
 }

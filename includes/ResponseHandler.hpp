@@ -15,6 +15,7 @@ class ResponseHandler
 
 		/*----------ResponseHeader.cpp------------*/
 		void addResponseHeader(std::string, std::string);
+		const char* _getFormatTime(const struct tm*);
 
 		void addDateHeader(void);
 		void addServerHeader(void);
@@ -23,7 +24,7 @@ class ResponseHandler
 		void addContentLengthHeader(void);
 		void addContentLocationHeader(void);
 		void addContentTypeHeader(std::string);
-		void addLastModifiedHeader(void);
+		void addLastModifiedHeader(std::string path);
 
 		/*---------------------------------------*/
 
@@ -41,11 +42,9 @@ class ResponseHandler
 		std::string _makeAutoIndexPage(std::string);
 		int _checkPath(std::string);
 
-
 		enum statusCode { NOT_FOUND, SERVER_ERR, FORBIDDEN, HEAD_METHOD};
 		#define ISFILE 1
 		#define ISDIR 2
-
 };
 
 #endif
