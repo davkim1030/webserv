@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   main.cpp                                           :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: hyukim <hyukim@student.42.fr>              +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2021/05/25 15:12:02 by hyukim            #+#    #+#             */
-/*   Updated: 2021/05/25 15:14:28 by hyukim           ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "webserv.h"
 #include "Location.hpp"
 #include "Server.hpp"
@@ -27,6 +15,7 @@ int		main(int argc, char **argv)
 	{
 		ServerConfig::getInstance()->saveConfig(argc, argv[1]);
 		ServerConfig::getInstance()->printItem();
+    // 여기서부터 받아서 소켓 시작
 	}
 	catch(const std::exception& e)
 	{

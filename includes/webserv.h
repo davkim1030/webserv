@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   webserv.h                                          :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: hyukim <hyukim@student.42.fr>              +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2021/05/25 15:11:41 by hyukim            #+#    #+#             */
-/*   Updated: 2021/05/25 15:11:51 by hyukim           ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #ifndef WEBSERV_H
 # define WEBSERV_H
 
@@ -21,6 +9,7 @@
 # include <queue>
 # include <list>
 # include <algorithm>
+# include <exception>
 
 # include <fcntl.h>
 # include <stdlib.h>
@@ -39,7 +28,11 @@
 # include <sys/socket.h>
 
 # include "libft.h"
+
 # include "Exception.hpp"
+
+# include "Response.hpp"
+# include "Request.hpp"
 
 # define CONFIG_PATH "./default.nginx"
 
