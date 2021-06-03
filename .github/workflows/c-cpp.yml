@@ -1,17 +1,12 @@
-name: C/C++ CI
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+# .github/workflows/basic_test.yml
+name: 42 Make Test
+on: [push, pull_request]
 
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
-
+  make_test:
+    runs-on: macos-latest
+    name: 42 Make Test
     steps:
     - uses: actions/checkout@v2
-    - name: make
-      run: make
+    - name: Check basic Makefile jobs
+      run: make && make re && make clean && make all && make fclean
