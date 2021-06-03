@@ -1,81 +1,25 @@
 #include "webserv.h"
+#include "Location.hpp"
+#include "Server.hpp"
+#include "ServerConfig.hpp"
 
-#include <stdio.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <netinet/in.h>
-#include <string.h>
-
-#define PORT 8380
-int main(void)
+int		main(int argc, char **argv)
 {
+	if (argc > 2)
+	{
+		std::cout << "Error : argument error" << std::endl;
+		exit(1);
+	}
 
-    int server_fd, new_socket; long valread;
-    struct sockaddr_in address;
-    int addrlen = sizeof(address);
-
-    char *hello = strdup("Hello from server");
-
-    // Creating socket file descriptor
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
-    {
-        perror("In socket");
-        exit(EXIT_FAILURE);
-    }
-
-
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons( PORT );
-
-    memset(address.sin_zero, '\0', sizeof address.sin_zero);
-
-
-    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address))<0)
-    {
-        perror("In bind");
-        exit(EXIT_FAILURE);
-    }
-    if (listen(server_fd, 10) < 0)
-    {
-        perror("In listen");
-        exit(EXIT_FAILURE);
-    }
-    while(1)
-    {
-        printf("\n+++++++ Waiting for new connection ++++++++\n\n");
-        if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0)
-        {
-            perror("In accept");
-            exit(EXIT_FAILURE);
-        }
-
-        char buffer[30000] = {0};
-        valread = read( new_socket , buffer, 30000);
-        // printf("%s\n",buffer );
-		Request Req(buffer);
-
-		Req.parseRequest();
-		std::cout << Req.getMethod() << std::endl;
-		std::cout << Req.getUri() << std::endl;
-		std::cout << Req.getHttpVersion() << std::endl;
-		std::cout << "------" << std::endl << Req.getRawHeader() << std::endl << "------" << std::endl;
-		std::map<std::string, std::string> header = Req.getHeader();
-		std::map<std::string, std::string>::iterator iter;
-		for( iter = header.begin(); iter != header.end(); iter++)
-		{
-			std::cout << "Key : " << iter->first << " Value : " << iter->second << std::endl;
-		}
-		std::cout << Req.getRawBody() << std::endl ;
-
-
-
-        write(new_socket , hello , strlen(hello));
-        printf("------------------Hello message sent-------------------\n");
-        close(new_socket);
-    }
-
-
+	try
+	{
+		ServerConfig::getInstance()->saveConfig(argc, argv[1]);
+		ServerConfig::getInstance()->printItem();
+    // 여기서부터 받아서 소켓 시작
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+	}
 	return (0);
 }
