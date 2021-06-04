@@ -26,9 +26,7 @@ int		main(int argc, char **argv)
 		if (location.begin()->getOption("allow_metho").empty())
 			std::cout << "NULL test" << std::endl;
 
-
-		// std::string test = server["listen"];
-    // 여기서부터 받아서 소켓 시작
+	    // 여기서부터 받아서 소켓 시작
 	}
 	catch(const std::exception& e)
 	{
