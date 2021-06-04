@@ -14,7 +14,18 @@ int		main(int argc, char **argv)
 	try
 	{
 		ServerConfig::getInstance()->saveConfig(argc, argv[1]);
-		ServerConfig::getInstance()->printItem();
+
+		std::vector<Server> server = ServerConfig::getInstance()->getServers();
+		std::vector<Server>::iterator it;
+		it = server.begin();
+		std::cout << it->getOption("listen") << std::endl;
+		it++;
+		std::vector<Location> location = it->getLocations();
+		std::cout << location.begin()->getPath() << std::endl;
+		std::cout << location.begin()->getOption("allow_method") << std::endl;
+
+
+		// std::string test = server["listen"];
     // 여기서부터 받아서 소켓 시작
 	}
 	catch(const std::exception& e)

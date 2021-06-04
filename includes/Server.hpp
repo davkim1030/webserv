@@ -32,6 +32,8 @@ class Server
         void configParse(std::string line);
 
 		void printItem();
+
+		std::string getOption(std::string const &key);
 };
 
 

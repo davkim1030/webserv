@@ -120,6 +120,15 @@ Server::Server(std::list<std::string> &strlst)
 }
 
 /*
+	location 멤버변수 option[key] 값을 반환
+	@param -> key -> option에 저장된 key와 매칭되는 value를 반환
+*/
+std::string Server::getOption(std::string const &key)
+{
+	return option[key];
+}
+
+/*
 	server가 가진 option목록 출력 후 location을 순환하며 printitem() 호출
 */
 void Server::printItem()
@@ -134,3 +143,4 @@ void Server::printItem()
 	
 	std::cout << "==================================================" << std::endl;
 }
+
