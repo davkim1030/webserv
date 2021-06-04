@@ -26,12 +26,15 @@ class Server
 		Server &operator=(Server const &co);
 		~Server();
 
-		std::vector<Location> getLocations();
+		std::vector<Location> getLocationVector();
+		Location *getLocation(std::string const& path);
 
         int checkLine(std::string line);
         void configParse(std::string line);
 
 		void printItem();
+
+		std::string getOption(std::string const &key);
 };
 
 

@@ -71,9 +71,24 @@ void Server::configParse(std::string line)
 /*
 	private 멤버 변수 location 반환 getter
 */
-std::vector<Location> Server::getLocations()
+std::vector<Location> Server::getLocationVector()
 {
 	return location;
+}
+
+/*
+	Server가 가진 Location Vector에서 name과 일치하는 path를 가진 Location 반환
+	@param -> std::list<std::string> path -> 찾으려는 path
+*/
+Location *Server::getLocation(std::string const& path)
+{
+	std::vector<Location>::iterator it;
+	for (it = location.begin(); it != location.end(); it++)
+	{
+		if (it->getPath() == path)
+			return &*it;
+	}
+	return NULL;
 }
 
 /*
@@ -120,6 +135,15 @@ Server::Server(std::list<std::string> &strlst)
 }
 
 /*
+	location 멤버변수 option[key] 값을 반환
+	@param -> key -> option에 저장된 key와 매칭되는 value를 반환
+*/
+std::string Server::getOption(std::string const &key)
+{
+	return option[key];
+}
+
+/*
 	server가 가진 option목록 출력 후 location을 순환하며 printitem() 호출
 */
 void Server::printItem()
@@ -134,3 +158,4 @@ void Server::printItem()
 	
 	std::cout << "==================================================" << std::endl;
 }
+

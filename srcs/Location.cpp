@@ -83,6 +83,23 @@ Location::Location(std::list<std::string> &line)
 }
 
 /*
+	location 멤버변수 path 반환
+*/
+std::string Location::getPath() const
+{
+	return path;
+}
+
+/*
+	location 멤버변수 option[key] 값을 반환
+	@param -> key -> option에 저장된 key와 매칭되는 value를 반환
+*/
+std::string Location::getOption(std::string const &key)
+{
+	return option[key];
+}
+
+/*
 	location의 이름 path 출력 후 내부 option 순환하며 모두 출력
 */
 void Location::printItem()

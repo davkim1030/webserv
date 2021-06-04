@@ -27,6 +27,10 @@ class Location
 		void saveLocation(std::string line);
 
 		void printItem();
+
+		std::string getOption(std::string const &key);
+		std::string getPath() const;
+		
 };
 
 #endif

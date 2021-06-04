@@ -30,7 +30,7 @@ server {
 			allow_method GET POST
 			autoindex on;
 			try_files $uri $uri/ =404;
-		}		
+		}
 
 		location /test/ {
 			autoindex on;
