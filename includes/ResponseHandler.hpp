@@ -4,13 +4,15 @@
 # include "webserv.h"
 # include "Response.hpp"
 # include "Request.hpp"
+# include "Location.hpp"
 
 class Response;
+class Location;
 
 class ResponseHandler
 {
 	public:
-		ResponseHandler(Request &Req);
+		ResponseHandler(Request &Req, std::vector<Server> server);
 		ResponseHandler(const ResponseHandler & src);
 		~ResponseHandler(void);
 		ResponseHandler & operator=( ResponseHandler const & rhs );
@@ -34,13 +36,14 @@ class ResponseHandler
 		void addHostHeader(void);
 
 
-
 		/*---------------------------------------*/
 
 
 	private:
 		ResponseHandler(void);
 		Request _Req;
+		std::vector<Server> _server;
+		Location *_location;
 		std::string _resourcePath;
 		std::map<std::string, std::string> _responseHeader;
 		std::map<std::string, std::string> _mimeType;
@@ -49,7 +52,6 @@ class ResponseHandler
 		void _makeOptionResponse(void);
 		void _makeGetResponse(int);
 		void _makeConnectResponse(void);
-
 
 		void _throwErrorResponse(int httpStatus, std::string version) throw(Response);
 

@@ -1,12 +1,13 @@
 # include "webserv.h"
 # include "ResponseHandler.hpp"
+# include "Server.hpp"
 
 /*
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
 
-ResponseHandler::ResponseHandler(Request &Req)
-:_Req(Req) {
+ResponseHandler::ResponseHandler(Request &Req, std::vector<Server> server)
+:_Req(Req), _server(server){
 	this->_mimeType[".aac"] = "audio/aac";
 	this->_mimeType[".abw"] = "application/x-abiword";
 	this->_mimeType[".arc"] = "application/octet-stream";
@@ -130,15 +131,9 @@ Response ResponseHandler::makeResponse()
 	*/
 
 	try{
-
-		/*std::string root;
-		std::vector<Server> server =  ServerConfig::getInstance()->getServers();
-		for (std::vector<Server>::iterator it = server.begin(); it != server.end(); it++ )
-		{
-			std::vector<Location> location = it->getLocations();
-			root = location.getPath();
-			location.getOption("allow_method");
-		}*/
+		_location = _server->getLocation(_Req.getUri());
+		if (_location == NULL)
+			_throwErrorResponse(NOT_FOUND, _Req.getHttpVersion());
 
 		if (_Req.getMethod() == "TRACE")
 			_makeTraceResponse();
@@ -148,14 +143,6 @@ Response ResponseHandler::makeResponse()
 			_makeConnectResponse();
 
 		this->_resourcePath = _Req.getUri(); //나중에 root 들어오면 앞에 붙여주세요
-		if (_checkPath(this->_resourcePath) == ISDIR)
-		{
-			if (this->_resourcePath[this->_resourcePath.length() - 1] != '/')
-                this->_resourcePath += '/';
-			if (Server::getLocation(_Req.getUri()).getOption("autoindex"))
-				throw Response(200, this->_responseHeader, _Req.getMethod() != "HEAD" ? _makeAutoIndexPage(this->_resourcePath) : "", _Req.getHttpVersion());
-				//_makeAutoIndexPage 함수 제작중
-		}
 
 		//경로 한번 더 검사-> 존재 안하면
 		if (_checkPath(this->_resourcePath) == NOT_FOUND && _Req.getMethod() != "PUT" && _Req.getMethod() != "POST")
@@ -178,6 +165,7 @@ Response ResponseHandler::makeResponse()
 
 	_responseHeader.clear();
 	_resourcePath.clear();
+	return Response(500, _responseHeader, _makeErrorPage(500), _Req.getHttpVersion());
 }
 
 /*
@@ -198,7 +186,27 @@ void ResponseHandler::_makeGetResponse(int httpStatus)
 	addDateHeader();
 	addServerHeader();
 
-	//open 후 read-> 구조체에 파일 객체 담기. 그 후 body에 객체를 담기
+	if (_checkPath(this->_resourcePath) == ISDIR)
+	{
+		if (this->_resourcePath[this->_resourcePath.length() - 1] != '/')
+			this->_resourcePath += '/';
+		
+		bool indexFileFlag = false;
+		char **indexFile = ft_split(_server->getOption("index").c_str(), ' ');
+		for (int i = 0; indexFile[i]; i++)
+		{
+			struct stat buffer;
+			if (stat((this->_resourcePath + indexFile[i]).c_str(), &buffer) == 0)
+			{
+				this->_resourcePath = this->_resourcePath + indexFile[i];
+				indexFileFlag = true;
+				break ;
+			}
+		}
+		if (indexFileFlag == false && _location->getOption("autoindex") == "on")
+			throw Response(200, this->_responseHeader, _Req.getMethod() != "HEAD" ? _makeAutoIndexPage(this->_resourcePath) : "", _Req.getHttpVersion());
+		//_makeAutoIndexPage 함수 제작중
+	}
 	if ((fd = open(this->_resourcePath.c_str(), O_RDONLY)) < 0)
 		_throwErrorResponse(SERVER_ERR, _Req.getHttpVersion());
 	if (fstat(fd, &sb) < 0)
