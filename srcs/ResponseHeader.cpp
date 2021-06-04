@@ -1,10 +1,20 @@
 #include "webserv.h"
 
+
+/*
+* 응답 헤더에 키와 키에 따른 밸류를 할당합니다.
+* @param 새로이 추가될 헤더의 키, 헤더의 밸류
+*/
 void ResponseHandler::addResponseHeader(std::string key, std::string value)
 {
 	this->_responseHeader[key] = value;
 }
 
+/*
+* 시간값을 포맷에 맞게 변환합니다.
+* @param 변환할 tm 구조체
+* @return 변환한 char *
+*/
 const char* ResponseHandler::_getFormatTime(const struct tm* timeinfo)
 {
 	char buffer[80];
@@ -13,6 +23,9 @@ const char* ResponseHandler::_getFormatTime(const struct tm* timeinfo)
 	return (buffer);
 }
 
+/*
+* Date 헤더를 추가합니다.
+*/
 void ResponseHandler::addDateHeader(void)
 {
 	time_t rawtime;
@@ -24,9 +37,12 @@ void ResponseHandler::addDateHeader(void)
 	addResponseHeader("Date", std::string(buffer));
 }
 
+/*
+* 서버 헤더를 추가합니다. 'FDB'
+*/
 void ResponseHandler::addServerHeader(void)
 {
-	this->_responseHeader["server"] = "FDB";
+	addResponseHeader("server", "FDB");
 }
 
 /*
@@ -47,7 +63,7 @@ void ResponseHandler::addContentTypeHeader(std::string extension)
 /*
 * 경로의 최신 수정시간을 헤더에 추가해주는 함수
 * @param 최신 수정시간을 구할 경로
-*/ 
+*/
 void ResponseHandler::addLastModifiedHeader(std::string path)
 {
 	struct stat statbuff;

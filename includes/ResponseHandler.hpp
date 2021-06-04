@@ -14,6 +14,7 @@ class ResponseHandler
 		void makeResponse(void);
 
 		/*----------ResponseHeader.cpp------------*/
+
 		void addResponseHeader(std::string, std::string);
 		const char* _getFormatTime(const struct tm*);
 
@@ -37,6 +38,8 @@ class ResponseHandler
 		std::map<std::string, std::string> _mimeType;
 
 		void _makeGetResponse(int);
+
+		void ResponseHandler::_throwErrorResponse(int httpStatus, std::string version) throw();
 
 		std::string _makeErrorPage(int);
 		std::string _makeAutoIndexPage(std::string);

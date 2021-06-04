@@ -95,7 +95,7 @@ ResponseHandler & ResponseHandler::operator=( ResponseHandler const & rhs )
 */
 
 /*
- * 경로가 존재하는지 / 파일인지 / 경로인지 판별합니다. 
+ * 경로가 존재하는지 / 파일인지 / 경로인지 판별합니다.
  * @param 체크할 경로
  * @return 경로가 존재하지 않을 경우 0 반환, 파일일 경우 1 반환, 디렉토리일경우 2 반환
  */
@@ -137,7 +137,7 @@ void ResponseHandler::makeResponse()
 		}
 		//경로 한번 더 검사-> 존재 안하면
 		if (_checkPath(_resourcePath) == NOT_FOUND && _Req.getMethod() != "PUT" && _Req.getMethod() != "POST")
-				throw Response(404, _responseHeader, _makeErrorPage(404), _Req.getHttpVersion());
+				_throwErrorResponse(404, _Req.getHttpVersion());
 
 		/*
 		* 여기에는 메소드에 따라 CGI 호출 여부를 결정하는 부분이 추가되어야 합니다.
@@ -169,14 +169,13 @@ void ResponseHandler::makeResponse()
 void ResponseHandler::_makeGetResponse(int httpStatus)
 {
 	std::string body;
-	std::string version = _Req.getHttpVersion();
 
 	addDateHeader();
 	addServerHeader();
 
 	//open 후 read-> 구조체에 파일 객체 담기. 그 후 body에 객체를 담기
 	if (fd = open(file.c_str(), O_RDONLY) < 0)
-		throw Response(500, _responseHeader, _makeErrorPage(500), version);
+		_throwErrorResponse(500, _Req.getHttpVersion());
 	//contentlength만큼 파일에 우겨넣기 필요
 
 	addContentTypeHeader(_resourcePath);
@@ -184,7 +183,13 @@ void ResponseHandler::_makeGetResponse(int httpStatus)
 	addContentLocationHeader();
 	addContentLengthHeader();
 	addLastModifiedHeader(_resourcePath);
+	throw Response(200, _responseHeader, body, _Req.getHttpVersion());
 
+
+}
+
+void ResponseHandler::_throwErrorResponse(int httpStatus, std::string version) throw()
+{
 	switch (httpStatus)
 	{
 		case NOT_FOUND:
@@ -196,7 +201,7 @@ void ResponseHandler::_makeGetResponse(int httpStatus)
 		case HEAD_METHOD:
 			throw Response(200, _responseHeader, "", version);
 		default:
-			throw Response(200, _responseHeader, body, version);
+			throw Response(404, _responseHeader, _makeErrorPage(404), version);
 	}
 }
 
@@ -209,7 +214,9 @@ std::string ResponseHandler::_makeAutoIndexPage(std::string _resourcePath)
 }
 
 /*
-* 스테이터스 코드를 출력하는 에러 페이지를 만듭니다.
+* 상태 코드에 따라 에러 페이지를 만듭니다.
+* @param 상태 코드
+* @return HTML 코드 string
 */
 std::string ResponseHandler::_makeErrorPage(int statusCode)
 {
