@@ -29,4 +29,6 @@
 
 # include "libft.h"
 
+# define CONFIG_PATH "./default.nginx"
+
 #endif

@@ -1,4 +1,25 @@
-SRC		=	main.cpp Response.cpp Request.cpp ResponseHandler.cpp ResponseHeader.cpp
+
+# **************************************************************************** #
+#                                                                              #
+#                                                         :::      ::::::::    #
+#    Makefile                                           :+:      :+:    :+:    #
+#                                                     +:+ +:+         +:+      #
+#    By: hyukim <hyukim@student.42seoul.kr>         +#+  +:+       +#+         #
+#                                                 +#+#+#+#+#+   +#+            #
+#    Created: 2020/11/22 22:02:20 by hyukim            #+#    #+#              #
+#    Updated: 2021/05/27 15:27:33 by hyukim           ###   ########.fr        #
+#                                                                              #
+# **************************************************************************** #
+
+SRC		=	main.cpp \
+			ServerConfig.cpp \
+			Server.cpp \
+			Location.cpp \
+			Exception.cpp \
+			Response.cpp \
+			Request.cpp \
+			ResponseHandler.cpp \
+			ResponseHeader.cpp
 
 SRCDIR	=	./srcs/
 SRCS	=	$(addprefix $(SRCDIR), $(SRC))
