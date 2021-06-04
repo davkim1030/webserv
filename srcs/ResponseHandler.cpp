@@ -124,15 +124,24 @@ void ResponseHandler::makeResponse()
 		또한 Host 헤더가 들어오면, Host헤더의 value 포트로 이동하게 해주세요!
 	*/
 	try{
-		this->_resourcePath = 루트변수 + _Req.getUri(); //나중에 root 들어오면 앞에 붙여주세요
+		/*std::string root;
+		std::vector<Server> server =  ServerConfig::getInstance()->getServers();
+		for (std::vector<Server>::iterator it = server.begin(); it != server.end(); it++ )
+		{
+			std::vector<Location> location = it->getLocations();
+			root = location.getPath();
+			location.getOption("allow_method");
+		}*/
+
+		this->_resourcePath = "/" + _Req.getUri(); //나중에 root 들어오면 앞에 붙여주세요
 
 		//디렉토리면
 		if (_checkPath(this->_resourcePath) == ISDIR)
 		{
 			if (this->_resourcePath[this->_resourcePath.length() - 1] != '/')
                 this->_resourcePath += '/';
-			if (오토인덱스변수)
-				throw Response(200, this->_responseHeader, _Req.getMethod() != "HEAD" ? _makeAutoIndexPage(this->_resourcePath) : "", _Req.getHttpVersion());
+			/*if (location.getOption(autoindex))
+				throw Response(200, this->_responseHeader, _Req.getMethod() != "HEAD" ? _makeAutoIndexPage(this->_resourcePath) : "", _Req.getHttpVersion());*/
 				//_makeAutoIndexPage 함수 제작중
 		}
 		//경로 한번 더 검사-> 존재 안하면
