@@ -2,6 +2,10 @@
 # define SOCKET_HPP
 
 # include "webserv.h"
+# include "Client.hpp"
+# include "Server.hpp"
+# include "ServerConfig.hpp"
+# include "Location.hpp"
 
 /*
  * 소켓 통신 서버
@@ -9,17 +13,18 @@
 class Socket
 {
 	private:
-		int serverSd; // 서버 socket descriptor
-		int clientSd; // 클라이언트 socket descriptor
-		int port; // 포워딩 해야 할 포트 번호
-		int socketCnt;	// 오픈할 소켓의 개수
-		struct sockaddr_in serverAddr; // 서버 소켓 정보 저장용 구조체
-		struct sockaddr_in clientAddr; // 클라이언트 소켓 정보 저장용 구조체
+		fd_set	rfds;	// 읽기 fd set
+		fd_set	wfds;	// 쓰기 fd set
+		fd_set	efds;	// 예외 fd set
+		int		fdMax;	// 처리할 최대 fd 값
+
+		std::map<int, std::map<std::string, Server> > servers;	// 프로그램에서 처리할 서버들 정보
+		std::map<int, Client> clients;	// 프로그램에 연결된 클라이언트 정보
 
 		Socket(Socket const &so);
 		Socket &operator=(Socket const &so);
 
-		void operateIo(int maxSize, fd_set rfds, fd_set wfds, fd_set efds);
+		void	clearConnectedSocket(int socketFd);
 
 		class SocketException : public std::exception
 		{
@@ -45,12 +50,10 @@ class Socket
 		};
 
 	public:
-		// Constructors & Destructors
-
-		Socket(int p = 80);
+		Socket();
 		~Socket();
 
-		void initServer(int socketCnt);
-		void runServer();
+		bool initServer(int socketCnt);
+		bool runServer(struct timeval timeout, unsigned int bufferSize);
 };
 #endif
