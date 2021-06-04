@@ -22,7 +22,9 @@ int		main(int argc, char **argv)
 		it++;
 		std::vector<Location> location = it->getLocations();
 		std::cout << location.begin()->getPath() << std::endl;
-		std::cout << location.begin()->getOption("allow_method") << std::endl;
+		std::cout << "res {" << location.begin()->getOption("allow_metho") << "}" << std::endl;
+		if (location.begin()->getOption("allow_metho").empty())
+			std::cout << "NULL test" << std::endl;
 
 
 		// std::string test = server["listen"];
