@@ -2,6 +2,10 @@
 # define RESPONSEHANDLER_HPP
 
 # include "webserv.h"
+# include "Response.hpp"
+# include "Request.hpp"
+
+class Response;
 
 class ResponseHandler
 {
@@ -16,7 +20,7 @@ class ResponseHandler
 		/*----------ResponseHeader.cpp------------*/
 
 		void addResponseHeader(std::string, std::string);
-		const char* _getFormatTime(const struct tm*);
+		std::string _getFormatTime(const struct tm*);
 
 		void addDateHeader(void);
 		void addServerHeader(void);
@@ -39,15 +43,18 @@ class ResponseHandler
 
 		void _makeGetResponse(int);
 
-		void ResponseHandler::_throwErrorResponse(int httpStatus, std::string version) throw();
+		void _throwErrorResponse(int httpStatus, std::string version) throw(Response);
 
 		std::string _makeErrorPage(int);
 		std::string _makeAutoIndexPage(std::string);
 		int _checkPath(std::string);
 
-		enum statusCode { NOT_FOUND, SERVER_ERR, FORBIDDEN, HEAD_METHOD};
+		#define NOT_FOUND 404
+		#define SERVER_ERR 500
+		#define FORBIDDEN 403
 		#define ISFILE 1
 		#define ISDIR 2
+		#define HEAD_METHOD 3
 };
 
 #endif

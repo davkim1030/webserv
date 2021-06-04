@@ -28,8 +28,5 @@
 # include <sys/socket.h>
 
 # include "libft.h"
-# include "Response.hpp"
-# include "Request.hpp"
-# include "ResponseHandler.hpp"
 
 #endif

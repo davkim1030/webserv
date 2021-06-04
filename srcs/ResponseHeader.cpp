@@ -1,5 +1,5 @@
 #include "webserv.h"
-
+# include "ResponseHandler.hpp"
 
 /*
 * 응답 헤더에 키와 키에 따른 밸류를 할당합니다.
@@ -15,12 +15,12 @@ void ResponseHandler::addResponseHeader(std::string key, std::string value)
 * @param 변환할 tm 구조체
 * @return 변환한 char *
 */
-const char* ResponseHandler::_getFormatTime(const struct tm* timeinfo)
+std::string ResponseHandler::_getFormatTime(const struct tm* timeinfo)
 {
 	char buffer[80];
 
 	strftime(buffer, 80, "%a, %d, %b %Y %X GMT", timeinfo);
-	return (buffer);
+	return (std::string(buffer));
 }
 
 /*
@@ -33,8 +33,7 @@ void ResponseHandler::addDateHeader(void)
 
 	time(&rawtime);
 	timeinfo = localtime(&rawtime);
-	const char *buffer = _getFormatTime(timeinfo);
-	addResponseHeader("Date", std::string(buffer));
+	addResponseHeader("Date", _getFormatTime(timeinfo));
 }
 
 /*
@@ -72,8 +71,7 @@ void ResponseHandler::addLastModifiedHeader(std::string path)
 	if (stat(path.c_str(), &statbuff) < 0)
 		throw Response(500, _responseHeader, _makeErrorPage(500), _Req.getHttpVersion());
 	timeinfo = localtime(&statbuff.st_mtime);
-	const char *buffer = _getFormatTime(timeinfo);
-	addResponseHeader("Last-Modified: ", (std::string)buffer);
+	addResponseHeader("Last-Modified: ", _getFormatTime(timeinfo));
 }
 
 void ResponseHandler::addContentLengthHeader(int length)

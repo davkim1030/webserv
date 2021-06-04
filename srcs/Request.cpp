@@ -1,5 +1,6 @@
 
 #include "webserv.h"
+# include "Request.hpp"
 
 /*
 ** ------------------------------- CONSTRUCTOR --------------------------------
@@ -104,7 +105,7 @@ std::string Request::parseUri(void) {
 	std::string firstLine = this->rawRequest.substr(0, this->rawRequest.find("\r\n"));
 	std::size_t start = firstLine.find(' ');
 	std::size_t end = firstLine.find_last_of(' ');
-	return (firstLine.substr(start + 1, end - start));
+	return (firstLine.substr(start + 1, end - start - 1));
 }
 
 /*

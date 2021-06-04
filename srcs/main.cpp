@@ -1,4 +1,7 @@
 #include "webserv.h"
+# include "Response.hpp"
+# include "Request.hpp"
+# include "ResponseHandler.hpp"
 
 #include <stdio.h>
 #include <sys/socket.h>
@@ -7,7 +10,7 @@
 #include <netinet/in.h>
 #include <string.h>
 
-#define PORT 8380
+#define PORT 80
 int main(void)
 {
     int server_fd, new_socket; long valread;
@@ -50,11 +53,18 @@ int main(void)
 
         char buffer[30000] = {0};
         valread = read( new_socket , buffer, 30000);
-        // printf("%s\n",buffer );
+		// printf("%s",buffer);
+
+		Request Req(buffer);
+		Req.parseRequest();
+		ResponseHandler ReqHan(Req);
+		ReqHan.makeResponse();
+
 	    write(new_socket , hello , strlen(hello));
         printf("------------------Hello message sent-------------------\n");
         close(new_socket);
     }
+	close(server_fd);
 
 
 	return (0);

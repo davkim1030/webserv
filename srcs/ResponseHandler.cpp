@@ -1,4 +1,5 @@
-#include "webserv.h"
+# include "webserv.h"
+# include "ResponseHandler.hpp"
 
 /*
 ** ------------------------------- CONSTRUCTOR --------------------------------
@@ -104,12 +105,14 @@ int ResponseHandler::_checkPath(std::string path)
 	struct stat buffer;
 
 	int exist = stat(path.c_str(), &buffer);
-	if (exist != 0)
-		return (NOT_FOUND);
-	if (S_ISREG(buffer.st_mode))
-		return (ISFILE);
-	else if (S_ISDIR(buffer.st_mode))
-		return (ISDIR);
+	if (exist == 0)
+	{
+		if (S_ISREG(buffer.st_mode))
+			return (ISFILE);
+		else if (S_ISDIR(buffer.st_mode))
+			return (ISDIR);
+	}
+	return (NOT_FOUND);
 }
 
 /*
@@ -133,7 +136,7 @@ void ResponseHandler::makeResponse()
 			location.getOption("allow_method");
 		}*/
 
-		this->_resourcePath = "/" + _Req.getUri(); //나중에 root 들어오면 앞에 붙여주세요
+		this->_resourcePath = _Req.getUri(); //나중에 root 들어오면 앞에 붙여주세요
 
 		//디렉토리면
 		if (_checkPath(this->_resourcePath) == ISDIR)
@@ -144,10 +147,11 @@ void ResponseHandler::makeResponse()
 				throw Response(200, this->_responseHeader, _Req.getMethod() != "HEAD" ? _makeAutoIndexPage(this->_resourcePath) : "", _Req.getHttpVersion());*/
 				//_makeAutoIndexPage 함수 제작중
 		}
+
 		//경로 한번 더 검사-> 존재 안하면
 		if (_checkPath(this->_resourcePath) == NOT_FOUND && _Req.getMethod() != "PUT" && _Req.getMethod() != "POST")
-				_throwErrorResponse(404, _Req.getHttpVersion());
-
+			_throwErrorResponse(NOT_FOUND, _Req.getHttpVersion());
+		printf("-------------------------------------------------------\n");
 		/*
 		* 여기에는 메소드에 따라 CGI 호출 여부를 결정하는 부분이 추가되어야 합니다.
 		*/
@@ -160,7 +164,7 @@ void ResponseHandler::makeResponse()
 	}
 	catch (Response &e)
 	{
-		e.getMessage();
+		std::cout << e.getMessage();
 		return ;
 	}
 
@@ -188,11 +192,11 @@ void ResponseHandler::_makeGetResponse(int httpStatus)
 
 	//open 후 read-> 구조체에 파일 객체 담기. 그 후 body에 객체를 담기
 	if ((fd = open(this->_resourcePath.c_str(), O_RDONLY)) < 0)
-		_throwErrorResponse(500, _Req.getHttpVersion());
+		_throwErrorResponse(SERVER_ERR, _Req.getHttpVersion());
 	if (fstat(fd, &sb) < 0)
 	{
 		close(fd);
-		_throwErrorResponse(500, _Req.getHttpVersion());
+		_throwErrorResponse(SERVER_ERR, _Req.getHttpVersion());
 	}
 	char *buffer;
 	while((res = get_next_line(fd, &buffer)) > 0)
@@ -201,10 +205,7 @@ void ResponseHandler::_makeGetResponse(int httpStatus)
 		free(buffer);
 	}
 	if (res < 0)
-	{
-		free(buffer);
-		_throwErrorResponse(500, _Req.getHttpVersion());
-	}
+		_throwErrorResponse(SERVER_ERR, _Req.getHttpVersion());
 	get_next_line(fd, &buffer);
 	body += buffer;
 	free(buffer);
@@ -219,7 +220,7 @@ void ResponseHandler::_makeGetResponse(int httpStatus)
 	throw Response(200, _responseHeader, body, _Req.getHttpVersion());
 }
 
-void ResponseHandler::_throwErrorResponse(int httpStatus, std::string version) throw()
+void ResponseHandler::_throwErrorResponse(int httpStatus, std::string version) throw(Response)
 {
 	switch (httpStatus)
 	{
@@ -240,6 +241,7 @@ void ResponseHandler::_throwErrorResponse(int httpStatus, std::string version) t
 */
 std::string ResponseHandler::_makeAutoIndexPage(std::string _resourcePath)
 {
+	return _resourcePath;
 }
 
 /*
