@@ -275,7 +275,6 @@ void ResponseHandler::_makeConnectResponse()
 	throw Response(200, _responseHeader, "", _Req.getHttpVersion());
 }
 
-
 /*
 * 오토인덱스 페이지를 만듭니다.
 * 미작성
