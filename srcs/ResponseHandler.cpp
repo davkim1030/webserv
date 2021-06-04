@@ -261,7 +261,6 @@ void ResponseHandler::_makeOptionResponse()
 	std::string allow;
 
 	/*Location에서 allow_method 따오는 부분*/
-
 	addAllowHeader(allow);
 	throw Response(200, _responseHeader, "", _Req.getHttpVersion());
 }
