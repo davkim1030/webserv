@@ -88,3 +88,13 @@ void ResponseHandler::addContentLocationHeader()
 {
 	addResponseHeader("Content-Location: ", this->_resourcePath);
 }
+
+void ResponseHandler::addAllowHeader(std::string allow)
+{
+	addResponseHeader("Allow: ", allow);
+}
+
+void ResponseHandler::addHostHeader()
+{
+	addResponseHeader("Allow: ", _resourcePath);
+}

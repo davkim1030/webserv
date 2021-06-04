@@ -117,16 +117,20 @@ int ResponseHandler::_checkPath(std::string path)
 
 /*
 * 입력 메소드와 헤더를 판단해 대응하는 응답값을 출력합니다.
+* @return 응답값을 담은 Response
 */
-void ResponseHandler::makeResponse()
+Response ResponseHandler::makeResponse()
 {
+
 	/*
 		여기에는...
 		특정한 헤더가 들어오면, 컨텐츠 협상을 통해서 언어를 정하거나(Accept-Charset, Accept-Language),
 		클라이언트의 소프트웨어 정보를 보내주거나(User-Agent) 하는 부분이 추가되어야 합니다.
 		또한 Host 헤더가 들어오면, Host헤더의 value 포트로 이동하게 해주세요!
 	*/
+
 	try{
+
 		/*std::string root;
 		std::vector<Server> server =  ServerConfig::getInstance()->getServers();
 		for (std::vector<Server>::iterator it = server.begin(); it != server.end(); it++ )
@@ -136,22 +140,27 @@ void ResponseHandler::makeResponse()
 			location.getOption("allow_method");
 		}*/
 
-		this->_resourcePath = _Req.getUri(); //나중에 root 들어오면 앞에 붙여주세요
+		if (_Req.getMethod() == "TRACE")
+			_makeTraceResponse();
+		else if (_Req.getMethod() == "OPTIONS")
+			_makeOptionResponse();
+		else if (_Req.getMethod() == "CONNECT")
+			_makeConnectResponse();
 
-		//디렉토리면
+		this->_resourcePath = _Req.getUri(); //나중에 root 들어오면 앞에 붙여주세요
 		if (_checkPath(this->_resourcePath) == ISDIR)
 		{
 			if (this->_resourcePath[this->_resourcePath.length() - 1] != '/')
                 this->_resourcePath += '/';
-			/*if (location.getOption(autoindex))
-				throw Response(200, this->_responseHeader, _Req.getMethod() != "HEAD" ? _makeAutoIndexPage(this->_resourcePath) : "", _Req.getHttpVersion());*/
+			if (Server::getLocation(_Req.getUri()).getOption("autoindex"))
+				throw Response(200, this->_responseHeader, _Req.getMethod() != "HEAD" ? _makeAutoIndexPage(this->_resourcePath) : "", _Req.getHttpVersion());
 				//_makeAutoIndexPage 함수 제작중
 		}
 
 		//경로 한번 더 검사-> 존재 안하면
 		if (_checkPath(this->_resourcePath) == NOT_FOUND && _Req.getMethod() != "PUT" && _Req.getMethod() != "POST")
 			_throwErrorResponse(NOT_FOUND, _Req.getHttpVersion());
-		printf("-------------------------------------------------------\n");
+
 		/*
 		* 여기에는 메소드에 따라 CGI 호출 여부를 결정하는 부분이 추가되어야 합니다.
 		*/
@@ -164,8 +173,7 @@ void ResponseHandler::makeResponse()
 	}
 	catch (Response &e)
 	{
-		std::cout << e.getMessage();
-		return ;
+		return e;
 	}
 
 	_responseHeader.clear();
@@ -234,6 +242,39 @@ void ResponseHandler::_throwErrorResponse(int httpStatus, std::string version) t
 			throw Response(404, _responseHeader, _makeErrorPage(404), version);
 	}
 }
+
+/*
+* 클라이언트가 서버에게 송신한 요청의 내용을 반환해줍니다.
+*/
+void ResponseHandler::_makeTraceResponse()
+{
+	addContentTypeHeader("message/http");
+	throw Response(200, _Req.getHeader(), "", _Req.getHttpVersion());
+}
+
+/*
+* 해당 URL에서 지원하는 요청 method 목록을 요청한다.
+* 미작성
+*/
+void ResponseHandler::_makeOptionResponse()
+{
+	std::string allow;
+
+	/*Location에서 allow_method 따오는 부분*/
+
+	addAllowHeader(allow);
+	throw Response(200, _responseHeader, "", _Req.getHttpVersion());
+}
+
+/*
+* 클라이언트가 특정 종류의 프록시 서버에게 연결을 요청한다.
+*/
+void ResponseHandler::_makeConnectResponse()
+{
+	addHostHeader();
+	throw Response(200, _responseHeader, "", _Req.getHttpVersion());
+}
+
 
 /*
 * 오토인덱스 페이지를 만듭니다.

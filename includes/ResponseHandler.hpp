@@ -15,7 +15,7 @@ class ResponseHandler
 		~ResponseHandler(void);
 		ResponseHandler & operator=( ResponseHandler const & rhs );
 
-		void makeResponse(void);
+		Response makeResponse(void);
 
 		/*----------ResponseHeader.cpp------------*/
 
@@ -29,7 +29,11 @@ class ResponseHandler
 		void addContentLengthHeader(int);
 		void addContentLocationHeader(void);
 		void addContentTypeHeader(std::string);
-		void addLastModifiedHeader(std::string path);
+		void addLastModifiedHeader(std::string);
+		void addAllowHeader(std::string);
+		void addHostHeader(void);
+
+
 
 		/*---------------------------------------*/
 
@@ -41,7 +45,11 @@ class ResponseHandler
 		std::map<std::string, std::string> _responseHeader;
 		std::map<std::string, std::string> _mimeType;
 
+		void _makeTraceResponse(void);
+		void _makeOptionResponse(void);
 		void _makeGetResponse(int);
+		void _makeConnectResponse(void);
+
 
 		void _throwErrorResponse(int httpStatus, std::string version) throw(Response);
 

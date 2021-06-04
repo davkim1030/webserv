@@ -58,7 +58,8 @@ int main(void)
 		Request Req(buffer);
 		Req.parseRequest();
 		ResponseHandler ReqHan(Req);
-		ReqHan.makeResponse();
+		Response Res = ReqHan.makeResponse();
+		std::cout << Res.getMessage();
 
 	    write(new_socket , hello , strlen(hello));
         printf("------------------Hello message sent-------------------\n");
