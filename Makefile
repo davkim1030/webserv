@@ -1,5 +1,6 @@
 SRC		=	main.cpp \
-			Socket.cpp
+			Socket.cpp \
+			Client.cpp
 
 SRCDIR	=	./srcs/
 SRCS	=	$(addprefix $(SRCDIR), $(SRC))
