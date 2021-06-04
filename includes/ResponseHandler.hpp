@@ -22,7 +22,7 @@ class ResponseHandler
 		void addServerHeader(void);
 		void addAllowHeader(void);
 		void addContentLanguageHeader(void);
-		void addContentLengthHeader(void);
+		void addContentLengthHeader(int);
 		void addContentLocationHeader(void);
 		void addContentTypeHeader(std::string);
 		void addLastModifiedHeader(std::string path);

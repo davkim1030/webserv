@@ -75,3 +75,18 @@ void ResponseHandler::addLastModifiedHeader(std::string path)
 	const char *buffer = _getFormatTime(timeinfo);
 	addResponseHeader("Last-Modified: ", (std::string)buffer);
 }
+
+void ResponseHandler::addContentLengthHeader(int length)
+{
+	addResponseHeader("Content-Length: ", ft_itoa(length));
+}
+
+void ResponseHandler::addContentLanguageHeader()
+{
+	addResponseHeader("Content-Language: ", "ko-KR");
+}
+
+void ResponseHandler::addContentLocationHeader()
+{
+	addResponseHeader("Content-Location: ", this->_resourcePath);
+}

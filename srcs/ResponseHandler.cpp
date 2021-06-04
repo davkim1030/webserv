@@ -124,19 +124,19 @@ void ResponseHandler::makeResponse()
 		또한 Host 헤더가 들어오면, Host헤더의 value 포트로 이동하게 해주세요!
 	*/
 	try{
-		_resourcePath = 루트변수 + _Req.getUri(); //나중에 root 들어오면 앞에 붙여주세요
+		this->_resourcePath = 루트변수 + _Req.getUri(); //나중에 root 들어오면 앞에 붙여주세요
 
 		//디렉토리면
-		if (_checkPath(_resourcePath) == ISDIR)
+		if (_checkPath(this->_resourcePath) == ISDIR)
 		{
-			if (_resourcePath[_resourcePath.length() - 1] != '/')
+			if (this->_resourcePath[this->_resourcePath.length() - 1] != '/')
                 this->_resourcePath += '/';
 			if (오토인덱스변수)
-				throw Response(200, _responseHeader, _Req.getMethod() != "HEAD" ? _makeAutoIndexPage(_resourcePath) : "", _Req.getHttpVersion());
+				throw Response(200, this->_responseHeader, _Req.getMethod() != "HEAD" ? _makeAutoIndexPage(this->_resourcePath) : "", _Req.getHttpVersion());
 				//_makeAutoIndexPage 함수 제작중
 		}
 		//경로 한번 더 검사-> 존재 안하면
-		if (_checkPath(_resourcePath) == NOT_FOUND && _Req.getMethod() != "PUT" && _Req.getMethod() != "POST")
+		if (_checkPath(this->_resourcePath) == NOT_FOUND && _Req.getMethod() != "PUT" && _Req.getMethod() != "POST")
 				_throwErrorResponse(404, _Req.getHttpVersion());
 
 		/*
@@ -156,6 +156,7 @@ void ResponseHandler::makeResponse()
 	}
 
 	_responseHeader.clear();
+	_resourcePath.clear();
 }
 
 /*
@@ -169,23 +170,44 @@ void ResponseHandler::makeResponse()
 void ResponseHandler::_makeGetResponse(int httpStatus)
 {
 	std::string body;
+	int fd;
+	struct stat	sb;
+	int res;
 
 	addDateHeader();
 	addServerHeader();
 
 	//open 후 read-> 구조체에 파일 객체 담기. 그 후 body에 객체를 담기
-	if (fd = open(file.c_str(), O_RDONLY) < 0)
+	if ((fd = open(this->_resourcePath.c_str(), O_RDONLY)) < 0)
 		_throwErrorResponse(500, _Req.getHttpVersion());
-	//contentlength만큼 파일에 우겨넣기 필요
+	if (fstat(fd, &sb) < 0)
+	{
+		close(fd);
+		_throwErrorResponse(500, _Req.getHttpVersion());
+	}
+	char *buffer;
+	while((res = get_next_line(fd, &buffer)) > 0)
+	{
+		body += buffer;
+		free(buffer);
+	}
+	if (res < 0)
+	{
+		free(buffer);
+		_throwErrorResponse(500, _Req.getHttpVersion());
+	}
+	get_next_line(fd, &buffer);
+	body += buffer;
+	free(buffer);
 
 	addContentTypeHeader(_resourcePath);
 	addContentLanguageHeader();
 	addContentLocationHeader();
-	addContentLengthHeader();
+	addContentLengthHeader((int)sb.st_size);
 	addLastModifiedHeader(_resourcePath);
+	if (httpStatus == HEAD_METHOD)
+		throw Response(200, _responseHeader, "", _Req.getHttpVersion());
 	throw Response(200, _responseHeader, body, _Req.getHttpVersion());
-
-
 }
 
 void ResponseHandler::_throwErrorResponse(int httpStatus, std::string version) throw()
@@ -198,8 +220,6 @@ void ResponseHandler::_throwErrorResponse(int httpStatus, std::string version) t
 			throw Response(500, _responseHeader, _makeErrorPage(500), version);
 		case FORBIDDEN:
 			throw Response(403, _responseHeader, _makeErrorPage(403), version);
-		case HEAD_METHOD:
-			throw Response(200, _responseHeader, "", version);
 		default:
 			throw Response(404, _responseHeader, _makeErrorPage(404), version);
 	}
