@@ -6,7 +6,7 @@
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
 
-ResponseHandler::ResponseHandler(Request &Req, std::vector<Server> server)
+ResponseHandler::ResponseHandler(Request &Req, std::vector<Server>::iterator server)
 :_Req(Req), _server(server){
 	this->_mimeType[".aac"] = "audio/aac";
 	this->_mimeType[".abw"] = "application/x-abiword";
@@ -122,7 +122,6 @@ int ResponseHandler::_checkPath(std::string path)
 */
 Response ResponseHandler::makeResponse()
 {
-
 	/*
 		여기에는...
 		특정한 헤더가 들어오면, 컨텐츠 협상을 통해서 언어를 정하거나(Accept-Charset, Accept-Language),
@@ -143,20 +142,26 @@ Response ResponseHandler::makeResponse()
 			_makeConnectResponse();
 
 		this->_resourcePath = _Req.getUri(); //나중에 root 들어오면 앞에 붙여주세요
-
 		//경로 한번 더 검사-> 존재 안하면
 		if (_checkPath(this->_resourcePath) == NOT_FOUND && _Req.getMethod() != "PUT" && _Req.getMethod() != "POST")
 			_throwErrorResponse(NOT_FOUND, _Req.getHttpVersion());
 
 		/*
-		* 여기에는 메소드에 따라 CGI 호출 여부를 결정하는 부분이 추가되어야 합니다.
+		* 여기에는
+		* 1. 메소드에 따라 CGI 호출 여부를 결정하는 부분
+		* 2. Transfer-Encoding 처리
+		* 3. redirection 처리
+		* 가 추가되어야 합니다.
 		*/
 
 		if (_Req.getMethod() == "GET" || _Req.getMethod() == "POST")
 			_makeGetResponse(0);
 		if (_Req.getMethod() == "HEAD")
 			_makeGetResponse(HEAD_METHOD);
-
+		if (_Req.getMethod() == "PUT")
+			_makePutResponse();
+		if (_Req.getMethod() == "DELETE")
+			_makeDeleteResponse();
 	}
 	catch (Response &e)
 	{
@@ -165,7 +170,7 @@ Response ResponseHandler::makeResponse()
 
 	_responseHeader.clear();
 	_resourcePath.clear();
-	return Response(500, _responseHeader, _makeErrorPage(500), _Req.getHttpVersion());
+	return Response(500, _responseHeader, _makeHTMLPage(ft_itoa(500)), _Req.getHttpVersion());
 }
 
 /*
@@ -204,7 +209,10 @@ void ResponseHandler::_makeGetResponse(int httpStatus)
 			}
 		}
 		if (indexFileFlag == false && _location->getOption("autoindex") == "on")
+		{
+			addContentTypeHeader(".html");
 			throw Response(200, this->_responseHeader, _Req.getMethod() != "HEAD" ? _makeAutoIndexPage(this->_resourcePath) : "", _Req.getHttpVersion());
+		}
 		//_makeAutoIndexPage 함수 제작중
 	}
 	if ((fd = open(this->_resourcePath.c_str(), O_RDONLY)) < 0)
@@ -236,23 +244,42 @@ void ResponseHandler::_makeGetResponse(int httpStatus)
 	throw Response(200, _responseHeader, body, _Req.getHttpVersion());
 }
 
-void ResponseHandler::_throwErrorResponse(int httpStatus, std::string version) throw(Response)
+
+void ResponseHandler::_makePutResponse(void)
 {
-	switch (httpStatus)
-	{
-		case NOT_FOUND:
-			throw Response(404, _responseHeader, _makeErrorPage(404), version);
-		case SERVER_ERR:
-			throw Response(500, _responseHeader, _makeErrorPage(500), version);
-		case FORBIDDEN:
-			throw Response(403, _responseHeader, _makeErrorPage(403), version);
-		default:
-			throw Response(404, _responseHeader, _makeErrorPage(404), version);
-	}
+	
+}
+
+
+/*
+* DELETE 메소드의 Response를 생성합니다.
+* 기본 헤더 : Date, Server
+* 엔티티 헤더 : Allow
+* 반환 Status-Code :
+* 202 (Accepted) - 아마도 명령을 성공적으로 수행할 것 같으나 아직은 실행하지 않은 경우
+* 204 (No Content) - 명령을 수행했고 더 이상 제공할 정보가 없는 경우 
+* 200 (OK) - 명령을 수행했고 응답 메시지가 이후의 상태를 설명하는 경우 
+* 404(찾을 수 없음)
+* 403(권한이 없음)
+*/
+
+void ResponseHandler::_makeDeleteResponse(void)
+{
+
+	addDateHeader();
+	addServerHeader();
+
+
+	std::string allow;
+	/*Location에서 allow_method 따오는 부분*/
+	addAllowHeader();
+	throw Response(200, _responseHeader, _makeHTMLPage("File deleted"), _Req.getHttpVersion());
+
+
 }
 
 /*
-* 클라이언트가 서버에게 송신한 요청의 내용을 반환해줍니다.
+* 클라이언트가 서버에게 송신한 요청을 반환한다.
 */
 void ResponseHandler::_makeTraceResponse()
 {
@@ -284,19 +311,44 @@ void ResponseHandler::_makeConnectResponse()
 
 /*
 * 오토인덱스 페이지를 만듭니다.
-* 미작성
+* @param 오토인덱스를 만들 경로
+* @return 완성된 body
 */
 std::string ResponseHandler::_makeAutoIndexPage(std::string _resourcePath)
 {
-	return _resourcePath;
+	std::string body;
+	std::string addr = "http://" + _Req.getHeader()["Host"] + "/"; //하이퍼링크용 경로
+
+	body += "<!DOCTYPE html>";
+	body += "<html>";
+	body += "<head>";
+	body += "</head>";
+	body += "<body>";
+	body += "<h1> Index of "+ _Req.getUri() + "</h1>";
+
+	DIR *dir = NULL;
+	if ((dir = opendir(_resourcePath.c_str())) == NULL)
+		_throwErrorResponse(500, _Req.getHttpVersion());
+	
+	struct dirent *file = NULL;
+	while ((file = readdir(dir)) != NULL)
+		body += "<a href=\"" + addr + file->d_name + "\">" + file->d_name + "</a><br>";
+
+	closedir(dir);
+
+	body += "</body>";
+	body += "</html>";
+
+	addContentLengthHeader(body.size());
+	return (body);
 }
 
 /*
-* 상태 코드에 따라 에러 페이지를 만듭니다.
-* @param 상태 코드
+* HTML 페이지를 만듭니다.
+* @param HTML 상에 출력할 string
 * @return HTML 코드 string
 */
-std::string ResponseHandler::_makeErrorPage(int statusCode)
+std::string ResponseHandler::_makeHTMLPage(std::string str)
 {
 	std::string body;
 
@@ -307,9 +359,24 @@ std::string ResponseHandler::_makeErrorPage(int statusCode)
 	body += "</head>\n";
 	body += "<body>\n";
 	body += "<h1>";
-	body += ft_itoa(statusCode);
+	body += str;
 	body += "<h1>\n";
 	body += "</body>\n";
 	body += "</html>";
 	return (body);
+}
+
+void ResponseHandler::_throwErrorResponse(int httpStatus, std::string version) throw(Response)
+{
+	switch (httpStatus)
+	{
+		case NOT_FOUND:
+			throw Response(404, _responseHeader, _makeHTMLPage(ft_itoa(404)), version);
+		case SERVER_ERR:
+			throw Response(500, _responseHeader, _makeHTMLPage(ft_itoa(500)), version);
+		case FORBIDDEN:
+			throw Response(403, _responseHeader, _makeHTMLPage(ft_itoa(403)), version);
+		default:
+			throw Response(404, _responseHeader, _makeHTMLPage(ft_itoa(404)), version);
+	}
 }

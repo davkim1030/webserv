@@ -5,14 +5,16 @@
 # include "Response.hpp"
 # include "Request.hpp"
 # include "Location.hpp"
+# include "Server.hpp"
 
 class Response;
+class Server;
 class Location;
 
 class ResponseHandler
 {
 	public:
-		ResponseHandler(Request &Req, std::vector<Server> server);
+		ResponseHandler(Request &Req, std::vector<Server>::iterator server);
 		ResponseHandler(const ResponseHandler & src);
 		~ResponseHandler(void);
 		ResponseHandler & operator=( ResponseHandler const & rhs );
@@ -42,7 +44,7 @@ class ResponseHandler
 	private:
 		ResponseHandler(void);
 		Request _Req;
-		std::vector<Server> _server;
+		std::vector<Server>::iterator _server;
 		Location *_location;
 		std::string _resourcePath;
 		std::map<std::string, std::string> _responseHeader;
@@ -52,10 +54,13 @@ class ResponseHandler
 		void _makeOptionResponse(void);
 		void _makeGetResponse(int);
 		void _makeConnectResponse(void);
+		void _makePutResponse(void);
+		void _makeDeleteResponse(void);
+
 
 		void _throwErrorResponse(int httpStatus, std::string version) throw(Response);
 
-		std::string _makeErrorPage(int);
+		std::string _makeHTMLPage(std::string);
 		std::string _makeAutoIndexPage(std::string);
 		int _checkPath(std::string);
 

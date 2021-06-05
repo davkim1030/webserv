@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
 
 		Request Req(buffer);
 		Req.parseRequest();
-		ResponseHandler ReqHan(Req, server);
+		ResponseHandler ReqHan(Req, server.end());
 		Response Res = ReqHan.makeResponse();
 		// std::cout << Res.getMessage();
 

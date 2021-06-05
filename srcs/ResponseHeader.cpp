@@ -69,7 +69,7 @@ void ResponseHandler::addLastModifiedHeader(std::string path)
 	struct tm*	timeinfo;
 
 	if (stat(path.c_str(), &statbuff) < 0)
-		throw Response(500, _responseHeader, _makeErrorPage(500), _Req.getHttpVersion());
+		throw Response(500, _responseHeader, _makeHTMLPage(ft_itoa(500)), _Req.getHttpVersion());
 	timeinfo = localtime(&statbuff.st_mtime);
 	addResponseHeader("Last-Modified: ", _getFormatTime(timeinfo));
 }
