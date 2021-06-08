@@ -58,15 +58,44 @@ bool Socket::initServer(int socketCnt)
 {
 	std::map<std::string, int> tmp;
 
-	socketCnt = socketCnt + 1;
 	std::vector<Server>::iterator iter;
 	for (iter = ServerConfig::getInstance()->getServers().begin();
 		iter != ServerConfig::getInstance()->getServers().end(); iter++)
 	{
-		std::string key = iter->getOption("server_name");
-		std::cout << key << std::endl;
+		std::string key = iter->getIp() + ":" + ft_itoa(iter->getPort());
+		if (tmp.find(key) != tmp.end())
+		{
+			// tmp 맵에 있는 이전 내용을 새로운 내용으로 덮어 씌우는 부분
+			continue ;
+		}
+		struct sockaddr_in	serverAddr;
+		iter->setSocketFd(socket(PF_INET, SOCK_STREAM, 0));		// 소켓 fd 생성
+		ft_memset(&serverAddr, '\0', sizeof(serverAddr));		// serverAddr 초기화
+		serverAddr.sin_family = AF_INET;						// IPv4 설정
+		serverAddr.sin_addr.s_addr = inet_addr(iter->getIp().c_str());	// ip 주소 설정
+		serverAddr.sin_port = htons(iter->getPort());			// 포트 설정
+
+		// 소켓, fd 바인드
+		if (bind(iter->getSocketFd(), (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
+			throw BindException();
+		// 데이터를 받을 서버 소켓 열기
+		if (listen(iter->getSocketFd(), socketCnt) == -1)
+			throw ListenException();
+		
+		FD_SET(iter->getSocketFd(), &rfds);
+		FD_SET(iter->getSocketFd(), &wfds);
+		FD_SET(iter->getSocketFd(), &efds);
+
+		// Socket에서 관리할 서버 리스트에 위에서 생성한 서버 추가
+		servers[iter->getSocketFd()][iter->getServerName()] = *iter;
+		// 중복 방지를 위해 tmp map에 추가
+		tmp[key] = iter->getSocketFd();
+
+		// select()로 감시할 fd의 최대값 업데이트
+		if (fdMax < iter->getSocketFd())
+			fdMax = iter->getSocketFd();
 	}
-	return false;
+	return (true);
 }
 
 bool Socket::runServer(struct timeval timeout, unsigned int bufferSize)
