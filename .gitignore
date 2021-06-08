@@ -2,5 +2,5 @@
 *.out
 *.a
 .vscode
-./include/libft.h
+includes/libft.h
 webserv
