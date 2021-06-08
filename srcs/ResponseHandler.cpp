@@ -69,7 +69,7 @@ ResponseHandler::ResponseHandler(Request &request, std::vector<Server>::iterator
 };
 
 ResponseHandler::ResponseHandler(const ResponseHandler & src)
-: request(src.request), mimeType(src.mimeType) {};
+: request(src.request), server(src.server), location(src.location), resourcePath(src.resourcePath), responseHeader(src.responseHeader), mimeType(src.mimeType) {};
 
 /*
 ** -------------------------------- DESTRUCTOR --------------------------------
