@@ -25,7 +25,6 @@ class ResponseHandler
 	public:
 		// 생성자 & 소멸자 & 대입연산자 오버로딩
 		ResponseHandler(Request &request, std::vector<Server>::iterator server);
-		ResponseHandler(const ResponseHandler & src);
 		~ResponseHandler(void);
 		ResponseHandler & operator=( ResponseHandler const & rhs );
 
@@ -57,8 +56,9 @@ class ResponseHandler
 
 
 	private:
-		//기본 생성자
+		//기본 생성자 및 복사생성자
 		ResponseHandler(void);
+		ResponseHandler(const ResponseHandler & src);
 
 		Request request;
 		std::vector<Server>::iterator server;
