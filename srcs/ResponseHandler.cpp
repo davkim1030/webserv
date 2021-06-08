@@ -133,6 +133,14 @@ Response ResponseHandler::makeResponse()
 		_location = _server->getLocation(_Req.getUri());
 		if (_location == NULL)
 			_throwErrorResponse(NOT_FOUND, _Req.getHttpVersion());
+
+		if (!_location->getOption("allow_method").empty() && _Req.getMethod() != "GET" && _Req.getMethod() != "HEAD")
+		{
+			std::string allow = _location->getOption("allow_method");
+			if (allow.find(_Req.getMethod()) == std::string::npos)
+				_throwErrorResponse(METHOD_NOT_ALLOWED, _Req.getHttpVersion());
+		}
+
 		if (_Req.getMethod() == "TRACE")
 			_makeTraceResponse();
 		else if (_Req.getMethod() == "OPTIONS")
@@ -327,14 +335,14 @@ void ResponseHandler::_makeTraceResponse()
 
 /*
 * 해당 URL에서 지원하는 요청 method 목록을 요청한다.
-* 미작성
 */
 void ResponseHandler::_makeOptionResponse()
 {
-	std::string allow;
-
-	/*Location에서 allow_method 따오는 부분*/
-	addAllowHeader(allow);
+	if (!_location->getOption("allow_method").empty())
+	{
+		std::string allow = _location->getOption("allow_method");
+		addAllowHeader(allow);
+	}
 	throw Response(200, _responseHeader, "", _Req.getHttpVersion());
 }
 
@@ -414,6 +422,8 @@ void ResponseHandler::_throwErrorResponse(int httpStatus, std::string version) t
 			throw Response(500, _responseHeader, _makeHTMLPage(ft_itoa(500)), version);
 		case FORBIDDEN:
 			throw Response(403, _responseHeader, _makeHTMLPage(ft_itoa(403)), version);
+		case METHOD_NOT_ALLOWED:
+			throw Response(405, _responseHeader, _makeHTMLPage(ft_itoa(405)), version);
 		default:
 			throw Response(404, _responseHeader, _makeHTMLPage(ft_itoa(404)), version);
 	}

@@ -67,6 +67,7 @@ class ResponseHandler
 		#define NOT_FOUND 404
 		#define SERVER_ERR 500
 		#define FORBIDDEN 403
+		#define METHOD_NOT_ALLOWED 405
 		#define ISFILE 1
 		#define ISDIR 2
 		#define HEAD_METHOD 3
