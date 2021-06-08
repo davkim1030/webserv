@@ -130,10 +130,10 @@ Response ResponseHandler::makeResponse()
 	*/
 
 	try{
+
 		_location = _server->getLocation(_Req.getUri());
 		if (_location == NULL)
 			_throwErrorResponse(NOT_FOUND, _Req.getHttpVersion());
-
 		if (_Req.getMethod() == "TRACE")
 			_makeTraceResponse();
 		else if (_Req.getMethod() == "OPTIONS")
@@ -190,30 +190,31 @@ void ResponseHandler::_makeGetResponse(int httpStatus)
 
 	addDateHeader();
 	addServerHeader();
-
 	if (_checkPath(this->_resourcePath) == ISDIR)
 	{
 		if (this->_resourcePath[this->_resourcePath.length() - 1] != '/')
 			this->_resourcePath += '/';
-		
-		bool indexFileFlag = false;
-		char **indexFile = ft_split(_server->getOption("index").c_str(), ' ');
-		for (int i = 0; indexFile[i]; i++)
+
+		if (!_location->getOption("index").empty())
 		{
-			struct stat buffer;
-			if (stat((this->_resourcePath + indexFile[i]).c_str(), &buffer) == 0)
+			bool indexFileFlag = false;
+			char **indexFile = ft_split(_server->getOption("index").c_str(), ' ');
+			for (int i = 0; indexFile[i]; i++)
 			{
-				this->_resourcePath = this->_resourcePath + indexFile[i];
-				indexFileFlag = true;
-				break ;
+				struct stat buffer;
+				if (stat((this->_resourcePath + indexFile[i]).c_str(), &buffer) == 0)
+				{
+					this->_resourcePath = this->_resourcePath + indexFile[i];
+					indexFileFlag = true;
+					break ;
+				}
+			}
+			if (indexFileFlag == false && _location->getOption("autoindex") == "on")
+			{
+				addContentTypeHeader(".html");
+				throw Response(200, this->_responseHeader, _Req.getMethod() != "HEAD" ? _makeAutoIndexPage(this->_resourcePath) : "", _Req.getHttpVersion());
 			}
 		}
-		if (indexFileFlag == false && _location->getOption("autoindex") == "on")
-		{
-			addContentTypeHeader(".html");
-			throw Response(200, this->_responseHeader, _Req.getMethod() != "HEAD" ? _makeAutoIndexPage(this->_resourcePath) : "", _Req.getHttpVersion());
-		}
-		//_makeAutoIndexPage 함수 제작중
 	}
 	if ((fd = open(this->_resourcePath.c_str(), O_RDONLY)) < 0)
 		_throwErrorResponse(SERVER_ERR, _Req.getHttpVersion());
@@ -244,10 +245,14 @@ void ResponseHandler::_makeGetResponse(int httpStatus)
 	throw Response(200, _responseHeader, body, _Req.getHttpVersion());
 }
 
+//작성중~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/*
+* PUT: 클라이언트가 서버에게 지정한 URL에 지정한 데이터를 저장할 것을 요청한다.
 
+*/
 void ResponseHandler::_makePutResponse(void)
 {
-	
+
 }
 
 
@@ -257,26 +262,31 @@ void ResponseHandler::_makePutResponse(void)
 * 엔티티 헤더 : Allow
 * 반환 Status-Code :
 * 202 (Accepted) - 아마도 명령을 성공적으로 수행할 것 같으나 아직은 실행하지 않은 경우
-* 204 (No Content) - 명령을 수행했고 더 이상 제공할 정보가 없는 경우 
-* 200 (OK) - 명령을 수행했고 응답 메시지가 이후의 상태를 설명하는 경우 
+* 204 (No Content) - 명령을 수행했고 더 이상 제공할 정보가 없는 경우
+* 200 (OK) - 명령을 수행했고 응답 메시지가 이후의 상태를 설명하는 경우
 * 404(찾을 수 없음)
 * 403(권한이 없음)
 */
-
 void ResponseHandler::_makeDeleteResponse(void)
 {
 
 	addDateHeader();
 	addServerHeader();
-
-
-	std::string allow;
-	/*Location에서 allow_method 따오는 부분*/
-	addAllowHeader();
-	throw Response(200, _responseHeader, _makeHTMLPage("File deleted"), _Req.getHttpVersion());
-
-
+	if (_checkPath(this->_resourcePath) == ISFILE)
+	{
+		unlink(this->_resourcePath.c_str());
+		if (!_location->getOption("allow_method").empty())
+		{
+			std::string allow = _location->getOption("allow_method");
+			addAllowHeader(allow);
+		}
+		throw Response(200, _responseHeader, _makeHTMLPage("File deleted"), _Req.getHttpVersion());
+	}
+	_throwErrorResponse(NOT_FOUND, _Req.getHttpVersion());
 }
+//작성중~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
 
 /*
 * 클라이언트가 서버에게 송신한 요청을 반환한다.
@@ -329,7 +339,7 @@ std::string ResponseHandler::_makeAutoIndexPage(std::string _resourcePath)
 	DIR *dir = NULL;
 	if ((dir = opendir(_resourcePath.c_str())) == NULL)
 		_throwErrorResponse(500, _Req.getHttpVersion());
-	
+
 	struct dirent *file = NULL;
 	while ((file = readdir(dir)) != NULL)
 		body += "<a href=\"" + addr + file->d_name + "\">" + file->d_name + "</a><br>";

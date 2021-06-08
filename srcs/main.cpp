@@ -15,7 +15,7 @@
 #include <netinet/in.h>
 #include <string.h>
 
-#define PORT 80
+#define PORT 8080
 int main(int argc, char *argv[])
 {
     int server_fd, new_socket; long valread;
@@ -85,7 +85,8 @@ int main(int argc, char *argv[])
 
 		Request Req(buffer);
 		Req.parseRequest();
-		ResponseHandler ReqHan(Req, server.end());
+		//엔드는 마지막걸 가리키는게아니라 마지막의 다음걸 가리키는거임!!!!!!!!!!!!! 쓰지마셈!!!!!!!!!!!1
+		ResponseHandler ReqHan(Req, --server.end());
 		Response Res = ReqHan.makeResponse();
 		// std::cout << Res.getMessage();
 
