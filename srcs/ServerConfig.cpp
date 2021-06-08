@@ -36,7 +36,7 @@ ServerConfig* ServerConfig::getInstance()
 /*
 	private 멤버 변수 server 반환 getter
 */
-std::vector<Server> ServerConfig::getServers()
+std::vector<Server> const &ServerConfig::getServers()
 {
 	return server;
 }
