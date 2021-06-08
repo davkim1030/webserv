@@ -58,49 +58,12 @@ int main(int argc, char *argv[])
 
         char buffer[30000] = {0};
         valread = read( new_socket , buffer, 30000);
-
-		// printf("%s",buffer);
         ServerConfig::getInstance()->saveConfig(argc, argv[1]);
         std::vector<Server> server = ServerConfig::getInstance()->getServers();
-        /*
-        std::vector<Server>::iterator server_it = server.begin();
-        std::cout << server_it->getOption("listen") << std::endl;
-        server_it++;
-        std::vector<Location> location = server_it->getLocationVector();
-
-        std::cout << location.begin()->getPath() << std::endl;
-
-        std::cout << "res {" << location.begin()->getOption("allow_method") << "}" << std::endl;
-
-        if (location.begin()->getOption("allow_method").empty())
-            std::cout << "NULL test" << std::endl;
-
-        Location *loc = server_it->getLocation("/test/"); // 인자가 바뀜에 따라 NULL 또는 Location 주소 반환
-
-        if (loc != NULL)
-            std::cout << "location test : " << loc->getPath() << std::endl;
-        else
-            std::cout << "location can not found" << std::endl;
-        */
-
-		Request Req(buffer);
-		Req.parseRequest();
-		//엔드는 마지막걸 가리키는게아니라 마지막의 다음걸 가리키는거임!!!!!!!!!!!!! 쓰지마셈!!!!!!!!!!!1
-		ResponseHandler ReqHan(Req, --server.end());
-		Response Res = ReqHan.makeResponse();
-		// std::cout << Res.getMessage();
-
-		/*
-			try
-			{
-				// 여기서부터 받아서 소켓 시작
-			}
-			catch(const std::exception& e)
-			{
-				std::cerr << e.what() << '\n';
-			}
-		*/
-
+		Request request(buffer);
+		request.parseRequest();
+		ResponseHandler responseHandler(request, --server.end());
+		Response Res = responseHandler.makeResponse();
 	    write(new_socket , hello , strlen(hello));
         printf("------------------Hello message sent-------------------\n");
         close(new_socket);

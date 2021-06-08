@@ -7,7 +7,7 @@
 */
 void ResponseHandler::addResponseHeader(std::string key, std::string value)
 {
-	this->_responseHeader[key] = value;
+	this->responseHeader[key] = value;
 }
 
 /*
@@ -15,7 +15,7 @@ void ResponseHandler::addResponseHeader(std::string key, std::string value)
 * @param 변환할 tm 구조체
 * @return 변환한 char *
 */
-std::string ResponseHandler::_getFormatTime(const struct tm* timeinfo)
+std::string ResponseHandler::getFormatTime(const struct tm* timeinfo)
 {
 	char buffer[80];
 
@@ -33,7 +33,7 @@ void ResponseHandler::addDateHeader(void)
 
 	time(&rawtime);
 	timeinfo = localtime(&rawtime);
-	addResponseHeader("Date", _getFormatTime(timeinfo));
+	addResponseHeader("Date", getFormatTime(timeinfo));
 }
 
 /*
@@ -53,10 +53,10 @@ void ResponseHandler::addContentTypeHeader(std::string extension)
 	size_t i = extension.find_first_of('.');
 	std::string filePath = std::string(extension, i + 1, extension.size() - i);
 
-	if (i == std::string::npos || _mimeType.count(filePath) == 0)
-		addResponseHeader("Content-Type: ", _mimeType["text/plain"]);
+	if (i == std::string::npos || mimeType.count(filePath) == 0)
+		addResponseHeader("Content-Type: ", mimeType["text/plain"]);
 	else
-		addResponseHeader("Content-Type: ", _mimeType[filePath]);
+		addResponseHeader("Content-Type: ", mimeType[filePath]);
 }
 
 /*
@@ -69,9 +69,9 @@ void ResponseHandler::addLastModifiedHeader(std::string path)
 	struct tm*	timeinfo;
 
 	if (stat(path.c_str(), &statbuff) < 0)
-		throw Response(500, _responseHeader, _makeHTMLPage(ft_itoa(500)), _Req.getHttpVersion());
+		throw Response(500, responseHeader, makeHTMLPage(ft_itoa(500)), request.getHttpVersion());
 	timeinfo = localtime(&statbuff.st_mtime);
-	addResponseHeader("Last-Modified: ", _getFormatTime(timeinfo));
+	addResponseHeader("Last-Modified: ", getFormatTime(timeinfo));
 }
 
 void ResponseHandler::addContentLengthHeader(int length)
@@ -86,7 +86,7 @@ void ResponseHandler::addContentLanguageHeader()
 
 void ResponseHandler::addContentLocationHeader()
 {
-	addResponseHeader("Content-Location: ", this->_resourcePath);
+	addResponseHeader("Content-Location: ", this->resourcePath);
 }
 
 void ResponseHandler::addAllowHeader(std::string allow)
@@ -96,5 +96,5 @@ void ResponseHandler::addAllowHeader(std::string allow)
 
 void ResponseHandler::addHostHeader()
 {
-	addResponseHeader("Allow: ", _resourcePath);
+	addResponseHeader("Allow: ", resourcePath);
 }
