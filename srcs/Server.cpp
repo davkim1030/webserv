@@ -1,6 +1,7 @@
 #include "webserv.h"
 #include "Location.hpp"
 #include "Server.hpp"
+#include "Exception.hpp"
 
 Server::Server() {}
 

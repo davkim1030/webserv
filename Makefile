@@ -4,7 +4,9 @@ SRC		=	main.cpp \
 			ServerConfig.cpp \
 			Server.cpp \
 			Location.cpp \
-			Exception.cpp
+			Exception.cpp \
+			Request.cpp \
+			Response.cpp
 
 SRCDIR	=	./srcs/
 SRCS	=	$(addprefix $(SRCDIR), $(SRC))

@@ -1,6 +1,7 @@
 #include "webserv.h"
 #include "Server.hpp"
 #include "ServerConfig.hpp"
+#include "Exception.hpp"
 
 // static variable extern
 ServerConfig *ServerConfig::instance;
