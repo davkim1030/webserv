@@ -130,7 +130,6 @@ Response ResponseHandler::makeResponse()
 	*/
 
 	try{
-
 		_location = _server->getLocation(_Req.getUri());
 		if (_location == NULL)
 			_throwErrorResponse(NOT_FOUND, _Req.getHttpVersion());
@@ -245,19 +244,52 @@ void ResponseHandler::_makeGetResponse(int httpStatus)
 	throw Response(200, _responseHeader, body, _Req.getHttpVersion());
 }
 
-//작성중~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 /*
-* PUT: 클라이언트가 서버에게 지정한 URL에 지정한 데이터를 저장할 것을 요청한다.
-
+* 클라이언트가 서버에게 지정한 URL에 지정한 데이터를 저장할 것을 요청한다.
+* RESPONSE
+* 기본 헤더 : Date, Server
+* 컨텐츠 헤더 :Content-Location
+* 반환 Status-Code :
+* 기존에 없는 것을 새로이 생성 - 201 (Created)
+* 기존에 있는 것을 성공적으로 수정 - 200 (OK) 또는 204 (No Content) 응답
+* 실패 : 500(SERVER ERR)
+* 권한없음 : 403(forbidden)
 */
 void ResponseHandler::_makePutResponse(void)
 {
+	int fd;
+	int pathType = _checkPath(this->_resourcePath);
 
+	switch (pathType)
+	{
+		case NOT_FOUND :
+		{
+
+			if ((fd = open(this->_resourcePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC)) < 0)
+				_throwErrorResponse(SERVER_ERR, _Req.getHttpVersion());
+
+			write(fd, _Req.getRawBody().c_str(), ft_atoi(_Req.getHeader()["Content-length"].c_str()));
+			close(fd);
+			addContentLocationHeader();
+			throw Response(201, _responseHeader, "", _Req.getHttpVersion());
+		}
+		case ISFILE :
+		{
+			if ((fd = open(this->_resourcePath.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644)) < 0)
+				_throwErrorResponse(SERVER_ERR, _Req.getHttpVersion());
+
+			write(fd, _Req.getRawBody().c_str(), ft_atoi(_Req.getHeader()["Content-length"].c_str()));\
+			close(fd);
+			addContentLocationHeader();
+			throw Response(204, _responseHeader, "", _Req.getHttpVersion());
+		}
+		default :
+			_throwErrorResponse(FORBIDDEN, _Req.getHttpVersion());
+	}
 }
 
-
 /*
-* DELETE 메소드의 Response를 생성합니다.
+* DELETE 메소드의 작업을 수행한다.
 * 기본 헤더 : Date, Server
 * 엔티티 헤더 : Allow
 * 반환 Status-Code :
@@ -269,7 +301,6 @@ void ResponseHandler::_makePutResponse(void)
 */
 void ResponseHandler::_makeDeleteResponse(void)
 {
-
 	addDateHeader();
 	addServerHeader();
 	if (_checkPath(this->_resourcePath) == ISFILE)
@@ -284,9 +315,6 @@ void ResponseHandler::_makeDeleteResponse(void)
 	}
 	_throwErrorResponse(NOT_FOUND, _Req.getHttpVersion());
 }
-//작성중~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
 
 /*
 * 클라이언트가 서버에게 송신한 요청을 반환한다.
