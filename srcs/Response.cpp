@@ -1,3 +1,4 @@
+#include "webserv.h"
 #include "Response.hpp"
 
 // Constructors & Destructors

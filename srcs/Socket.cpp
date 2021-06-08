@@ -58,16 +58,22 @@ bool Socket::initServer(int socketCnt)
 {
 	std::map<std::string, int> tmp;
 
-	for (std::vector<Server>::iterator iter = ServerConfig::getInstance()->getServers().begin();
+	socketCnt = socketCnt + 1;
+	std::vector<Server>::iterator iter;
+	for (iter = ServerConfig::getInstance()->getServers().begin();
 		iter != ServerConfig::getInstance()->getServers().end(); iter++)
 	{
-
+		std::string key = iter->getOption("server_name");
+		std::cout << key << std::endl;
 	}
+	return false;
 }
 
 bool Socket::runServer(struct timeval timeout, unsigned int bufferSize)
 {
-	
+	timeout.tv_sec += 1;
+	bufferSize = bufferSize + 1;
+	return false;
 }
 
 /*

@@ -2,6 +2,8 @@
 # define CLIENT_HPP
 
 # include "webserv.h"
+# include "Request.hpp"
+# include "Response.hpp"
 
 /*
  * 클라이언트의 상태를 나타내는 enum

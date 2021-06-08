@@ -5,11 +5,9 @@
  * 클라이언트 클래스 기본 생성자
  * fd 값들을 -1로 지정하여 초기화 하지 않으면 사용 못 하게 함
  */
-Client::Client()
+Client::Client() : status(REQUEST_RECEIVING), serverSocketFd(-1), socketFd(-1),
+		response(200, std::map<std::string, std::string>(), "")
 {
-	serverSocketFd = -1;
-	socketFd = -1;
-	status = Status::REQUEST_RECEIVING;
 }
 
 /*
@@ -18,9 +16,10 @@ Client::Client()
  * @param: int socketFd: 클라이언트에 할당된 소켓 fd
  */
 Client::Client(int serverSocketFd, int socketFd)
-	: serverSocketFd(serverSocketFd), sockerFd(sockerFd)
+	: serverSocketFd(serverSocketFd), socketFd(socketFd),
+	response(200, std::map<std::string, std::string>(), "")
 {
-	status = Status::REQUEST_RECEIVING;
+	status = REQUEST_RECEIVING;
 }
 
 Client::~Client()
