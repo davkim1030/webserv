@@ -116,6 +116,36 @@ int ResponseHandler::checkPath(std::string path)
 	return (NOT_FOUND);
 }
 
+
+/*
+	cgi 처리 단계
+	1. 들어온 파일 확인해서 cgi 확장자인지 확인
+	2. cgi 이름에 맞는 파일이 있는지 찾기 ex) test.bla 들어오면 cgi_test 찾기
+	3. uri 내부에 ?가 있는지 확인 후 ? 뒤에 있는 정보들은 query_string으로 저장
+	4. 기본 환경변수 목록 만들기 -> map으로 저장해두면 편할 것 같음
+	5. 저장된 환경변수 char** 형태로 가공
+	
+
+*/
+void ResponseHandler::cgi()
+{
+	std::string uri = request.getUri();
+	std::cout << "test : " << uri << std::endl;
+	std::string loc = uri.substr(0, uri.rfind('/') + 1);
+	Location *locat = server->getLocation(loc);
+	locat->printItem();
+}
+
+// cgi 실행 여부 판단
+int ResponseHandler::isCgi() //later 
+{
+	// cgi extension 확인 후 넘기기
+
+
+
+	return (1);
+}
+
 /*
 * 입력 메소드와 헤더를 판단해 대응하는 응답값을 출력합니다.
 * @return 응답값을 담은 Response
@@ -129,8 +159,15 @@ Response ResponseHandler::makeResponse()
 		또한 Host 헤더가 들어오면, Host헤더의 value 포트로 이동하게 해주세요!
 	*/
 
+	server->printItem();
 	try{
 		location = server->getLocation(request.getUri());
+
+		if (isCgi())
+		{
+			cgi();
+		}
+
 		if (location == NULL)
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
 
@@ -160,6 +197,8 @@ Response ResponseHandler::makeResponse()
 		* 3. redirection 처리
 		* 가 추가되어야 합니다.
 		*/
+		
+
 
 		if (request.getMethod() == "GET" || request.getMethod() == "POST")
 			makeGetResponse(0);

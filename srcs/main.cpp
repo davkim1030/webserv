@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
         std::vector<Server> server = ServerConfig::getInstance()->getServers();
 		Request request(buffer);
 		request.parseRequest();
-		ResponseHandler responseHandler(request, --server.end());
+		ResponseHandler responseHandler(request, server.begin());
 		Response Res = responseHandler.makeResponse();
 	    write(new_socket , hello , strlen(hello));
         printf("------------------Hello message sent-------------------\n");

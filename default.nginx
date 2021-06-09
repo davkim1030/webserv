@@ -5,16 +5,19 @@
 user  nginx; # 유저 권한
 worker_processes  1; # 프로세스 실행 가능 수
 
-us 23# clnt_addr_siz
-key 1;vale
-
 error_log  /var/log/nginx/error.log warn; # 에러 정보 저장
 pid        /var/run/nginx.pid; # 마스터 프로세스 ID 저장
 
 server {
-	listen 80 default_server; # testline
+	server_name default_server;
+	listen 80;
 
-	return 301 https://$host$request_uri;
+	location / {
+		allow_method GET;
+		cgi_path /
+		cgi_extention .bla
+	}
+
 }
 
 server {

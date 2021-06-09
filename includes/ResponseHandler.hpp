@@ -84,6 +84,11 @@ class ResponseHandler
 
 		//경로를 확인하는 함수
 		int checkPath(std::string);
+
+
+		//joockim
+		int isCgi();
+		void cgi();
 };
 
 #endif
