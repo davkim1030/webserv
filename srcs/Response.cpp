@@ -202,7 +202,7 @@ std::string Response::getMessage()
 {
     std::string result;
 
-    result = "HTTP/" + version + " " + ft_itoa(statusCode) + " " + statusMessage + "\r\n";
+    result = version + " " + ft_itoa(statusCode) + " " + statusMessage + "\r\n";
     for (std::map<std::string, std::string>::iterator iter = header.begin();
             iter != header.end(); iter++)
         result += iter->first + ": " + iter->second + "\n";

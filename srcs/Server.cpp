@@ -1,6 +1,7 @@
 #include "webserv.h"
 #include "Location.hpp"
 #include "Server.hpp"
+#include "Exception.hpp"
 
 Server::Server() {}
 
@@ -155,7 +156,7 @@ void Server::printItem()
 	}
 	for (std::vector<Location>::iterator it = location.begin(); it != location.end(); it++)
 		it->printItem();
-	
+
 	std::cout << "==================================================" << std::endl;
 }
 

@@ -1,3 +1,4 @@
+
 # **************************************************************************** #
 #                                                                              #
 #                                                         :::      ::::::::    #
@@ -14,7 +15,11 @@ SRC		=	main.cpp \
 			ServerConfig.cpp \
 			Server.cpp \
 			Location.cpp \
-			Exception.cpp
+			Exception.cpp \
+			Response.cpp \
+			Request.cpp \
+			ResponseHandler.cpp \
+			ResponseHeader.cpp
 
 SRCDIR	=	./srcs/
 SRCS	=	$(addprefix $(SRCDIR), $(SRC))
