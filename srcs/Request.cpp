@@ -170,6 +170,11 @@ std::string Request::getMethod(void) const {	return this->method;	}
 std::string Request::getRawUri(void) const {	return this->rawUri;	}
 
 /*
+* rawUri에서 파싱된 경로값을 취합니다.
+*/
+std::string Request::getDirectory(void) const {	return this->directory;	}
+
+/*
 * http 버전 값을 취합니다.
 */
 std::string Request::getHttpVersion(void) const {	return this->httpVersion;	}
