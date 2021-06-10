@@ -177,7 +177,13 @@ char** ResponseHandler::cgiRequest()
 
 void ResponseHandler::cgiResponse(char **envp)
 {
+	while(*envp)
+	{
+		std::cout << *envp << std::endl;
+		envp++;
+	}
 
+	int fd[2];
 }
 
 // cgi 실행 여부 판단
