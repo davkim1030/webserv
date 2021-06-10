@@ -124,7 +124,12 @@ int ResponseHandler::checkPath(std::string path)
 	3. uri 내부에 ?가 있는지 확인 후 ? 뒤에 있는 정보들은 query_string으로 저장
 	4. 기본 환경변수 목록 만들기 -> map으로 저장해두면 편할 것 같음
 	5. 저장된 환경변수 char** 형태로 가공
-	
+	6. 완성된 환경변수를 이용 해 cgi call
+		6-1. pipe 생성 후 fcntl로 파일 속성 변경 (NON_BLOCK)
+		6-2. fork로 프로세스 분리
+		6-3. 가공된 정보를 통해 cgi 실행
+		6-4. execve(실행할 파일 이름, (여긴 좀 더 알아볼 것_), 가공해둔 envp)
+	7. execve에서 실행된 결과를 pipe를 통해 가져와서 body로 넘겨주기
 
 */
 void ResponseHandler::cgi()
