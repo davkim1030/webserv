@@ -132,13 +132,9 @@ int ResponseHandler::checkPath(std::string path)
 	7. execve에서 실행된 결과를 pipe를 통해 가져와서 body로 넘겨주기
 
 */
-void ResponseHandler::cgi()
+void ResponseHandler::cgiRequest()
 {
-	std::string uri = request.getUri();
-	std::cout << "test : " << uri << std::endl;
-	std::string loc = uri.substr(0, uri.rfind('/') + 1);
-	Location *locat = server->getLocation(loc);
-	locat->printItem();
+	
 }
 
 // cgi 실행 여부 판단

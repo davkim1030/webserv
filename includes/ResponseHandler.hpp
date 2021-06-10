@@ -88,7 +88,7 @@ class ResponseHandler
 
 		//joockim
 		int isCgi();
-		void cgi();
+		void cgiRequest();
 };
 
 #endif

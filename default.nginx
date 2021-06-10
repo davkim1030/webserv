@@ -13,10 +13,13 @@ server {
 	listen 80;
 
 	location / {
+		root /test/
 		allow_method GET;
-		cgi_path /
+		cgi_path ./
 		cgi_extention .bla
 	}
+
+	
 
 }
 
@@ -30,18 +33,14 @@ server {
 		server_name _;
 
 		location / {
-			allow_method GET POST
+			allow_method GET POST;
 			autoindex on;
 			try_files $uri $uri/ =404;
 		}
 
 		location /test/ {
 			autoindex on;
-			try_files $uri $uri/ =404;
+			allow_method GET POST HEAD DELETE
 		}
 
-		location ~ \.php$ {
-			include snippets/fastcgi-php.conf;
-			fastcgi_pass unix:/var/run/php/php7.3-fpm.sock;
-		}
 }
