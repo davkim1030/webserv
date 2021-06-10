@@ -6,7 +6,7 @@
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
 
-ResponseHandler::ResponseHandler(Request &request, std::vector<Server>::iterator server)
+ResponseHandler::ResponseHandler(Request &request, std::vector<Server> server)
 :request(request), server(server){
 	this->mimeType[".aac"] = "audio/aac";
 	this->mimeType[".abw"] = "application/x-abiword";

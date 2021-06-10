@@ -35,7 +35,7 @@ Response::Response(const Response &other)
  */
 Response::Response(int statusCode, std::map<std::string, std::string> header,
         std::string body, std::string version)
-    : version(version), statusCode(statusCode), header(header), body(body)
+    : version(version), statusCode(statusCode), header(header), body(body), lastResponse(0)
 {
     switch (statusCode)
     {
@@ -182,6 +182,7 @@ Response &Response::operator=(const Response &other)
         statusMessage = other.statusMessage;
         header = other.header;
         body = other.body;
+        lastResponse = other.lastResponse;
     }
     return (*this);
 }
@@ -209,6 +210,29 @@ std::string Response::getMessage()
         result += iter->first + ": " + iter->second + "\n";
     result += "\r\n" + body + "\r\n";
     return (result);
+}
+
+int Response::getLastResponse()
+{
+    return (lastResponse);
+}
+
+void Response::setLastResponse(int lastResponse)
+{
+    this->lastResponse = lastResponse;
+}
+
+/*
+ * 리스폰스 객체 초기화
+ */
+void    Response::initResponse()
+{
+    version = "HTTP/1.1";
+    statusCode = 0;
+    statusMessage.clear();
+    header.clear();
+    body.clear();
+    lastResponse = 0;
 }
 
 const std::string    Response::_100 = "Continue";

@@ -109,6 +109,8 @@ bool Socket::runServer(struct timeval timeout, unsigned int bufferSize)
 	int					fdNum;
 	char				buf[bufferSize];
 
+	unsigned long		timeoutMs = timeout.tv_sec * 1000 + timeout.tv_usec / 1000;
+
 	while (1)
 	{
 		usleep(5);	// cpu 100% 점유 방지
@@ -143,40 +145,93 @@ bool Socket::runServer(struct timeval timeout, unsigned int bufferSize)
 					
 					clients[clientSocket].setServerSocketFd(i);
 					clients[clientSocket].setSocketFd(clientSocket);
-					clients[clientSocket].setLastReqMs();	// TODO: ms 단위 현재 시간 가져오는 함수 만들기
+					clients[clientSocket].setLastReqMs(ft_get_time());
 				}
 				else						// 클라이언트 소켓
 				{
 					int		len;
 					bool	isReadable = false;
 
-					clients[i].setLastReqMs();		// TODO: ms 단위 현재 시간 가져오는 함수 만들기
+					clients[i].setLastReqMs(ft_get_time());
 					while ((len = read(i, buf, bufferSize)) > 0)
 					{
 						isReadable = true;
 						buf[len] = 0;
-						clients[i].getRawRequest() += buf;
+						clients[i].getRequest().setRawRequest(
+							clients[i].getRequest().getRawRequest() + buf
+						);
 					}
-					if (clients[i].getStatus() == REQUEST_RECEIVING && clients[i].getRequest)
+					if (clients[i].getStatus() == REQUEST_RECEIVING && clients[i].getRequest().isParsable())
+					{
+						// Request::host 처리하는 부분 구현 필요
+						std::string serverName = clients[i].getRequest().getHost();
+						size_t	idx;
+						if ((idx = serverName.find(':') ) != std::string::npos)
+							serverName = serverName.substr(0, idx);
+						clients[i].setResponse(ResponseHandler(clients[i].getRequest(), ServerConfig::getInstance()->getServers()).makeResponse());
+						// clients[i].getResponse().makeResponse(clients[i].getRequest(), getPerfectLocation(clients[i].getServerSocketFd(), serverName, clients[i].getRequest().getDirectory() ));
+						clients[i].getRequest().initRequest();
+						clients[i].setStatus(RESPONSE_READY);
+					}
+					if (isReadable == false)
+					{
+						clearConnectedSocket(i);
+						if (len == 0)
+							std::cout << "Disconnected " << i << "in Server" << std::endl;
+						else
+							std::cout << "Error occured client " << i << "in Server" << std::endl;
+					}
+				}
+			}
+			else if (FD_ISSET(i, &wfds))	// write 요청이 온 경우
+			{
+				// 항상 클라이언트 소켓만 들어옴
+				if (ft_get_time() - clients[i].getLastReqMs() > timeoutMs)
+				{
+					clearConnectedSocket(i);
+					continue ;
+				}
+				if (clients[i].getStatus() == RESPONSE_READY)
+				{
+					write(i, clients[i].getResponse().getMessage().c_str(), clients[i].getResponse().getMessage().size());
+					if (clients[i].getResponse().getLastResponse() == 401)
+						clearConnectedSocket(i);
+					else
+					{
+						clients[i].getResponse();
+						clients[i].setStatus(REQUEST_RECEIVING);
+					}
+				}
+			}
+			else if (FD_ISSET(i, &efds))	// except 요청이 온 경우
+			{
+				if (servers.count(i) == 1)
+				{
+					FD_CLR(i, &rfds);
+					FD_CLR(i, &efds);
+					close(i);
+					servers.erase(servers.find(i));
+				}
+				else
+				{
+					clearConnectedSocket(i);
 				}
 			}
 		}
 	}
-	timeout.tv_sec += 1;
-	bufferSize = bufferSize + 1;
-	return false;
+	return (true);
 }
 
 /*
  * 연결된 클라이언트의 fd를 fd_set들에서 clear하고 연결을 close 함
  * @param int socketFd: 연결을 종료할 클라이언트 소켓 fd
  */
-void	Socket::clearConnectedSocket(int socketFd)
+void	Socket::clearConnectedSocket(int fd)
 {
-	FD_CLR(socketFd, &rfds);
-	FD_CLR(socketFd, &wfds);
-	FD_CLR(socketFd, &efds);
+	FD_CLR(fd, &rfds);
+	FD_CLR(fd, &wfds);
+	FD_CLR(fd, &efds);
 
-	close(socketFd);
-	clients.erase(clients.find(socketFd));
+	close(fd);
+	clients.erase(clients.find(fd));
 }

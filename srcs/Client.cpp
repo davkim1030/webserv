@@ -6,7 +6,7 @@
  * fd 값들을 -1로 지정하여 초기화 하지 않으면 사용 못 하게 함
  */
 Client::Client() : status(REQUEST_RECEIVING), serverSocketFd(-1), socketFd(-1),
-		response(200, std::map<std::string, std::string>(), "")
+		request(""), response(200, std::map<std::string, std::string>(), "")
 {
 }
 
@@ -17,7 +17,7 @@ Client::Client() : status(REQUEST_RECEIVING), serverSocketFd(-1), socketFd(-1),
  */
 Client::Client(int serverSocketFd, int socketFd)
 	: serverSocketFd(serverSocketFd), socketFd(socketFd),
-	response(200, std::map<std::string, std::string>(), "")
+	request(""), response(200, std::map<std::string, std::string>(), "")
 {
 	status = REQUEST_RECEIVING;
 }
@@ -51,6 +51,11 @@ void	Client::setLastReqMs(unsigned long lastReqMs)
 	this->lastReqMs = lastReqMs;
 }
 
+void	Client::setResponse(const Response &response)
+{
+	this->response = response;
+}
+
 int		Client::getSocketFd()
 {
 	return (socketFd);
@@ -59,11 +64,6 @@ int		Client::getSocketFd()
 int		Client::getServerSocketFd()
 {
 	return (serverSocketFd);
-}
-
-std::string	&Client::getRawRequest()
-{
-	return (rawRequest);
 }
 
 Response	&Client::getResponse()

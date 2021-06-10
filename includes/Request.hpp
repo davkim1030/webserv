@@ -24,10 +24,13 @@ class Request
 		std::string getRawHeader(void) const;
 		std::map<std::string, std::string> getHeader(void) const;
 		std::string getRawBody(void) const;
+		std::string const &getRawRequest(void);
+		std::string const &getHost(void);
 
 		void	initRequest(void);
 		void	setRawRequest(std::string);
 		void	parseRequest(void);
+		bool	isParsable();
 
 	private:
 		Request();
@@ -39,6 +42,7 @@ class Request
 		//uri에서 파싱된 directory, 아니라면 rawUri와 동일
 		std::string directory;
 		std::string	httpVersion;
+		std::string host;
 
 		std::string rawHeader;
 		std::map<std::string, std::string> header;

@@ -6,6 +6,7 @@
 # include "Server.hpp"
 # include "ServerConfig.hpp"
 # include "Location.hpp"
+# include "ResponseHandler.hpp"
 
 /*
  * 소켓 통신 서버
@@ -24,7 +25,7 @@ class Socket
 		Socket(Socket const &so);
 		Socket &operator=(Socket const &so);
 
-		void	clearConnectedSocket(int socketFd);
+		void clearConnectedSocket(int fd);
 
 		class SocketException : public std::exception
 		{

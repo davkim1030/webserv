@@ -153,10 +153,23 @@ std::map<std::string, std::string> Request::parseHeader(std::string rawHeader)
 	return header;
 }
 
+bool Request::isParsable()
+{
+	return (rawRequest.find("\r\n"));
+}
+
 /*
 * 가공되지 않은 요청 문자열에 인자로 받은 string을 할당합니다.
 */
 void Request::setRawRequest(std::string data){	this->rawRequest = data;	}
+
+/*
+ * 정제되지 않은 기본 리퀘스트를 가져온다.
+ */
+std::string const &Request::getRawRequest()
+{
+	return (rawRequest);
+}
 
 /*
 * method 값을 취합니다.
@@ -193,3 +206,10 @@ std::map<std::string, std::string> Request::getHeader(void) const {	return this-
 */
 std::string Request::getRawBody(void) const {	return this->rawBody;	}
 
+/*
+ * Request의 host 정보를 가져온다.
+ */
+std::string const &Request::getHost(void)
+{
+	return host;
+}

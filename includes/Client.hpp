@@ -23,7 +23,7 @@ class Client
 		Status			status;			// 현재 상태
 		int				serverSocketFd;	// 클라이언트가 연결될 서버 소켓의 fd
 		int				socketFd;		// 클라이언트에 할당된 소켓 fd
-		std::string		rawRequest;		// 리퀘스트로 만들 문자열
+		Request			request;		// 리퀘스트 데이터
 		Response		response;		// 돌려줄 리스폰스
 		long long		remainBody;		// 남은 바디 길이
 		unsigned long	lastReqMs;		// 마지막으로 통신한 시간
@@ -39,11 +39,12 @@ class Client
 		void		setStatus(Status status);
 		void		setRemainBody(long long remainBody);
 		void		setLastReqMs(unsigned long lastReqMs);
+		void		setResponse(const Response &response);
 
 		// getters
 		int			getSocketFd();
 		int			getServerSocketFd();
-		std::string	&getRawRequest();
+		Request		&getRequest();
 		Response	&getResponse();
 		Status		getStatus();
 		long long	getRemainBody();
