@@ -17,7 +17,7 @@ private:
     std::string body;                           // 바디 문자열
 
     Response();
-    
+
 public:
     // Constants
     /*
@@ -33,7 +33,7 @@ public:
     static const std::string    _204;   // No Content
     static const std::string    _205;   // Reset Content
     static const std::string    _206;   // Partial Content
-    
+
     static const std::string    _300;   // Multiple Choices
     static const std::string    _301;   // Moved Permanently
     static const std::string    _302;   // Found
@@ -80,7 +80,7 @@ public:
     // Constructors & destructor
     Response(const Response &other);
     Response(int statusCode, std::map<std::string, std::string> header,
-            std::string body, std::string version="1.1");
+            std::string body, std::string version="HTTP/1.1");
     ~Response();
 
     // Operator overloading

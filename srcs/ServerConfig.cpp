@@ -1,5 +1,6 @@
 #include "webserv.h"
 #include "Server.hpp"
+#include "Exception.hpp"
 #include "ServerConfig.hpp"
 #include "Exception.hpp"
 
