@@ -198,7 +198,7 @@ Response ResponseHandler::makeResponse()
 		* 3. redirection 처리
 		* 가 추가되어야 합니다.
 		*/
-		
+
 
 
 		if (request.getMethod() == "GET" || request.getMethod() == "POST")
