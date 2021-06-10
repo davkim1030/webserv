@@ -148,7 +148,7 @@ Response ResponseHandler::makeResponse()
 		else if (request.getMethod() == "CONNECT")
 			makeConnectResponse();
 
-		this->resourcePath = request.getRawUri(); //나중에 root 들어오면 앞에 붙여주세요
+		this->resourcePath = request.getUri(); //나중에 root 들어오면 앞에 붙여주세요
 		//경로 한번 더 검사-> 존재 안하면
 		if (checkPath(this->resourcePath) == NOT_FOUND && request.getMethod() != "PUT" && request.getMethod() != "POST")
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
@@ -370,7 +370,7 @@ std::string ResponseHandler::makeAutoIndexPage(std::string resourcePath)
 	body += "<head>";
 	body += "</head>";
 	body += "<body>";
-	body += "<h1> Index of "+ request.getRawUri() + "</h1>";
+	body += "<h1> Index of "+ request.getUri() + "</h1>";
 
 	DIR *dir = NULL;
 	if ((dir = opendir(resourcePath.c_str())) == NULL)
