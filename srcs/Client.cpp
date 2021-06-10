@@ -61,9 +61,9 @@ int		Client::getServerSocketFd()
 	return (serverSocketFd);
 }
 
-Request	&Client::getRequest()
+std::string	&Client::getRawRequest()
 {
-	return (request);
+	return (rawRequest);
 }
 
 Response	&Client::getResponse()

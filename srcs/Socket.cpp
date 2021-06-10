@@ -100,6 +100,68 @@ bool Socket::initServer(int socketCnt)
 
 bool Socket::runServer(struct timeval timeout, unsigned int bufferSize)
 {
+	fd_set	cpyRfds;
+	fd_set	cpyWfds;
+	fd_set	cpyEfds;
+
+	struct sockaddr_in	clientAddr;
+	socklen_t			addrSize = sizeof(clientAddr);
+	int					fdNum;
+	char				buf[bufferSize];
+
+	while (1)
+	{
+		usleep(5);	// cpu 100% 점유 방지
+
+		// fds들의 데이터 유실 방지를 위해 복사
+		cpyRfds = rfds;
+		cpyWfds = wfds;
+		cpyEfds = efds;
+
+		// fd_set 변수의 0 ~ fdMax + 1까지 비트를 감시하여 읽기, 쓰기, 에러 요구가 일어났는지 확인
+		if ((fdNum = select(fdMax + 1, &cpyRfds, &cpyWfds, &cpyEfds, &timeout)) == -1)
+			// TODO: throw proper error
+		if (fdNum == 0) // 처리할 요구가 없으면 다시 위로
+			continue ;
+
+		// fd를 0부터 fdMax - 1까지 반복하며 set된 플래그 값이 있는지 확인하여 처리		
+		for (int i = 0; i < fdMax; i++)
+		{
+			if (FD_ISSET(i, &cpyRfds))	// read 요청이 온 경우
+			{
+				if (servers.count(i) == 1)	// 서버 소켓의 경우
+				{
+					int clientSocket = accept(i, (struct sockaddr *)&clientAddr, &addrSize);
+					if (clientSocket == -1)
+						throw AcceptException();
+					fcntl(clientSocket, F_SETFL, O_NONBLOCK);	// 해당 클라이언트 fd를 논블록으로 변경
+					FD_SET(clientSocket, &wfds);
+					FD_SET(clientSocket, &rfds);
+					FD_SET(clientSocket, &efds);
+					if (fdMax < clientSocket)
+						fdMax = clientSocket;
+					
+					clients[clientSocket].setServerSocketFd(i);
+					clients[clientSocket].setSocketFd(clientSocket);
+					clients[clientSocket].setLastReqMs();	// TODO: ms 단위 현재 시간 가져오는 함수 만들기
+				}
+				else						// 클라이언트 소켓
+				{
+					int		len;
+					bool	isReadable = false;
+
+					clients[i].setLastReqMs();		// TODO: ms 단위 현재 시간 가져오는 함수 만들기
+					while ((len = read(i, buf, bufferSize)) > 0)
+					{
+						isReadable = true;
+						buf[len] = 0;
+						clients[i].getRawRequest() += buf;
+					}
+					if (clients[i].getStatus() == REQUEST_RECEIVING && clients[i].getRequest)
+				}
+			}
+		}
+	}
 	timeout.tv_sec += 1;
 	bufferSize = bufferSize + 1;
 	return false;
