@@ -77,7 +77,7 @@ void Request::initRequest(void)
 }
 
 /*
-* 가공되지 않은 요청 문자열을 가져와 method, rawUri, httpVersion, header, body를 파싱합니다.
+* 가공되지 않은 HTTP 요청 문자열을 가져와 method, rawUri, httpVersion, header, body를 파싱합니다.
 */
 void Request::parseRequest(void)
 {
@@ -96,14 +96,14 @@ void Request::parseRequest(void)
 }
 
 /*
-* 가공되지 않은 요청 문자열에서 method를 파싱합니다.
+* 가공되지 않은 HTTP 요청 문자열에서 method를 파싱합니다.
 */
 std::string Request::parseMethod(void) {
 	return (this->rawRequest.substr(0, rawRequest.find(' ')));
 }
 
 /*
-* 가공되지 않은 요청 문자열에서 uri를 파싱합니다.
+* 가공되지 않은 HTTP 요청 문자열에서 uri를 파싱합니다.
 */
 std::string Request::parseUri(void) {
 	std::string firstLine = this->rawRequest.substr(0, this->rawRequest.find("\r\n"));
@@ -122,7 +122,7 @@ std::string Request::parseDirectory(void) {
 }
 
 /*
-* 가공되지 않은 요청 문자열에서 HTTP 버전을 파싱합니다.
+* 가공되지 않은 HTTP 요청 문자열에서 HTTP 버전을 파싱합니다.
 */
 std::string Request::parseHttpVersion(void) {
 	std::string firstLine = this->rawRequest.substr(0, this->rawRequest.find("\r\n"));
@@ -130,7 +130,7 @@ std::string Request::parseHttpVersion(void) {
 }
 
 /*
-* 가공되지 않은 요청 문자열에서 헤더를 키와 밸류값으로 나누어 파싱합니다.
+* 가공되지 않은 HTTP 요청 문자열에서 헤더를 키와 밸류값으로 나누어 파싱합니다.
 */
 std::map<std::string, std::string> Request::parseHeader(std::string rawHeader)
 {
@@ -155,7 +155,7 @@ std::map<std::string, std::string> Request::parseHeader(std::string rawHeader)
 }
 
 /*
-* 가공되지 않은 요청 문자열에 인자로 받은 string을 할당합니다.
+* 가공되지 않은 HTTP 요청 문자열에 인자로 받은 string을 할당합니다.
 */
 void Request::setRawRequest(std::string data){	this->rawRequest = data;	}
 
