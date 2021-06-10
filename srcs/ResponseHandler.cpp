@@ -131,21 +131,78 @@ int ResponseHandler::checkPath(std::string path)
 		6-4. execve(실행할 파일 이름, (여긴 좀 더 알아볼 것_), 가공해둔 envp)
 	7. execve에서 실행된 결과를 pipe를 통해 가져와서 body로 넘겨주기
 
-*/
-void ResponseHandler::cgiRequest()
-{
 	
+*/
+char** ResponseHandler::cgiRequest()
+{
+	std::map<std::string, std::string> metaVariable;
+
+	metaVariable["AUTH_TYPE"] = "null";
+	metaVariable["CONTENT_LENGTH"] = "100";
+	metaVariable["CONTENT_TYPE"] = "MIME type";
+	metaVariable["GATEWAY_INTERFACE"] = "CGI/1.1";
+
+	// /test/cgi.bla/path/?query_string -> 이렇게 들어올 수 있음
+	// 뒤에 아무것도 안들어오는 경우, /만 들어오고 끝나는 경우, /path 하고 들어오는 경우
+	//   uri 통째로 써주기 ,      /만 써주기,             /path 써주기
+	metaVariable["PATH_INFO"] = "/";
+	metaVariable["PATH_TRANSLATED"] = "root/PATH_INFO";
+	metaVariable["QUERY_STRING"] = "QUERY_STRING";
+
+	metaVariable["REMOTE_ADDR"] = "clientIP"; // 클라이언트의 IP
+	metaVariable["REMOTE_IDENT"] = ""; // 없어두됨
+	metaVariable["REMOTE_USER"] = ""; // 없어두됨 REMOTE 둘 다 AUTH 파일에 넘겨져 온다고 생각 중
+	
+	metaVariable["REQUEST_METHOD"] = "GET";
+	metaVariable["REQUEST_URI"] = "URI";
+	metaVariable["SCRIPT_NAME"] = ".bla file";
+	metaVariable["SERVER_NAME"] = "my server name";
+	metaVariable["SERVER_PORT"] = "server port";
+	metaVariable["SERVER_PROTOCOL"] = "HTTP/1.1";
+	metaVariable["SERVER_SOFTWARE"] = "joockim/1.1";
+
+
+	char **res = (char **)malloc(sizeof(char *) * metaVariable.size() + 1);
+	int i = 0;
+	for (std::map<std::string, std::string>::const_iterator it = metaVariable.begin();
+	it != metaVariable.end(); it++)
+	{
+		std::string temp = std::string(it->first + "=" + it->second);
+		res[i] = ft_strdup(temp.c_str());
+		i++;
+	}
+	res[i] = NULL;
+	return res;
+}
+
+void ResponseHandler::cgiResponse(char **envp)
+{
+
 }
 
 // cgi 실행 여부 판단
 int ResponseHandler::isCgi() //later 
 {
 	// cgi extension 확인 후 넘기기
+	/*
+		/test/
+		/test/test.bla
+		/test/test.bla?query_string
+		/test/test.bla/path/
+		/test/test.bla/path/?query_string
+	*/
+	std::string uri = request.getRawUri();
+	std::cout << "uri test : " << uri << std::endl;
 
+	if (uri.find(".bla") != std::string::npos)
+		std::cout << "bla find " << std::endl;
+
+	
 
 
 	return (1);
 }
+
 
 /*
 * 입력 메소드와 헤더를 판단해 대응하는 응답값을 출력합니다.
@@ -162,11 +219,12 @@ Response ResponseHandler::makeResponse()
 
 	server->printItem();
 	try{
-		location = server->getLocation(request.getUri());
+		location = server->getLocation(request.getDirectory());
 
 		if (isCgi())
 		{
-			cgi();
+			std::cout << "cgi on " << std::endl;
+			cgiResponse(cgiRequest());
 		}
 
 		if (location == NULL)
@@ -186,7 +244,7 @@ Response ResponseHandler::makeResponse()
 		else if (request.getMethod() == "CONNECT")
 			makeConnectResponse();
 
-		this->resourcePath = request.getUri(); //나중에 root 들어오면 앞에 붙여주세요
+		this->resourcePath = request.getRawUri(); //나중에 root 들어오면 앞에 붙여주세요
 		//경로 한번 더 검사-> 존재 안하면
 		if (checkPath(this->resourcePath) == NOT_FOUND && request.getMethod() != "PUT" && request.getMethod() != "POST")
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
@@ -410,7 +468,7 @@ std::string ResponseHandler::makeAutoIndexPage(std::string resourcePath)
 	body += "<head>";
 	body += "</head>";
 	body += "<body>";
-	body += "<h1> Index of "+ request.getUri() + "</h1>";
+	body += "<h1> Index of "+ request.getRawUri() + "</h1>";
 
 	DIR *dir = NULL;
 	if ((dir = opendir(resourcePath.c_str())) == NULL)

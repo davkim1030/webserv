@@ -14,7 +14,8 @@ class Location
 	private:
 		std::string							path;
 		std::map<std::string, std::string>	option;
-
+		std::list<std::string> index;
+		std::list<std::string> allow_method;
 
 	public:
 		Location();

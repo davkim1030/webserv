@@ -20,7 +20,8 @@ Request::Request( const Request & src )
 {
 	setRawRequest(src.rawHeader);
 	this->method = src.getMethod();
-	this->uri = src.getUri();
+	this->rawUri = src.getRawUri();
+	this->directory = src.getDirectory();
 	this->httpVersion = src.getHttpVersion();
 	this->rawHeader = src.getRawHeader();
 	this->header = src.getHeader();
@@ -45,7 +46,8 @@ Request &				Request::operator=( Request const & rhs )
 	{
 		setRawRequest(rhs.rawHeader);
 		this->method = rhs.getMethod();
-		this->uri = rhs.getUri();
+		this->rawUri = rhs.getRawUri();
+		this->directory = rhs.getDirectory();
 		this->httpVersion = rhs.getHttpVersion();
 		this->rawHeader = rhs.getRawHeader();
 		this->header = rhs.getHeader();
@@ -64,7 +66,8 @@ Request &				Request::operator=( Request const & rhs )
 void Request::initRequest(void)
 {
 	this->method.clear();
-	this->uri.clear();
+	this->rawUri.clear();
+	this->directory.clear();
 	this->httpVersion.clear();
 
 	this->rawHeader.clear();
@@ -74,13 +77,14 @@ void Request::initRequest(void)
 }
 
 /*
-* 가공되지 않은 요청 문자열을 가져와 method, uri, httpVersion, header, body를 파싱합니다.
+* 가공되지 않은 요청 문자열을 가져와 method, rawUri, httpVersion, header, body를 파싱합니다.
 */
 void Request::parseRequest(void)
 {
 	std::cout << "raw : " << rawRequest << std::endl;
 	this->method = parseMethod();
-	this->uri = parseUri();
+	this->rawUri = parseUri();
+	this->directory = parseDirectory();
 	this->httpVersion = parseHttpVersion();
 
 	std::size_t headerStartPos = this->rawRequest.find("\r\n") + 2;
@@ -100,13 +104,22 @@ std::string Request::parseMethod(void) {
 }
 
 /*
-* 가공되지 않은 요청 문자열에서 uri를 파싱합니다.
+* 가공되지 않은 HTTP 요청 문자열에서 uri를 파싱합니다.
 */
 std::string Request::parseUri(void) {
 	std::string firstLine = this->rawRequest.substr(0, this->rawRequest.find("\r\n"));
 	std::size_t start = firstLine.find(' ');
 	std::size_t end = firstLine.find_last_of(' ');
 	return (firstLine.substr(start + 1, end - start - 1));
+}
+
+/*
+* rawUri에서 directory를 파싱합니다. uri가 directory이거나 /가 존재하지 않을 경우 반환값은 rawUri와 동일합니다.
+*/
+std::string Request::parseDirectory(void) {
+	if (this->rawUri[this->rawUri.size() - 1] == '/' || this->rawUri.find('/') == std::string::npos)
+		return this->rawUri;
+	return (this->rawUri.substr(0, this->rawUri.find_last_of('/') + 1));
 }
 
 /*
@@ -153,9 +166,14 @@ void Request::setRawRequest(std::string data){	this->rawRequest = data;	}
 std::string Request::getMethod(void) const {	return this->method;	}
 
 /*
-* uri 값을 취합니다.
+* rawUri 값을 취합니다.
 */
-std::string Request::getUri(void) const {	return this->uri;	}
+std::string Request::getRawUri(void) const {	return this->rawUri;	}
+
+/*
+* rawUri에서 파싱된 경로값을 취합니다.
+*/
+std::string Request::getDirectory(void) const {	return this->directory;	}
 
 /*
 * http 버전 값을 취합니다.

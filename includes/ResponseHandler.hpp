@@ -88,7 +88,8 @@ class ResponseHandler
 
 		//joockim
 		int isCgi();
-		void cgiRequest();
+		char** cgiRequest();
+		void cgiResponse(char **envp);
 };
 
 #endif
