@@ -15,6 +15,7 @@ server {
 	location / {
 		root /test/
 		allow_method GET;
+
 		cgi_path ./
 		cgi_extention .bla
 		cgi_extention .p
