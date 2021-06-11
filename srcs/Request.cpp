@@ -94,9 +94,11 @@ void Request::parseRequest(void)
 	std::size_t headerEndPos = this->rawRequest.find("\r\n\r\n");
 	this->rawHeader = this->rawRequest.substr(headerStartPos, headerEndPos - headerStartPos + 2);
 
-	this->rawBody = this->rawRequest.substr(headerEndPos + 4, this->rawRequest.length() - headerEndPos);
-
 	this->header = parseHeader(this->getRawHeader());
+	if (this->getHeader()["Transfer-Encoding"] != "chunked")
+		this->rawBody = this->rawRequest.substr(headerEndPos + 4, this->rawRequest.length() - headerEndPos);
+	else
+		this->rawBody = parseBody();
 }
 
 /*
@@ -104,6 +106,24 @@ void Request::parseRequest(void)
 */
 std::string Request::parseMethod(void) {
 	return (this->rawRequest.substr(0, rawRequest.find(' ')));
+}
+
+/*
+*  Transfer-Encoding 헤더가 chunked 옵션으로 들어온 경우 body를 파싱합니다.
+*/
+std::string Request::parseBody(void) {
+		size_t dataSize;
+		std::string data;
+		std::string rawBody = this->rawRequest.substr(this->rawRequest.find("\r\n\r\n") + 4);
+
+		while ((dataSize = ft_atoi(rawBody.substr(0, rawBody.find("\r\n")).c_str())) != 0)
+		{
+			std::cout <<dataSize<<std::endl;;
+			rawBody = rawBody.substr(rawBody.find("\r\n") + 2);
+			data += rawBody.substr(0, dataSize);
+			rawBody = rawBody.substr(rawBody.find("\r\n") + 2);
+		}
+		return data;
 }
 
 /*

@@ -32,7 +32,7 @@ class Request
 
 	private:
 		Request();
-		
+
 		std::string	rawRequest;
 
 		std::string	method;
@@ -54,6 +54,7 @@ class Request
 		std::string parseDirectory(void);
 		std::string parseHttpVersion(void);
 		std::map<std::string, std::string> parseHeader(std::string);
+		std::string parseBody(void);
 };
 
 
