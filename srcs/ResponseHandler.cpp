@@ -177,12 +177,6 @@ char** ResponseHandler::cgiRequest()
 
 void ResponseHandler::cgiResponse(char **envp)
 {
-	while(*envp)
-	{
-		std::cout << *envp << std::endl;
-		envp++;
-	}
-
 	int fd[2];
 }
 
