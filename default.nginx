@@ -5,20 +5,31 @@
 user  nginx; # 유저 권한
 worker_processes  1; # 프로세스 실행 가능 수
 
-us 23# clnt_addr_siz
-key 1;vale
-
 error_log  /var/log/nginx/error.log warn; # 에러 정보 저장
 pid        /var/run/nginx.pid; # 마스터 프로세스 ID 저장
 
 server {
-	listen 80 default_server; # testline
+	server_name default_server;
+	listen 8084 127.0.0.1;
 
-	return 301 https://$host$request_uri;
+	location / {
+		root /test/
+		allow_method GET;
+		cgi_path ./
+		cgi_extention .bla
+		cgi_extention .p
+	}
+
+	location /test/ {
+		root /test/;
+		allow_method GET POST DELETE HEAD;
+	}
+	
+
 }
 
 server {
-		listen 443;
+		listen 8083;
 
 		root /var/www/html;
 
@@ -27,18 +38,14 @@ server {
 		server_name _;
 
 		location / {
-			allow_method GET POST
+			allow_method GET POST;
 			autoindex on;
 			try_files $uri $uri/ =404;
 		}
 
 		location /test/ {
 			autoindex on;
-			try_files $uri $uri/ =404;
+			allow_method GET POST HEAD DELETE
 		}
 
-		location ~ \.php$ {
-			include snippets/fastcgi-php.conf;
-			fastcgi_pass unix:/var/run/php/php7.3-fpm.sock;
-		}
 }
