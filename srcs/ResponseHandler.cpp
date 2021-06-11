@@ -138,7 +138,10 @@ Response ResponseHandler::makeResponse()
 		{
 			std::string allow = location->getOption("allow_method");
 			if (allow.find(request.getMethod()) == std::string::npos)
+			{
+				addAllowHeader(allow);
 				throwErrorResponse(METHOD_NOT_ALLOWED, request.getHttpVersion());
+			}
 		}
 
 		if (request.getMethod() == "TRACE")
@@ -179,6 +182,7 @@ Response ResponseHandler::makeResponse()
 
 	responseHeader.clear();
 	resourcePath.clear();
+	throwErrorResponse(500, request.getHttpVersion());
 	return Response(500, responseHeader, makeHTMLPage(ft_itoa(500)), request.getHttpVersion());
 }
 
@@ -277,7 +281,7 @@ Content-Length: 13
 
 say=Hi&to=Mom
 */
-O_APPEND
+// O_APPEND
 }
 
 /*
@@ -426,7 +430,6 @@ std::string ResponseHandler::makeHTMLPage(std::string str)
 {
 	std::string body;
 
-	addContentTypeHeader(".html");
 	body += "<!DOCTYPE html>\n";
 	body += "<html>\n";
 	body += "<head>\n";
@@ -442,17 +445,22 @@ std::string ResponseHandler::makeHTMLPage(std::string str)
 
 void ResponseHandler::throwErrorResponse(int httpStatus, std::string version) throw(Response)
 {
+	std::string body = makeHTMLPage(ft_itoa(httpStatus));
+	addDateHeader();
+	addServerHeader();
+	addContentTypeHeader(".html");
+	addContentLengthHeader((int)body.length());
 	switch (httpStatus)
 	{
 		case NOT_FOUND:
-			throw Response(404, responseHeader, makeHTMLPage(ft_itoa(404)), version);
+			throw Response(404, responseHeader, body, version);
 		case SERVER_ERR:
-			throw Response(500, responseHeader, makeHTMLPage(ft_itoa(500)), version);
+			throw Response(500, responseHeader, body, version);
 		case FORBIDDEN:
-			throw Response(403, responseHeader, makeHTMLPage(ft_itoa(403)), version);
+			throw Response(403, responseHeader, body, version);
 		case METHOD_NOT_ALLOWED:
-			throw Response(405, responseHeader, makeHTMLPage(ft_itoa(405)), version);
+			throw Response(405, responseHeader, body, version);
 		default:
-			throw Response(404, responseHeader, makeHTMLPage(ft_itoa(404)), version);
+			throw Response(404, responseHeader, body, version);
 	}
 }
