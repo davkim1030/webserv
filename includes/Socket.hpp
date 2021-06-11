@@ -7,6 +7,7 @@
 # include "ServerConfig.hpp"
 # include "Location.hpp"
 # include "ResponseHandler.hpp"
+# include "Exception.hpp"
 
 /*
  * 소켓 통신 서버
@@ -45,6 +46,12 @@ class Socket
 		};
 
 		class AcceptException : public std::exception
+		{
+			public:
+				virtual const char *what() const throw();
+		};
+
+		class SelectException : public std::exception
 		{
 			public:
 				virtual const char *what() const throw();

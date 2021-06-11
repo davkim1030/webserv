@@ -45,6 +45,7 @@ class Server
 
         int checkLine(std::string line);
         void configParse(std::string line);
+		int	 sliceOptions();
 
 		void printItem();
 };

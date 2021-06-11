@@ -6,7 +6,7 @@
 Server::Server() {}
 
 Server::Server(Server const &serv) : option(serv.option), location(serv.location),
-		ip("127.0.0.1"), port(0), serverName("_"), socketFd(-1)
+		ip(serv.ip), port(serv.port), serverName(serv.serverName), socketFd(serv.socketFd)
 {}
 
 Server &Server::operator=(Server const &serv)
@@ -15,6 +15,10 @@ Server &Server::operator=(Server const &serv)
     {
         option = serv.option;
         location = serv.location;
+		ip = serv.ip;
+		port = serv.port;
+		serverName = serv.serverName;
+		socketFd = serv.socketFd;
     }
     return *this;
 }
@@ -131,14 +135,34 @@ Server::Server(std::list<std::string> &strlst)
 			configParse(*it);
 		}
 	}
-	if (option.find("listen") != option.end())
-		port = static_cast<unsigned int>(ft_atoi(option["listen"].c_str()));
-	else
-		parenFlag = -1;
-	splitSpaces(option["listen"]);
+	// ip, server_name, port 를 넣는다
+	parenFlag = parenFlag != -1 ? parenFlag : sliceOptions();
 	// parenFlag != -1 -> error
 	if (parenFlag != -1)
 		throw WrongFileFormatException();
+}
+
+/*
+ * 설정(config) 파일을 읽고난 후에 ip, port, server_name 자르고 저장하는 부분
+ * listen port ip 순으로 와야 하고 ip가 오지 않으면 기본으로 127.0.0.1을 설정
+ * server_name이 없으면 에러
+ * @return int: 이상 없으면 -1, 이상 있으면 1
+ */
+int Server::sliceOptions()
+{
+	std::vector<std::string> portIp;
+	
+	if (option.count("listen") == 0 || option.count("server_name") == 0)
+		return (1);
+	portIp = splitSpaces(option["listen"]);
+	if (portIp.size() == 1)
+		portIp.push_back("127.0.0.1");
+	else if (portIp.size() < 1)
+		return (1);
+	port = static_cast<unsigned int>(ft_atoi(portIp.at(0).c_str()));
+	ip = portIp.at(1);
+	serverName = option["server_name"];
+	return (-1);
 }
 
 /*

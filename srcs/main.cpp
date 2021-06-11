@@ -24,6 +24,10 @@ int		main(int argc, char *argv[])
         {
             // 서버 개수만큼 소켓 초기화
             socket.initServer(ServerConfig::getInstance()->getServers().size());
+            struct timeval timeout;
+            timeout.tv_sec = 5;
+            timeout.tv_usec = 0;
+            socket.runServer(timeout, 100);
         }
     }
     catch(const std::exception& e)

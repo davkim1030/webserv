@@ -6,7 +6,7 @@
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
 
-ResponseHandler::ResponseHandler(Request &request, std::vector<Server> server)
+ResponseHandler::ResponseHandler(Request &request, Server &server)
 :request(request), server(server){
 	this->mimeType[".aac"] = "audio/aac";
 	this->mimeType[".abw"] = "application/x-abiword";
@@ -130,7 +130,8 @@ Response ResponseHandler::makeResponse()
 	*/
 
 	try{
-		location = server->getLocation(request.getDirectory());
+		location = server.getLocation(request.getDirectory());
+		std::cout
 		if (location == NULL)
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
 
@@ -205,7 +206,7 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 		if (!location->getOption("index").empty())
 		{
 			bool indexFileFlag = false;
-			char **indexFile = ft_split(server->getOption("index").c_str(), ' ');
+			char **indexFile = ft_split(server.getOption("index").c_str(), ' ');
 			for (int i = 0; indexFile[i]; i++)
 			{
 				struct stat buffer;

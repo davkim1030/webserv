@@ -71,6 +71,11 @@ Response	&Client::getResponse()
 	return (response);
 }
 
+Request		&Client::getRequest()
+{
+	return (request);
+}
+
 Status	Client::getStatus()
 {
 	return (status);
