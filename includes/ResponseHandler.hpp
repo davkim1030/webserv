@@ -73,6 +73,7 @@ class ResponseHandler
 		void makeGetResponse(int);
 		void makeConnectResponse(void);
 		void makePutResponse(void);
+		void makePostResponse(void);
 		void makeDeleteResponse(void);
 
 		//에러 Response를 던지는 함수
