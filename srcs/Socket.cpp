@@ -114,7 +114,7 @@ bool Socket::initServer(int socketCnt)
 
 		// 소켓, fd 바인드
 		if (bind(iter->getSocketFd(), (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
-				throw BindException();
+			throw BindException();
 		// 데이터를 받을 서버 소켓 열기
 		if (listen(iter->getSocketFd(), socketCnt) == -1)
 			throw ListenException();
@@ -122,6 +122,7 @@ bool Socket::initServer(int socketCnt)
 		std::cout << iter->getIp() << ":" << iter->getPort() << std::endl;
 		
 		FD_SET(iter->getSocketFd(), &rfds);
+		FD_SET(iter->getSocketFd(), &wfds);
 		FD_SET(iter->getSocketFd(), &efds);
 
 		// Socket에서 관리할 서버 리스트에 위에서 생성한 서버 추가
@@ -142,10 +143,7 @@ bool Socket::runServer(struct timeval timeout, unsigned int bufferSize)
 	fd_set	cpyWfds;
 	fd_set	cpyEfds;
 
-	struct sockaddr_in	clientAddr;
-	socklen_t			addrSize = sizeof(clientAddr);
-	int					fdNum;
-	char				buf[bufferSize];
+	int		fdNum;
 
 	unsigned long		timeoutMs = timeout.tv_sec * 1000 + timeout.tv_usec / 1000;
 
@@ -159,29 +157,39 @@ bool Socket::runServer(struct timeval timeout, unsigned int bufferSize)
 		cpyEfds = efds;
 
 		// fd_set 변수의 0 ~ fdMax + 1까지 비트를 감시하여 읽기, 쓰기, 에러 요구가 일어났는지 확인
-		std::cout << "HI!" << std::endl;
+		printFds(rfds, wfds, efds, fdMax);
 		if ((fdNum = select(fdMax + 1, &cpyRfds, &cpyWfds, &cpyEfds, &timeout)) == -1)
 			throw SelectException();
 		if (fdNum == 0) // 처리할 요구가 없으면 다시 위로
 			continue ;
 		
-		std::cout << "BYTW" << std::endl;
 		// fd를 0부터 fdMax - 1까지 반복하며 set된 플래그 값이 있는지 확인하여 처리		
 		for (int i = 0; i < fdMax + 1; i++)
 		{
 			if (FD_ISSET(i, &cpyRfds))	// read 요청이 온 경우
 			{
-				if (servers.count(i) == 1)	// 서버 소켓의 경우
+				if (servers.find(i) != servers.end())	// 서버 소켓의 경우
 				{
+					struct sockaddr_in	clientAddr;
+					socklen_t	addrSize = sizeof(clientAddr);
+
+					ft_memset(&clientAddr, '\0', addrSize);
 					int clientSocket = accept(i, (struct sockaddr *)&clientAddr, &addrSize);
 					if (clientSocket == -1)
+					{
+						std::cout << "ERROR FD " << i << std::endl;
+						for (std::map<int, std::map<std::string, Server> >::iterator iter = servers.begin();
+								iter != servers.end(); iter++)
+							std::cout << iter->first <<": " << iter->second.size() << std::endl;
+						std::cout << strerror(errno) << std::endl;
 						throw AcceptException();
+					}
 					std::cout << "Open client socket: " << clientSocket << std::endl;
 					std::cout << servers[i]["default_server"].getPort() << std::endl;
 					fcntl(clientSocket, F_SETFL, O_NONBLOCK);	// 해당 클라이언트 fd를 논블록으로 변경
-					FD_SET(clientSocket, &wfds);
 					FD_SET(clientSocket, &rfds);
-					// FD_SET(clientSocket, &efds);
+					FD_SET(clientSocket, &wfds);
+					FD_SET(clientSocket, &efds);
 					if (fdMax < clientSocket)
 						fdMax = clientSocket;
 					
@@ -193,6 +201,7 @@ bool Socket::runServer(struct timeval timeout, unsigned int bufferSize)
 				{
 					int		len;
 					bool	isReadable = false;
+					char	buf[bufferSize];
 
 					clients[i].setLastReqMs(ft_get_time());
 					// TODO: 한 번에 한 번씩 읽어야만 나중에 문제 안 생김 !수정 필요!
@@ -214,7 +223,7 @@ bool Socket::runServer(struct timeval timeout, unsigned int bufferSize)
 						if ((idx = serverName.find(':') ) != std::string::npos)
 							serverName = serverName.substr(0, idx);
 						// TODO default server 수정 해야됨
-						clients[i].setResponse(ResponseHandler(clients[i].getRequest(), servers[i]["default_server"]).makeResponse());
+						clients[i].setResponse(ResponseHandler(clients[i].getRequest(), servers[3]["default_server"]).makeResponse());
 						clients[i].getRequest().initRequest();
 						clients[i].setStatus(RESPONSE_READY);
 					}
@@ -233,13 +242,11 @@ bool Socket::runServer(struct timeval timeout, unsigned int bufferSize)
 				// 항상 클라이언트 소켓만 들어옴
 				if (ft_get_time() - clients[i].getLastReqMs() > timeoutMs)
 				{
-					std::cout << "Connection close" << std::endl;
 					clearConnectedSocket(i);
 					continue ;
 				}
 				if (clients[i].getStatus() == RESPONSE_READY)
 				{
-					std::cout << "!!!!!!!!!!!!!!" << clients[i].getStatus() << std::endl;
 					write(i, clients[i].getResponse().getMessage().c_str(), clients[i].getResponse().getMessage().size());
 					if (clients[i].getResponse().getLastResponse() == 401)
 						clearConnectedSocket(i);
@@ -247,8 +254,10 @@ bool Socket::runServer(struct timeval timeout, unsigned int bufferSize)
 					{
 						clients[i].getResponse();
 						clients[i].setStatus(REQUEST_RECEIVING);
+						clearConnectedSocket(i);
 					}
 				}
+				FD_CLR(i, &wfds);
 			}
 			else if (FD_ISSET(i, &cpyEfds))	// except 요청이 온 경우
 			{
@@ -265,7 +274,6 @@ bool Socket::runServer(struct timeval timeout, unsigned int bufferSize)
 				}
 			}
 		}
-		printFds(rfds, wfds, efds, fdMax);
 	}
 	return (true);
 }
@@ -284,4 +292,5 @@ void	Socket::clearConnectedSocket(int fd)
 	clients.erase(clients.find(fd));
 	if (fd == fdMax)
 		fdMax--;
+	std::cout << "Connection close fd: " << fd << std::endl;
 }

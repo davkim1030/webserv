@@ -241,14 +241,14 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 	while((res = get_next_line(fd, &buffer)) > 0)
 	{
 		body += buffer;
+		body += "\n";
 		free(buffer);
 	}
 	if (res < 0)
 		throwErrorResponse(SERVER_ERR, request.getHttpVersion());
-	get_next_line(fd, &buffer);
 	body += buffer;
 	free(buffer);
-	addContentTypeHeader(resourcePath);
+	addContentTypeHeader(".html");
 	addContentLanguageHeader();
 	addContentLocationHeader();
 	addContentLengthHeader((int)sb.st_size);
