@@ -177,7 +177,7 @@ char** ResponseHandler::cgiRequest()
 
 void ResponseHandler::cgiResponse(char **envp)
 {
-	int fd[2];
+
 }
 
 // cgi 실행 여부 판단
@@ -220,6 +220,8 @@ Response ResponseHandler::makeResponse()
 	server->printItem();
 	try{
 		location = server->getLocation(request.getDirectory());
+		if (location == NULL)
+			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
 
 		if (isCgi())
 		{
@@ -227,8 +229,6 @@ Response ResponseHandler::makeResponse()
 			cgiResponse(cgiRequest());
 		}
 
-		if (location == NULL)
-			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
 
 		if (!location->getOption("allow_method").empty() && request.getMethod() != "GET" && request.getMethod() != "HEAD")
 		{
