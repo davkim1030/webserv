@@ -20,13 +20,14 @@ class Socket
 		fd_set	efds;	// 예외 fd set
 		int		fdMax;	// 처리할 최대 fd 값
 
-		std::map<int, std::map<std::string, Server> > servers;	// 프로그램에서 처리할 서버들 정보
+		std::map<int, Server> servers;	// 프로그램에서 처리할 서버들 정보
 		std::map<int, Client> clients;	// 프로그램에 연결된 클라이언트 정보
 
 		Socket(Socket const &so);
 		Socket &operator=(Socket const &so);
 
 		void clearConnectedSocket(int fd);
+		void updateFdMax();
 
 		class SocketException : public std::exception
 		{
@@ -61,7 +62,7 @@ class Socket
 		Socket();
 		~Socket();
 
-		bool initServer(int socketCnt);
-		bool runServer(struct timeval timeout, unsigned int bufferSize);
+		void initServer(int socketCnt);
+		void runServer(struct timeval timeout, unsigned int bufferSize);
 };
 #endif

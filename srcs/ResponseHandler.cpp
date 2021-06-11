@@ -248,7 +248,7 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 		throwErrorResponse(SERVER_ERR, request.getHttpVersion());
 	body += buffer;
 	free(buffer);
-	addContentTypeHeader(".html");
+	addContentTypeHeader(resourcePath);
 	addContentLanguageHeader();
 	addContentLocationHeader();
 	addContentLengthHeader((int)sb.st_size);
