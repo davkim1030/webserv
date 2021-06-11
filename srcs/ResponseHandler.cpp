@@ -130,7 +130,7 @@ Response ResponseHandler::makeResponse()
 	*/
 
 	try{
-		location = server->getLocation(request.getUri());
+		location = server->getLocation(request.getDirectory());
 		if (location == NULL)
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
 
