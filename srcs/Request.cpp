@@ -108,22 +108,37 @@ std::string Request::parseMethod(void) {
 	return (this->rawRequest.substr(0, rawRequest.find(' ')));
 }
 
+int ft_hex_atoi(const std::string &str)
+{
+	int result = 0;
+	for (std::string::const_iterator iter = str.begin(); iter != str.end(); iter++)
+	{
+		if (*iter >= 'A' && *iter <= 'F')
+			result = (*iter - 'A' + 10) + result * 16;
+		else if (*iter >= 'a' && *iter <= 'f')
+			result = (*iter - 'a' + 10) + result * 16;
+		else if (*iter >= '0' && *iter <= '9')
+			result = (*iter - '0') + result * 16;
+		else break ;
+	}
+	return result;
+}
+
 /*
 *  Transfer-Encoding 헤더가 chunked 옵션으로 들어온 경우 body를 파싱합니다.
 */
 std::string Request::parseBody(void) {
-		size_t dataSize;
-		std::string data;
-		std::string rawBody = this->rawRequest.substr(this->rawRequest.find("\r\n\r\n") + 4);
+	size_t dataSize;
+	std::string data;
+	std::string rawBody = this->rawRequest.substr(this->rawRequest.find("\r\n\r\n") + 4);
 
-		while ((dataSize = ft_atoi(rawBody.substr(0, rawBody.find("\r\n")).c_str())) != 0)
-		{
-			std::cout <<dataSize<<std::endl;;
-			rawBody = rawBody.substr(rawBody.find("\r\n") + 2);
-			data += rawBody.substr(0, dataSize);
-			rawBody = rawBody.substr(rawBody.find("\r\n") + 2);
-		}
-		return data;
+	while ((dataSize = ft_hex_atoi(rawBody.substr(0, rawBody.find("\r\n")).c_str())) != 0)
+	{
+		rawBody = rawBody.substr(rawBody.find("\r\n") + 2);
+		data += rawBody.substr(0, dataSize);
+		rawBody = rawBody.substr(rawBody.find("\r\n") + 2);
+	}
+	return data;
 }
 
 /*

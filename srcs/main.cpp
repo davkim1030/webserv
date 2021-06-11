@@ -58,12 +58,15 @@ int main(int argc, char *argv[])
 
         char buffer[30000] = {0};
         valread = read( new_socket , buffer, 30000);
+
         ServerConfig::getInstance()->saveConfig(argc, argv[1]);
         std::vector<Server> server = ServerConfig::getInstance()->getServers();
 		Request request(buffer);
+		std::cout <<buffer << std::endl;
 		request.parseRequest();
 		ResponseHandler responseHandler(request, --server.end());
 		Response Res = responseHandler.makeResponse();
+		std::cout << Res.getMessage() << std::endl;
 	    write(new_socket , hello , strlen(hello));
         printf("------------------Hello message sent-------------------\n");
         close(new_socket);

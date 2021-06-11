@@ -161,10 +161,12 @@ Response ResponseHandler::makeResponse()
 		* 가 추가되어야 합니다.
 		*/
 
-		if (request.getMethod() == "GET" || request.getMethod() == "POST")
+		if (request.getMethod() == "GET")
 			makeGetResponse(0);
 		if (request.getMethod() == "HEAD")
 			makeGetResponse(HEAD_METHOD);
+		if (request.getMethod() == "POST")
+			makePostResponse();
 		if (request.getMethod() == "PUT")
 			makePutResponse();
 		if (request.getMethod() == "DELETE")
@@ -199,19 +201,20 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 	addServerHeader();
 	if (checkPath(this->resourcePath) == ISDIR)
 	{
+
 		if (this->resourcePath[this->resourcePath.length() - 1] != '/')
 			this->resourcePath += '/';
 
 		if (!location->getOption("index").empty())
 		{
 			bool indexFileFlag = false;
-			char **indexFile = ft_split(server->getOption("index").c_str(), ' ');
+			char **indexFile = ft_split(location->getOption("index").c_str(), ' ');
 			for (int i = 0; indexFile[i]; i++)
 			{
 				struct stat buffer;
-				if (stat((this->resourcePath + indexFile[i]).c_str(), &buffer) == 0)
+				if (stat(('.' + this->resourcePath + indexFile[i]).c_str(), &buffer) == 0)
 				{
-					this->resourcePath = this->resourcePath + indexFile[i];
+					this->resourcePath = '.' + this->resourcePath + indexFile[i];
 					indexFileFlag = true;
 					break ;
 				}
@@ -241,7 +244,6 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 	get_next_line(fd, &buffer);
 	body += buffer;
 	free(buffer);
-
 	addContentTypeHeader(resourcePath);
 	addContentLanguageHeader();
 	addContentLocationHeader();
@@ -254,6 +256,33 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 
 /*
 * 클라이언트가 서버에게 지정한 URL에 지정한 데이터를 저장할 것을 요청한다.
+* 멱등성 X(데이터를 계속해서 새로 추가함.)
+* RESPONSE
+* 기본 헤더 : Date, Server
+* 컨텐츠 헤더 :Content-Location
+* 반환 Status-Code :
+* 기존에 없는 것을 새로이 생성 - 201 (Created)
+* 기존에 있는 것을 성공적으로 수정 - 200 (OK) 또는 204 (No Content) 응답
+* 실패 : 500(SERVER ERR)
+* 권한없음 : 403(forbidden)
+*/
+
+void ResponseHandler::makePostResponse(void)
+{
+//작성중
+
+/*
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 13
+
+say=Hi&to=Mom
+*/
+O_APPEND
+}
+
+/*
+* 클라이언트가 서버에게 지정한 URL에 지정한 데이터를 저장하거나 대체할 것을 요청한다.
+* 멱등성 O(데이터를 계속해서 새로 만듬. 기존에 데이터가 있으면 싹 지워버리고 다시씀.)
 * RESPONSE
 * 기본 헤더 : Date, Server
 * 컨텐츠 헤더 :Content-Location
@@ -272,7 +301,6 @@ void ResponseHandler::makePutResponse(void)
 	{
 		case NOT_FOUND :
 		{
-
 			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC)) < 0)
 				throwErrorResponse(SERVER_ERR, request.getHttpVersion());
 

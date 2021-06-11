@@ -50,13 +50,10 @@ void ResponseHandler::addServerHeader(void)
 */
 void ResponseHandler::addContentTypeHeader(std::string extension)
 {
-	size_t i = extension.find_first_of('.');
-	std::string filePath = std::string(extension, i + 1, extension.size() - i);
-
-	if (i == std::string::npos || mimeType.count(filePath) == 0)
+	if (mimeType.count(extension) == 0)
 		addResponseHeader("Content-Type: ", mimeType["text/plain"]);
 	else
-		addResponseHeader("Content-Type: ", mimeType[filePath]);
+		addResponseHeader("Content-Type: ", mimeType[extension]);
 }
 
 /*

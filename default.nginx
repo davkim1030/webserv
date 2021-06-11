@@ -12,33 +12,23 @@ error_log  /var/log/nginx/error.log warn; # 에러 정보 저장
 pid        /var/run/nginx.pid; # 마스터 프로세스 ID 저장
 
 server {
-	listen 80 default_server; # testline
+	server_name default_server;
+	listen 80;
 
-	return 301 https://$host$request_uri;
-}
+	location / {
+		root /
+		allow_method GET;
+		cgi_path ./
+		cgi_extention .bla
+		cgi_extention .p
+		index index.php index.html index.htm index.php;
+		autoindex on;
+	}
 
-server {
-		listen 443;
+	location /test/ {
+		index index.php index.html index.htm index.php;
+		root /test/;
+		allow_method GET POST DELETE HEAD;
 
-		root /var/www/html;
-
-		index index.php index.html index.htm index.php; # lienldifnsil
-
-		server_name _;
-
-		location / {
-			allow_method GET POST
-			autoindex on;
-			try_files $uri $uri/ =404;
-		}
-
-		location /test/ {
-			autoindex on;
-			try_files $uri $uri/ =404;
-		}
-
-		location ~ \.php$ {
-			include snippets/fastcgi-php.conf;
-			fastcgi_pass unix:/var/run/php/php7.3-fpm.sock;
-		}
+	}
 }
