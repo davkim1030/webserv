@@ -83,7 +83,7 @@ void ResponseHandler::addContentLanguageHeader()
 
 void ResponseHandler::addContentLocationHeader()
 {
-	addResponseHeader("Content-Location", this->resourcePath);
+	addResponseHeader("Content-Location", this->resourcePath.substr(1));
 }
 
 void ResponseHandler::addAllowHeader(std::string allow)
