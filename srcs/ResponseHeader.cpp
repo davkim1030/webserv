@@ -51,7 +51,7 @@ void ResponseHandler::addServerHeader(void)
 void ResponseHandler::addContentTypeHeader(std::string extension)
 {
 	if (mimeType.count(extension) == 0)
-		addResponseHeader("Content-Type", mimeType["text/plain"]);
+		addResponseHeader("Content-Type", "text/plain");
 	else
 		addResponseHeader("Content-Type", mimeType[extension]);
 }

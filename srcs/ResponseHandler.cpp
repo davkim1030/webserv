@@ -151,7 +151,7 @@ Response ResponseHandler::makeResponse()
 		else if (request.getMethod() == "CONNECT")
 			makeConnectResponse();
 
-		this->resourcePath = request.getUri(); //나중에 root 들어오면 앞에 붙여주세요
+		this->resourcePath = '.' + request.getUri();
 		//경로 한번 더 검사-> 존재 안하면
 		if (checkPath(this->resourcePath) == NOT_FOUND && request.getMethod() != "PUT" && request.getMethod() != "POST")
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
@@ -216,9 +216,9 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 			for (int i = 0; indexFile[i]; i++)
 			{
 				struct stat buffer;
-				if (stat(('.' + this->resourcePath + indexFile[i]).c_str(), &buffer) == 0)
+				if (stat((this->resourcePath + indexFile[i]).c_str(), &buffer) == 0)
 				{
-					this->resourcePath = '.' + this->resourcePath + indexFile[i];
+					this->resourcePath = this->resourcePath + indexFile[i];
 					indexFileFlag = true;
 					break ;
 				}
@@ -241,14 +241,14 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 	while((res = get_next_line(fd, &buffer)) > 0)
 	{
 		body += buffer;
+		body += "\n";
 		free(buffer);
 	}
 	if (res < 0)
 		throwErrorResponse(SERVER_ERR, request.getHttpVersion());
-	get_next_line(fd, &buffer);
 	body += buffer;
 	free(buffer);
-	addContentTypeHeader(resourcePath);
+	addContentTypeHeader(fileExtension(resourcePath.substr(1)));
 	addContentLanguageHeader();
 	addContentLocationHeader();
 	addContentLengthHeader((int)sb.st_size);
@@ -256,6 +256,16 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 	if (httpStatus == HEAD_METHOD)
 		throw Response(200, responseHeader, "", request.getHttpVersion());
 	throw Response(200, responseHeader, body, request.getHttpVersion());
+}
+
+/*
+* 입력받은 파일의 확장자를 반환합니다.
+*/
+std::string ResponseHandler::fileExtension(std::string resourcePath)
+{
+	if (resourcePath.find('.') != std::string::npos)
+		return (resourcePath.substr(resourcePath.find('.')));
+	return resourcePath;
 }
 
 /*
@@ -397,12 +407,12 @@ std::string ResponseHandler::makeAutoIndexPage(std::string resourcePath)
 	std::string body;
 	std::string addr = "http://" + request.getHeader()["Host"] + "/"; //하이퍼링크용 경로
 
-	body += "<!DOCTYPE html>";
-	body += "<html>";
-	body += "<head>";
-	body += "</head>";
-	body += "<body>";
-	body += "<h1> Index of "+ request.getUri() + "</h1>";
+	body += "<!DOCTYPE html>\n";
+	body += "<html>\n";
+	body += "<head>\n";
+	body += "</head>\n";
+	body += "<body>\n";
+	body += "<h1> Index of "+ request.getUri() + "</h1>\n";
 
 	DIR *dir = NULL;
 	if ((dir = opendir(resourcePath.c_str())) == NULL)
@@ -410,12 +420,12 @@ std::string ResponseHandler::makeAutoIndexPage(std::string resourcePath)
 
 	struct dirent *file = NULL;
 	while ((file = readdir(dir)) != NULL)
-		body += "<a href=\"" + addr + file->d_name + "\">" + file->d_name + "</a><br>";
+		body += "<a href=\"" + addr + file->d_name + "\">" + file->d_name + "</a><br>\n";
 
 	closedir(dir);
 
-	body += "</body>";
-	body += "</html>";
+	body += "</body>\n";
+	body += "</html>\n";
 
 	addContentLengthHeader(body.size());
 	return (body);
