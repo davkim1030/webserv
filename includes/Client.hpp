@@ -32,6 +32,9 @@ class Client
 		Client();
 		Client(int serverSocketFd, int socketFd);
 		~Client();
+		Client(const Client &other);
+
+		Client &operator=(const Client &toher);
 
 		// setters
 		void		setSocketFd(int socketFd);

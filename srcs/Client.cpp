@@ -8,6 +8,17 @@
 Client::Client() : status(REQUEST_RECEIVING), serverSocketFd(-1), socketFd(-1),
 		request(""), response(200, std::map<std::string, std::string>(), "")
 {
+	lastReqMs = ft_get_time();
+}
+
+/*
+ * 복사 생성자
+ * @param const Client &other: 복사할 객체
+ */
+Client::Client(const Client &other) : status(other.status), serverSocketFd(other.serverSocketFd),
+	socketFd(other.socketFd), request(other.request), response(other.response),
+	remainBody(other.remainBody), lastReqMs(other.lastReqMs)
+{
 }
 
 /*
@@ -20,10 +31,30 @@ Client::Client(int serverSocketFd, int socketFd)
 	request(""), response(200, std::map<std::string, std::string>(), "")
 {
 	status = REQUEST_RECEIVING;
+	remainBody = 0;
+	lastReqMs = ft_get_time();
 }
 
 Client::~Client()
 {
+}
+
+/*
+ * 할당 연산자 오버로딩
+ */
+Client &Client::operator=(const Client &other)
+{
+	if (this != &other)
+	{
+		status = other.status;
+		serverSocketFd = other.serverSocketFd;
+		socketFd = other.socketFd;
+		request = other.request;
+		response = other.response;
+		remainBody = other.remainBody;
+		lastReqMs = other.lastReqMs;
+	}
+	return *this;
 }
 
 void	Client::setSocketFd(int socketFd)
