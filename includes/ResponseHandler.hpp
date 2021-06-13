@@ -77,6 +77,8 @@ class ResponseHandler
 		void makePostResponse(void);
 		void makeDeleteResponse(void);
 
+		std::string fileExtension(std::string);
+
 		//에러 Response를 던지는 함수
 		void throwErrorResponse(int, std::string) throw(Response);
 
