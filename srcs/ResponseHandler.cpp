@@ -6,7 +6,7 @@
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
 
-ResponseHandler::ResponseHandler(Request &request, std::vector<Server>::iterator server)
+ResponseHandler::ResponseHandler(Request &request, Server &server)
 :request(request), server(server){
 	this->mimeType[".aac"] = "audio/aac";
 	this->mimeType[".abw"] = "application/x-abiword";
@@ -130,11 +130,11 @@ Response ResponseHandler::makeResponse()
 	*/
 
 	try{
-
 		/*CGI를 넣어주세요.*/
 
 		//location에서 uri를 찾지말고 uri에서 location을 찾아야합니다.
 		location = server->getLocation(request.getUri());
+
 		if (location == NULL)
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
 		if (!location->getOption("allow_method").empty() && request.getMethod() != "GET" && request.getMethod() != "HEAD")

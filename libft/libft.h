@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   libft.h                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: sunpark <sunpark@student.42seoul.kr>       +#+  +:+       +#+        */
+/*   By: hyukim <hyukim@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2020/02/25 11:39:22 by sunpark           #+#    #+#             */
-/*   Updated: 2021/05/25 15:07:19 by hyukim           ###   ########.fr       */
+/*   Updated: 2021/06/10 16:06:19 by hyukim           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,5 +88,7 @@ char				*ft_strnul(void);
 int					get_next_line(int fd, char **line);
 
 int					ft_printf(const char *format, ...);
+
+unsigned long		ft_get_time(void);
 
 #endif

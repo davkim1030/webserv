@@ -28,7 +28,7 @@ class ServerConfig
 		~ServerConfig();
 
 		static ServerConfig*	getInstance();
-		std::vector<Server>		getServers();
+		std::vector<Server>		&getServers();
 
 		int		checkLine(std::string line);
 		void	configParse(std::string line);
