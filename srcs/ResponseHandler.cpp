@@ -167,7 +167,7 @@ Response ResponseHandler::makeResponse()
 		if (request.getMethod() == "GET")
 			makeGetResponse(0);
 		if (request.getMethod() == "HEAD")
-			makeGetResponse(HEAD_METHOD);
+			makeHeadResponse();
 		if (request.getMethod() == "POST")
 			makePostResponse();
 		if (request.getMethod() == "PUT")
@@ -188,7 +188,6 @@ Response ResponseHandler::makeResponse()
 
 /*
 * GET 메소드의 Response를 생성합니다.
-* @param send_body HEAD를 실행했을 경우 send_body 가 false값으로 들어옵니다.
 * 기본 헤더 : Date, Server
 * 엔티티 헤더 : Last-Modified
 * 컨텐츠 헤더 : Content-Language, Content-Length, Content-Location,	Content-Type
@@ -256,6 +255,17 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 	if (httpStatus == HEAD_METHOD)
 		throw Response(200, responseHeader, "", request.getHttpVersion());
 	throw Response(200, responseHeader, body, request.getHttpVersion());
+}
+
+/*
+* HEAD 메소드의 Response를 생성합니다.
+* allowed method인지 확인하고 이상이 없으면 makeGetResponse 함수를 호출한다.
+*/
+void ResponseHandler::makeHeadResponse(void)
+{
+	if (server.getOption("allowed_method").find("HEAD") == std::string::npos)
+		throw Response(405, responseHeader, "", request.getHttpVersion());
+	makeGetResponse(HEAD_METHOD);
 }
 
 /*

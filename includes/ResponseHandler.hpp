@@ -71,6 +71,7 @@ class ResponseHandler
 		void makeTraceResponse(void);
 		void makeOptionResponse(void);
 		void makeGetResponse(int);
+		void makeHeadResponse(void);
 		void makeConnectResponse(void);
 		void makePutResponse(void);
 		void makePostResponse(void);
