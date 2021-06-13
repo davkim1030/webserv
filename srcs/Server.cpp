@@ -91,7 +91,7 @@ Location *Server::getLocation(std::string const& path)
 	std::vector<Location>::iterator it;
 	for (it = location.begin(); it != location.end(); it++)
 	{
-		if (it->getPath() == path)
+		if (path.find(it->getPath()) != std::string::npos)
 			return &*it;
 	}
 	return NULL;

@@ -130,10 +130,13 @@ Response ResponseHandler::makeResponse()
 	*/
 
 	try{
-		location = server.getLocation(request.getDirectory());
+		/*CGI를 넣어주세요.*/
+
+		//location에서 uri를 찾지말고 uri에서 location을 찾아야합니다.
+		location = server->getLocation(request.getUri());
+
 		if (location == NULL)
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
-
 		if (!location->getOption("allow_method").empty() && request.getMethod() != "GET" && request.getMethod() != "HEAD")
 		{
 			std::string allow = location->getOption("allow_method");
@@ -151,19 +154,9 @@ Response ResponseHandler::makeResponse()
 		else if (request.getMethod() == "CONNECT")
 			makeConnectResponse();
 
-		this->resourcePath = request.getUri(); //나중에 root 들어오면 앞에 붙여주세요
-		//경로 한번 더 검사-> 존재 안하면
+		this->resourcePath = location->getOption("root") + request.getUri(); //root 들어오면 더해주세요
 		if (checkPath(this->resourcePath) == NOT_FOUND && request.getMethod() != "PUT" && request.getMethod() != "POST")
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
-
-		/*
-		* 여기에는
-		* 1. 메소드에 따라 CGI 호출 여부를 결정하는 부분
-		* 2. Transfer-Encoding 처리
-		* 3. redirection 처리
-		* 가 추가되어야 합니다.
-		*/
-
 		if (request.getMethod() == "GET")
 			makeGetResponse(0);
 		if (request.getMethod() == "HEAD")
@@ -216,9 +209,9 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 			for (int i = 0; indexFile[i]; i++)
 			{
 				struct stat buffer;
-				if (stat(('.' + this->resourcePath + indexFile[i]).c_str(), &buffer) == 0)
+				if (stat((this->resourcePath + indexFile[i]).c_str(), &buffer) == 0)
 				{
-					this->resourcePath = '.' + this->resourcePath + indexFile[i];
+					this->resourcePath = this->resourcePath + indexFile[i];
 					indexFileFlag = true;
 					break ;
 				}
@@ -248,7 +241,7 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 		throwErrorResponse(SERVER_ERR, request.getHttpVersion());
 	body += buffer;
 	free(buffer);
-	addContentTypeHeader(resourcePath);
+	addContentTypeHeader(fileExtension(resourcePath.substr(1)));
 	addContentLanguageHeader();
 	addContentLocationHeader();
 	addContentLengthHeader((int)sb.st_size);
@@ -256,6 +249,16 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 	if (httpStatus == HEAD_METHOD)
 		throw Response(200, responseHeader, "", request.getHttpVersion());
 	throw Response(200, responseHeader, body, request.getHttpVersion());
+}
+
+/*
+* 입력받은 파일의 확장자를 반환합니다.
+*/
+std::string ResponseHandler::fileExtension(std::string resourcePath)
+{
+	if (resourcePath.find('.') != std::string::npos)
+		return (resourcePath.substr(resourcePath.find('.')));
+	return resourcePath;
 }
 
 /*
@@ -273,15 +276,33 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 
 void ResponseHandler::makePostResponse(void)
 {
-//작성중
+	int fd;
+	int pathType = checkPath(this->resourcePath);
 
-/*
-Content-Type: application/x-www-form-urlencoded
-Content-Length: 13
+	switch (pathType)
+	{
+		case NOT_FOUND :
+		{
+			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0)
+				throwErrorResponse(SERVER_ERR, request.getHttpVersion());
 
-say=Hi&to=Mom
-*/
-// O_APPEND
+			write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			close(fd);
+			addContentLocationHeader();
+			throw Response(201, responseHeader, "", request.getHttpVersion());
+		}
+		case ISFILE :
+		{
+			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_APPEND )) < 0)
+				throwErrorResponse(SERVER_ERR, request.getHttpVersion());
+			write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			close(fd);
+			addContentLocationHeader();
+			throw Response(200, responseHeader, "", request.getHttpVersion());
+		}
+		default :
+			throwErrorResponse(FORBIDDEN, request.getHttpVersion());
+	}
 }
 
 /*
@@ -305,23 +326,22 @@ void ResponseHandler::makePutResponse(void)
 	{
 		case NOT_FOUND :
 		{
-			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC)) < 0)
+			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0)
 				throwErrorResponse(SERVER_ERR, request.getHttpVersion());
 
-			write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-length"].c_str()));
+			write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
 			close(fd);
 			addContentLocationHeader();
 			throw Response(201, responseHeader, "", request.getHttpVersion());
 		}
 		case ISFILE :
 		{
-			if ((fd = open(this->resourcePath.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644)) < 0)
+			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_TRUNC)) < 0)
 				throwErrorResponse(SERVER_ERR, request.getHttpVersion());
-
-			write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-length"].c_str()));\
+			write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
 			close(fd);
 			addContentLocationHeader();
-			throw Response(204, responseHeader, "", request.getHttpVersion());
+			throw Response(200, responseHeader, "", request.getHttpVersion());
 		}
 		default :
 			throwErrorResponse(FORBIDDEN, request.getHttpVersion());
@@ -397,12 +417,12 @@ std::string ResponseHandler::makeAutoIndexPage(std::string resourcePath)
 	std::string body;
 	std::string addr = "http://" + request.getHeader()["Host"] + "/"; //하이퍼링크용 경로
 
-	body += "<!DOCTYPE html>";
-	body += "<html>";
-	body += "<head>";
-	body += "</head>";
-	body += "<body>";
-	body += "<h1> Index of "+ request.getUri() + "</h1>";
+	body += "<!DOCTYPE html>\n";
+	body += "<html>\n";
+	body += "<head>\n";
+	body += "</head>\n";
+	body += "<body>\n";
+	body += "<h1> Index of "+ request.getUri() + "</h1>\n";
 
 	DIR *dir = NULL;
 	if ((dir = opendir(resourcePath.c_str())) == NULL)
@@ -410,12 +430,12 @@ std::string ResponseHandler::makeAutoIndexPage(std::string resourcePath)
 
 	struct dirent *file = NULL;
 	while ((file = readdir(dir)) != NULL)
-		body += "<a href=\"" + addr + file->d_name + "\">" + file->d_name + "</a><br>";
+		body += "<a href=\"" + addr + file->d_name + "\">" + file->d_name + "</a><br>\n";
 
 	closedir(dir);
 
-	body += "</body>";
-	body += "</html>";
+	body += "</body>\n";
+	body += "</html>\n";
 
 	addContentLengthHeader(body.size());
 	return (body);
