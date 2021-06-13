@@ -130,10 +130,12 @@ Response ResponseHandler::makeResponse()
 	*/
 
 	try{
+
+		/*CGI를 넣어주세요.*/
+
 		location = server->getLocation(request.getDirectory());
 		if (location == NULL)
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
-
 		if (!location->getOption("allow_method").empty() && request.getMethod() != "GET" && request.getMethod() != "HEAD")
 		{
 			std::string allow = location->getOption("allow_method");
@@ -154,15 +156,6 @@ Response ResponseHandler::makeResponse()
 		this->resourcePath = '.' + request.getUri();
 		if (checkPath(this->resourcePath) == NOT_FOUND && request.getMethod() != "PUT" && request.getMethod() != "POST")
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
-
-		/*
-		* 여기에는
-		* 1. 메소드에 따라 CGI 호출 여부를 결정하는 부분
-		* 2. Transfer-Encoding 처리
-		* 3. redirection 처리
-		* 가 추가되어야 합니다.
-		*/
-
 		if (request.getMethod() == "GET")
 			makeGetResponse(0);
 		if (request.getMethod() == "HEAD")

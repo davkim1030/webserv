@@ -18,7 +18,6 @@ class Request
 
 		//getter
 		std::string getMethod(void) const;
-		std::string getRawUri(void) const;
 		std::string getUri(void) const;
 		std::string getDirectory(void) const;
 		std::string getHttpVersion(void) const;
@@ -36,10 +35,8 @@ class Request
 		std::string	rawRequest;
 
 		std::string	method;
-		std::string rawUri;
-		//rawUri에서 쿼리스트링/가상경로를 제거한 경로
 		std::string uri;
-		//rawUri에서 파일명/쿼리스트링/가상경로를 제거한 directory 경로, 아니라면 rawUri와 동일
+		//uri에서 파일명을제거한 directory 경로, 아니라면 rawUri와 동일
 		std::string directory;
 		std::string	httpVersion;
 
@@ -49,7 +46,6 @@ class Request
 		std::string	rawBody;
 
 		std::string parseMethod(void);
-		std::string parseRawUri(void);
 		std::string parseUri(void);
 		std::string parseDirectory(void);
 		std::string parseHttpVersion(void);
