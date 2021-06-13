@@ -63,7 +63,12 @@ int main(int argc, char *argv[])
         std::vector<Server> server = ServerConfig::getInstance()->getServers();
 		Request request(buffer);
 		std::cout <<buffer << std::endl;
+
 		request.parseRequest();
+		std::cout <<"[" << request.getUri() <<std::endl;
+		std::cout << "----Response---" << std::endl;
+
+
 		ResponseHandler responseHandler(request, --server.end());
 		Response Res = responseHandler.makeResponse();
 		std::cout << Res.getMessage() << std::endl;

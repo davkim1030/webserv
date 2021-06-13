@@ -133,7 +133,8 @@ Response ResponseHandler::makeResponse()
 
 		/*CGI를 넣어주세요.*/
 
-		location = server->getLocation(request.getDirectory());
+		//location에서 uri를 찾지말고 uri에서 location을 찾아야합니다.
+		location = server->getLocation(request.getUri());
 		if (location == NULL)
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
 		if (!location->getOption("allow_method").empty() && request.getMethod() != "GET" && request.getMethod() != "HEAD")
@@ -153,7 +154,7 @@ Response ResponseHandler::makeResponse()
 		else if (request.getMethod() == "CONNECT")
 			makeConnectResponse();
 
-		this->resourcePath = '.' + request.getUri();
+		this->resourcePath = location->getOption("root") + request.getUri(); //root 들어오면 더해주세요
 		if (checkPath(this->resourcePath) == NOT_FOUND && request.getMethod() != "PUT" && request.getMethod() != "POST")
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
 		if (request.getMethod() == "GET")

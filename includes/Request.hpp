@@ -19,7 +19,6 @@ class Request
 		//getter
 		std::string getMethod(void) const;
 		std::string getUri(void) const;
-		std::string getDirectory(void) const;
 		std::string getHttpVersion(void) const;
 		std::string getRawHeader(void) const;
 		std::map<std::string, std::string> getHeader(void) const;
@@ -36,8 +35,6 @@ class Request
 
 		std::string	method;
 		std::string uri;
-		//uri에서 파일명을제거한 directory 경로, 아니라면 rawUri와 동일
-		std::string directory;
 		std::string	httpVersion;
 
 		std::string rawHeader;
@@ -47,7 +44,6 @@ class Request
 
 		std::string parseMethod(void);
 		std::string parseUri(void);
-		std::string parseDirectory(void);
 		std::string parseHttpVersion(void);
 		std::map<std::string, std::string> parseHeader(std::string);
 		std::string parseBody(void);
