@@ -241,7 +241,7 @@ std::vector<std::string> Server::splitSpaces(const std::string &str)
 {
 	std::vector<std::string>	result;
 	char	*cur = const_cast<char *>(str.c_str());
-	char	*prev = const_cast<char *>(cur);
+	char	*prev = cur;
 
 	// NULL 만날 때까지 반복
 	while (*cur)
