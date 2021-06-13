@@ -15,3 +15,11 @@ const char *FileDoesNotExistException::what() const throw()
 {
     return "Error : file not exist";
 }
+
+/*
+ * 실행시 argument의 갯수나 내용일 틀릴시 발생시키는 예외
+ */
+const char *ArgumentException::what() const throw()
+{
+    return "Error : wrong argument. ./webserv [CONFIG_FILE]";
+}

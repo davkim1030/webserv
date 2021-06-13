@@ -1,6 +1,5 @@
-
 #include "webserv.h"
-# include "Request.hpp"
+#include "Request.hpp"
 
 /*
 ** ------------------------------- CONSTRUCTOR --------------------------------
@@ -94,9 +93,11 @@ void Request::parseRequest(void)
 	std::size_t headerEndPos = this->rawRequest.find("\r\n\r\n");
 	this->rawHeader = this->rawRequest.substr(headerStartPos, headerEndPos - headerStartPos + 2);
 
-	this->rawBody = this->rawRequest.substr(headerEndPos + 4, this->rawRequest.length() - headerEndPos);
-
 	this->header = parseHeader(this->getRawHeader());
+	if (this->getHeader()["Transfer-Encoding"] != "chunked")
+		this->rawBody = this->rawRequest.substr(headerEndPos + 4, this->rawRequest.length() - headerEndPos);
+	else
+		this->rawBody = parseBody();
 }
 
 /*
@@ -104,6 +105,39 @@ void Request::parseRequest(void)
 */
 std::string Request::parseMethod(void) {
 	return (this->rawRequest.substr(0, rawRequest.find(' ')));
+}
+
+int ft_hex_atoi(const std::string &str)
+{
+	int result = 0;
+	for (std::string::const_iterator iter = str.begin(); iter != str.end(); iter++)
+	{
+		if (*iter >= 'A' && *iter <= 'F')
+			result = (*iter - 'A' + 10) + result * 16;
+		else if (*iter >= 'a' && *iter <= 'f')
+			result = (*iter - 'a' + 10) + result * 16;
+		else if (*iter >= '0' && *iter <= '9')
+			result = (*iter - '0') + result * 16;
+		else break ;
+	}
+	return result;
+}
+
+/*
+*  Transfer-Encoding 헤더가 chunked 옵션으로 들어온 경우 body를 파싱합니다.
+*/
+std::string Request::parseBody(void) {
+	size_t dataSize;
+	std::string data;
+	std::string rawBody = this->rawRequest.substr(this->rawRequest.find("\r\n\r\n") + 4);
+
+	while ((dataSize = ft_hex_atoi(rawBody.substr(0, rawBody.find("\r\n")).c_str())) != 0)
+	{
+		rawBody = rawBody.substr(rawBody.find("\r\n") + 2);
+		data += rawBody.substr(0, dataSize);
+		rawBody = rawBody.substr(rawBody.find("\r\n") + 2);
+	}
+	return data;
 }
 
 /*
@@ -173,10 +207,23 @@ std::map<std::string, std::string> Request::parseHeader(std::string rawHeader)
 	return header;
 }
 
+bool Request::isParsable()
+{
+	return (rawRequest.find("\r\n"));
+}
+
 /*
 * 가공되지 않은 HTTP 요청 문자열에 인자로 받은 string을 할당합니다.
 */
 void Request::setRawRequest(std::string data){	this->rawRequest = data;	}
+
+/*
+ * 정제되지 않은 기본 리퀘스트를 가져온다.
+ */
+std::string const &Request::getRawRequest()
+{
+	return (rawRequest);
+}
 
 /*
 * method 값을 취합니다.
@@ -218,3 +265,10 @@ std::map<std::string, std::string> Request::getHeader(void) const {	return this-
 */
 std::string Request::getRawBody(void) const {	return this->rawBody;	}
 
+/*
+ * Request의 host 정보를 가져온다.
+ */
+std::string const &Request::getHost(void)
+{
+	return host;
+}
