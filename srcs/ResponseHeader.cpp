@@ -41,7 +41,7 @@ void ResponseHandler::addDateHeader(void)
 */
 void ResponseHandler::addServerHeader(void)
 {
-	addResponseHeader("server", "FDB");
+	addResponseHeader("Server", "FDB");
 }
 
 /*

@@ -152,7 +152,6 @@ Response ResponseHandler::makeResponse()
 			makeConnectResponse();
 
 		this->resourcePath = '.' + request.getUri();
-		//경로 한번 더 검사-> 존재 안하면
 		if (checkPath(this->resourcePath) == NOT_FOUND && request.getMethod() != "PUT" && request.getMethod() != "POST")
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
 
@@ -283,15 +282,33 @@ std::string ResponseHandler::fileExtension(std::string resourcePath)
 
 void ResponseHandler::makePostResponse(void)
 {
-//작성중
+	int fd;
+	int pathType = checkPath(this->resourcePath);
 
-/*
-Content-Type: application/x-www-form-urlencoded
-Content-Length: 13
+	switch (pathType)
+	{
+		case NOT_FOUND :
+		{
+			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0)
+				throwErrorResponse(SERVER_ERR, request.getHttpVersion());
 
-say=Hi&to=Mom
-*/
-// O_APPEND
+			write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			close(fd);
+			addContentLocationHeader();
+			throw Response(201, responseHeader, "", request.getHttpVersion());
+		}
+		case ISFILE :
+		{
+			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_APPEND )) < 0)
+				throwErrorResponse(SERVER_ERR, request.getHttpVersion());
+			write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			close(fd);
+			addContentLocationHeader();
+			throw Response(200, responseHeader, "", request.getHttpVersion());
+		}
+		default :
+			throwErrorResponse(FORBIDDEN, request.getHttpVersion());
+	}
 }
 
 /*
@@ -315,23 +332,22 @@ void ResponseHandler::makePutResponse(void)
 	{
 		case NOT_FOUND :
 		{
-			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC)) < 0)
+			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0)
 				throwErrorResponse(SERVER_ERR, request.getHttpVersion());
 
-			write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-length"].c_str()));
+			write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
 			close(fd);
 			addContentLocationHeader();
 			throw Response(201, responseHeader, "", request.getHttpVersion());
 		}
 		case ISFILE :
 		{
-			if ((fd = open(this->resourcePath.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644)) < 0)
+			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_TRUNC)) < 0)
 				throwErrorResponse(SERVER_ERR, request.getHttpVersion());
-
-			write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-length"].c_str()));\
+			write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
 			close(fd);
 			addContentLocationHeader();
-			throw Response(204, responseHeader, "", request.getHttpVersion());
+			throw Response(200, responseHeader, "", request.getHttpVersion());
 		}
 		default :
 			throwErrorResponse(FORBIDDEN, request.getHttpVersion());
