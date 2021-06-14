@@ -10,21 +10,30 @@ pid        /var/run/nginx.pid; # 마스터 프로세스 ID 저장
 
 server {
 	server_name default_server;
-	listen 8080;
+	listen 8082;
 
 	location / {
-		root /
+		root ./
 		allow_method GET;
 		cgi_path ./
-		cgi_extention .bla
-		cgi_extention .p
+		cgi_extension .bla
+		cgi_extension .p
 		index index.php index.html index.htm index.php;
 		autoindex on;
 	}
 
+	location /directory/ {
+		root ./test/YoupiBanane/;
+		allow_method GET POST DELETE HEAD;
+		cgi_path ./
+		cgi_extension .bla
+		cgi_extension .p
+		index youpi.bad_extension;
+	}
+	
 	location /test/ {
 		index index.php index.html index.htm index.php;
-		root /test/;
+		root ./test/;
 		allow_method GET POST DELETE HEAD;
 
 	}

@@ -20,8 +20,6 @@ class Server
 		std::string					serverName;		// 서버 이름
 		int							socketFd;		// 소켓의 fd
 
-		std::vector<std::string>	splitSpaces(const std::string &str);
-
 	public:
 		// std::string 형태로 인자 받아서 바로 파싱해서 저장하자
 		Server();
