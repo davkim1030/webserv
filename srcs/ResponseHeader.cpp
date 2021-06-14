@@ -41,7 +41,7 @@ void ResponseHandler::addDateHeader(void)
 */
 void ResponseHandler::addServerHeader(void)
 {
-	addResponseHeader("server", "FDB");
+	addResponseHeader("Server", "FDB");
 }
 
 /*
@@ -50,13 +50,10 @@ void ResponseHandler::addServerHeader(void)
 */
 void ResponseHandler::addContentTypeHeader(std::string extension)
 {
-	size_t i = extension.find_first_of('.');
-	std::string filePath = std::string(extension, i + 1, extension.size() - i);
-
-	if (i == std::string::npos || mimeType.count(filePath) == 0)
-		addResponseHeader("Content-Type: ", mimeType["text/plain"]);
+	if (mimeType.count(extension) == 0)
+		addResponseHeader("Content-Type", "text/plain");
 	else
-		addResponseHeader("Content-Type: ", mimeType[filePath]);
+		addResponseHeader("Content-Type", mimeType[extension]);
 }
 
 /*
@@ -71,30 +68,30 @@ void ResponseHandler::addLastModifiedHeader(std::string path)
 	if (stat(path.c_str(), &statbuff) < 0)
 		throw Response(500, responseHeader, makeHTMLPage(ft_itoa(500)), request.getHttpVersion());
 	timeinfo = localtime(&statbuff.st_mtime);
-	addResponseHeader("Last-Modified: ", getFormatTime(timeinfo));
+	addResponseHeader("Last-Modified", getFormatTime(timeinfo));
 }
 
 void ResponseHandler::addContentLengthHeader(int length)
 {
-	addResponseHeader("Content-Length: ", ft_itoa(length));
+	addResponseHeader("Content-Length", ft_itoa(length));
 }
 
 void ResponseHandler::addContentLanguageHeader()
 {
-	addResponseHeader("Content-Language: ", "ko-KR");
+	addResponseHeader("Content-Language", "ko-KR");
 }
 
 void ResponseHandler::addContentLocationHeader()
 {
-	addResponseHeader("Content-Location: ", this->resourcePath);
+	addResponseHeader("Content-Location", this->resourcePath.substr(1));
 }
 
 void ResponseHandler::addAllowHeader(std::string allow)
 {
-	addResponseHeader("Allow: ", allow);
+	addResponseHeader("Allow", allow);
 }
 
 void ResponseHandler::addHostHeader()
 {
-	addResponseHeader("Allow: ", resourcePath);
+	addResponseHeader("Host", resourcePath);
 }

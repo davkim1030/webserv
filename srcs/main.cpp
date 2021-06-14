@@ -1,12 +1,12 @@
 #include "webserv.h"
+#include "Client.hpp"
+#include "Socket.hpp"
+#include "Location.hpp"
+#include "Server.hpp"
+#include "ServerConfig.hpp"
 #include "Exception.hpp"
-# include "Response.hpp"
-# include "Request.hpp"
-# include "ResponseHandler.hpp"
-# include "Server.hpp"
-# include "ServerConfig.hpp"
-# include "Location.hpp"
 
+<<<<<<< HEAD
 
 #include <stdio.h>
 #include <sys/socket.h>
@@ -17,44 +17,32 @@
 
 #define PORT 80
 int main(int argc, char *argv[])
+=======
+int		main(int argc, char *argv[])
+>>>>>>> main
 {
-    int server_fd, new_socket; long valread;
-    struct sockaddr_in address;
-    int addrlen = sizeof(address);
+    Socket socket;
 
-    char *hello = strdup("Hello from server");
-
-    // Creating socket file descriptor
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
+    try
     {
-        perror("In socket");
-        exit(EXIT_FAILURE);
-    }
+        if (argc >= 3)
+            throw ArgumentException();
+        // config 파일 파싱
+        ServerConfig::getInstance()->saveConfig(argc, argv[1]);
 
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons( PORT );
-
-    memset(address.sin_zero, '\0', sizeof address.sin_zero);
-
-    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address))<0)
-    {
-        perror("In bind");
-        exit(EXIT_FAILURE);
-    }
-    if (listen(server_fd, 10) < 0)
-    {
-        perror("In listen");
-        exit(EXIT_FAILURE);
-    }
-    while(1)
-    {
-        printf("\n+++++++ Waiting for new connection ++++++++\n\n");
-        if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0)
+        // for를 돌면서 각 서버 데이터에 대해서 소켓, 서버 시작
+        std::vector<Server> servers = ServerConfig::getInstance()->getServers();
+        for (std::vector<Server>::iterator server_it = servers.begin();
+                server_it != servers.end(); server_it++)
         {
-            perror("In accept");
-            exit(EXIT_FAILURE);
+            // 서버 개수만큼 소켓 초기화
+            socket.initServer(ServerConfig::getInstance()->getServers().size());
+            struct timeval timeout;
+            timeout.tv_sec = 5;
+            timeout.tv_usec = 0;
+            socket.runServer(timeout, 100);
         }
+<<<<<<< HEAD
 
         char buffer[30000] = {0};
         valread = read( new_socket , buffer, 30000);
@@ -67,6 +55,13 @@ int main(int argc, char *argv[])
 	    write(new_socket , hello , strlen(hello));
         printf("------------------Hello message sent-------------------\n");
         close(new_socket);
+=======
+>>>>>>> main
     }
-	close(server_fd);
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+        exit(1);
+    }
+    return (0);
 }

@@ -13,6 +13,7 @@ pid        /var/run/nginx.pid; # 마스터 프로세스 ID 저장
 
 server {
 	server_name default_server;
+<<<<<<< HEAD
 	listen 80;
 
 	location / {
@@ -56,4 +57,24 @@ server {
 			allow_method GET POST HEAD DELETE
 		}
 
+=======
+	listen 8080;
+
+	location / {
+		root /
+		allow_method GET;
+		cgi_path ./
+		cgi_extention .bla
+		cgi_extention .p
+		index index.php index.html index.htm index.php;
+		autoindex on;
+	}
+
+	location /test/ {
+		index index.php index.html index.htm index.php;
+		root /test/;
+		allow_method GET POST DELETE HEAD;
+
+	}
+>>>>>>> main
 }

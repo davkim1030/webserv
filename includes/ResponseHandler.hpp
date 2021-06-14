@@ -24,7 +24,7 @@ class ResponseHandler
 {
 	public:
 		// 생성자 & 소멸자 & 대입연산자 오버로딩
-		ResponseHandler(Request &request, std::vector<Server>::iterator server);
+		ResponseHandler(Request &request, Server &server);
 		~ResponseHandler(void);
 		ResponseHandler & operator=( ResponseHandler const & rhs );
 
@@ -61,7 +61,7 @@ class ResponseHandler
 		ResponseHandler(const ResponseHandler & src);
 
 		Request request;
-		std::vector<Server>::iterator server;
+		Server server;
 		Location *location;
 		std::string resourcePath;
 		std::map<std::string, std::string> responseHeader;
@@ -73,7 +73,10 @@ class ResponseHandler
 		void makeGetResponse(int);
 		void makeConnectResponse(void);
 		void makePutResponse(void);
+		void makePostResponse(void);
 		void makeDeleteResponse(void);
+
+		std::string fileExtension(std::string);
 
 		//에러 Response를 던지는 함수
 		void throwErrorResponse(int, std::string) throw(Response);

@@ -5,7 +5,8 @@
 
 Server::Server() {}
 
-Server::Server(Server const &serv) : option(serv.option), location(serv.location)
+Server::Server(Server const &serv) : option(serv.option), location(serv.location),
+		ip(serv.ip), port(serv.port), serverName(serv.serverName), socketFd(serv.socketFd)
 {}
 
 Server &Server::operator=(Server const &serv)
@@ -14,6 +15,10 @@ Server &Server::operator=(Server const &serv)
     {
         option = serv.option;
         location = serv.location;
+		ip = serv.ip;
+		port = serv.port;
+		serverName = serv.serverName;
+		socketFd = serv.socketFd;
     }
     return *this;
 }
@@ -86,7 +91,7 @@ Location *Server::getLocation(std::string const& path)
 	std::vector<Location>::iterator it;
 	for (it = location.begin(); it != location.end(); it++)
 	{
-		if (it->getPath() == path)
+		if (path.find(it->getPath()) != std::string::npos)
 			return &*it;
 	}
 	return NULL;
@@ -130,9 +135,34 @@ Server::Server(std::list<std::string> &strlst)
 			configParse(*it);
 		}
 	}
+	// ip, server_name, port 를 넣는다
+	parenFlag = parenFlag != -1 ? parenFlag : sliceOptions();
 	// parenFlag != -1 -> error
 	if (parenFlag != -1)
 		throw WrongFileFormatException();
+}
+
+/*
+ * 설정(config) 파일을 읽고난 후에 ip, port, server_name 자르고 저장하는 부분
+ * listen port ip 순으로 와야 하고 ip가 오지 않으면 기본으로 127.0.0.1을 설정
+ * server_name이 없으면 에러
+ * @return int: 이상 없으면 -1, 이상 있으면 1
+ */
+int Server::sliceOptions()
+{
+	std::vector<std::string> portIp;
+	
+	if (option.count("listen") == 0 || option.count("server_name") == 0)
+		return (1);
+	portIp = splitSpaces(option["listen"]);
+	if (portIp.size() == 1)
+		portIp.push_back("127.0.0.1");
+	else if (portIp.size() < 1)
+		return (1);
+	port = static_cast<unsigned int>(ft_atoi(portIp.at(0).c_str()));
+	ip = portIp.at(1);
+	serverName = option["server_name"];
+	return (-1);
 }
 
 /*
@@ -142,6 +172,48 @@ Server::Server(std::list<std::string> &strlst)
 std::string Server::getOption(std::string const &key)
 {
 	return option[key];
+}
+
+const std::string &Server::getIp() const
+{
+	return (ip);
+}
+
+unsigned int Server::getPort() const
+{
+	return (port);
+}
+
+const std::string &Server::getServerName() const
+{
+	return (serverName);
+}
+
+int Server::getSocketFd() const
+{
+	return (socketFd);
+}
+
+// setters
+
+void Server::setIp(const std::string &ip)
+{
+	this->ip = ip;
+}
+
+void Server::setPort(unsigned int port)
+{
+	this->port = port;
+}
+
+void Server::setServerName(const std::string &serverName)
+{
+	this->serverName = serverName;
+}
+
+void Server::setSocketFd(int socketFd)
+{
+	this->socketFd = socketFd;
 }
 
 /*
@@ -160,3 +232,33 @@ void Server::printItem()
 	std::cout << "==================================================" << std::endl;
 }
 
+/*
+ * 입력 받은 문자열을 띄어쓰기, 탭 단위로 나눠서 std::vector로 리턴
+ * @param const std::string &str : 띄어쓰기로 나눌 문자열
+ * @return std::vector<std::string> & : 문자열을 나눈 결과
+ */
+std::vector<std::string> Server::splitSpaces(const std::string &str)
+{
+	std::vector<std::string>	result;
+	char	*cur = const_cast<char *>(str.c_str());
+	char	*prev = cur;
+
+	// NULL 만날 때까지 반복
+	while (*cur)
+	{
+		if (ft_isblank(*cur))
+		{
+			result.push_back(str.substr(prev - str.c_str(), cur - prev));
+			// *cur가 0이면 멈춰야 함, *cur가 space이면 다음으로 가야함
+			while (*cur != '\0' && (*cur == ' ' || *cur == '\t'))
+				cur++;
+			prev = cur;
+		}
+		else
+			cur++;
+	}
+	// 루프 다 돌고 나서 안 들어간 값이 있으면 추가
+	if (cur != prev)
+		result.push_back(str.substr(prev - str.c_str(), cur - prev));
+	return (result);
+}

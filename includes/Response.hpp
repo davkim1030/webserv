@@ -15,6 +15,7 @@ private:
     std::string statusMessage;                  // 상태 메시지
     std::map<std::string, std::string> header;  // 헤더 데이터
     std::string body;                           // 바디 문자열
+    int lastResponse;                           // 마지막 리스폰스 타입
 
     Response();
 
@@ -88,6 +89,10 @@ public:
 
     // Methods
     std::string getMessage();
+    int getLastResponse();
+
+    void setLastResponse(int lastResponse);
+    void initResponse();
 
 };
 #endif
