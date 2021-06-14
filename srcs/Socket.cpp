@@ -104,7 +104,9 @@ void Socket::initServer(int socketCnt)
 	for (iter = ServerConfig::getInstance()->getServers().begin();
 		iter != ServerConfig::getInstance()->getServers().end(); iter++)
 	{
-		std::string key = iter->getIp() + ":" + ft_itoa(iter->getPort());
+		char *strTmp = ft_itoa(iter->getPort());
+		std::string key = iter->getIp() + ":" + strTmp;
+		free(strTmp);
 		std::cout << "IP: " << iter->getIp() << "$" << std::endl;
 		std::cout << "ServerName: " << iter->getServerName() << "$" << std::endl;
 		std::cout << "port: " << iter->getPort() << "$" << std::endl;
@@ -160,14 +162,13 @@ void Socket::runServer(struct timeval timeout, unsigned int bufferSize)
 	// 메인 루프
 	while (1)
 	{
-		usleep(5);	// cpu 100% 점유 방지
-
+ 
 		// fds들의 데이터 유실 방지를 위해 복사
 		cpyRfds = rfds;
 		cpyWfds = wfds;
 		cpyEfds = efds;
 
-		printFdsStatus(rfds, wfds, efds, fdMax);
+		// printFdsStatus(rfds, wfds, efds, fdMax);
 		// fd_set 변수의 0 ~ fdMax + 1까지 비트를 감시하여 읽기, 쓰기, 에러 요구가 일어났는지 확인
 		if ((fdNum = select(fdMax + 1, &cpyRfds, &cpyWfds, &cpyEfds, &timeout)) == -1)
 			throw SelectException();
@@ -287,6 +288,7 @@ void Socket::runServer(struct timeval timeout, unsigned int bufferSize)
 				}
 			}
 		}
+		usleep(500);	// cpu 100% 점유 방지
 	}
 }
 

@@ -10,7 +10,7 @@ pid        /var/run/nginx.pid; # 마스터 프로세스 ID 저장
 
 server {
 	server_name default_server;
-	listen 8082;
+	listen 8083;
 
 	location / {
 		root ./
@@ -22,7 +22,7 @@ server {
 		autoindex on;
 	}
 
-	location /directory/ {
+	location /directory {
 		root ./test/YoupiBanane/;
 		allow_method GET POST DELETE HEAD;
 		cgi_path ./

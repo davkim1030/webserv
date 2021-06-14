@@ -195,7 +195,7 @@ Response ResponseHandler::makeResponse()
 	responseHeader.clear();
 	resourcePath.clear();
 	throwErrorResponse(500, request.getHttpVersion());
-	return Response(500, responseHeader, makeHTMLPage(ft_itoa(500)), request.getHttpVersion());
+	return Response(500, responseHeader, makeHTMLPage("500"), request.getHttpVersion());
 }
 
 /*
@@ -223,13 +223,14 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 		if (!location->getOption("index").empty())
 		{
 			bool indexFileFlag = false;
-			char **indexFile = ft_split(location->getOption("index").c_str(), ' ');
-			for (int i = 0; indexFile[i]; i++)
+			std::vector<std::string> indexFile = splitSpaces(location->getOption("index"));
+			for (std::vector<std::string>::iterator iter = indexFile.begin();
+					iter != indexFile.end(); iter++)
 			{
 				struct stat buffer;
-				if (stat((this->resourcePath + indexFile[i]).c_str(), &buffer) == 0)
+				if (stat((this->resourcePath + *iter).c_str(), &buffer) == 0)
 				{
-					this->resourcePath = this->resourcePath + indexFile[i];
+					this->resourcePath = this->resourcePath + *iter;
 					indexFileFlag = true;
 					break ;
 				}
@@ -494,7 +495,9 @@ std::string ResponseHandler::makeHTMLPage(std::string str)
 
 void ResponseHandler::throwErrorResponse(int httpStatus, std::string version) throw(Response)
 {
-	std::string body = makeHTMLPage(ft_itoa(httpStatus));
+	char	*strTmp = ft_itoa(httpStatus);
+	std::string body = makeHTMLPage(strTmp);
+	free(strTmp);
 	addDateHeader();
 	addServerHeader();
 	addContentTypeHeader(".html");

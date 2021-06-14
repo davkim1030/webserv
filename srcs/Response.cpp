@@ -203,12 +203,14 @@ const char *Response::UnsupportedStatusCodeException::what() const throw()
 std::string Response::getMessage()
 {
     std::string result;
+    char *strTmp = ft_itoa(statusCode);
 
-    result = version + " " + ft_itoa(statusCode) + " " + statusMessage + "\r\n";
+    result = version + " " + strTmp + " " + statusMessage + "\r\n";
     for (std::map<std::string, std::string>::iterator iter = header.begin();
             iter != header.end(); iter++)
         result += iter->first + ": " + iter->second + "\n";
     result += "\r\n" + body + "\r\n";
+    free(strTmp);
     return (result);
 }
 
@@ -279,3 +281,4 @@ const std::string    Response::_502 = "Bad Gateway";
 const std::string    Response::_503 = "Service Unavailable";
 const std::string    Response::_504 = "Gateway Time-out";
 const std::string    Response::_505 = "HTTP Version not supported";
+
