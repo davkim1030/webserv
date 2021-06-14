@@ -170,10 +170,7 @@ Response ResponseHandler::makeResponse()
 				}
 			}
 		}
-<<<<<<< HEAD
 		// 못 찾으면 기본 값 주기
-=======
->>>>>>> 9027f4c9e83bb8747c1996c6899c6afc84414268
 		if (resourcePath == "")
 			this->resourcePath = location->getOption("root") + request.getUri(); //root 들어오면 더해주세요
 
