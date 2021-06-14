@@ -20,7 +20,6 @@ Request::Request( const Request & src )
 	setRawRequest(src.rawHeader);
 	this->method = src.getMethod();
 	this->uri = src.getUri();
-	this->directory = src.getDirectory();
 	this->httpVersion = src.getHttpVersion();
 	this->rawHeader = src.getRawHeader();
 	this->header = src.getHeader();
@@ -46,7 +45,6 @@ Request &				Request::operator=( Request const & rhs )
 		setRawRequest(rhs.rawHeader);
 		this->method = rhs.getMethod();
 		this->uri = rhs.getUri();
-		this->directory = rhs.getDirectory();
 		this->httpVersion = rhs.getHttpVersion();
 		this->rawHeader = rhs.getRawHeader();
 		this->header = rhs.getHeader();
@@ -66,7 +64,6 @@ void Request::initRequest(void)
 {
 	this->method.clear();
 	this->uri.clear();
-	this->directory.clear();
 	this->httpVersion.clear();
 
 	this->rawHeader.clear();
@@ -82,7 +79,6 @@ void Request::parseRequest(void)
 {
 	this->method = parseMethod();
 	this->uri = parseUri();
-	this->directory = parseDirectory();
 	this->httpVersion = parseHttpVersion();
 
 	std::size_t headerStartPos = this->rawRequest.find("\r\n") + 2;
@@ -147,17 +143,6 @@ std::string Request::parseUri(void) {
 }
 
 /*
-* uri에서 파일명/쿼리스트링/가상경로를 제외한 directory를 파싱합니다.
-* uri가 directory이거나 /가 존재하지 않을 경우 반환값은 uri와 동일합니다.
-*/
-std::string Request::parseDirectory(void) {
-	if (this->uri[this->uri.size() - 1] == '/')
- 		return this->uri;
-	if (this->uri.find('/', 1) == std::string::npos)
-		return std::string("/");
- 	return (this->uri.substr(0, this->uri.find_first_of('/', 1) + 1));
-}
-/*
 * 가공되지 않은 HTTP 요청 문자열에서 HTTP 버전을 파싱합니다.
 */
 std::string Request::parseHttpVersion(void) {
@@ -217,11 +202,6 @@ std::string Request::getMethod(void) const {	return this->method;	}
 * uri 값을 취합니다.
 */
 std::string Request::getUri(void) const {	return this->uri;	}
-
-/*
-* uri에서 파싱된 경로값을 취합니다.
-*/
-std::string Request::getDirectory(void) const {	return this->directory;	}
 
 /*
 * http 버전 값을 취합니다.
