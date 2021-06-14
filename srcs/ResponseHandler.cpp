@@ -131,7 +131,6 @@ Response ResponseHandler::makeResponse()
 
 	try{
 		/*CGI를 넣어주세요.*/
-
 		//location에서 uri를 찾지말고 uri에서 location을 찾아야합니다.
 		location = server.getLocation(request.getUri());
 
@@ -154,7 +153,27 @@ Response ResponseHandler::makeResponse()
 		else if (request.getMethod() == "CONNECT")
 			makeConnectResponse();
 
-		this->resourcePath = location->getOption("root") + request.getUri(); //root 들어오면 더해주세요
+		// 로케이션 이름(가상 디렉토리)들 중에서 request의 uri와 같은 것이 있는지 찾기
+		std::vector<Location> loc = server.getLocationVector();
+		for (std::vector<Location>::iterator iter = loc.begin();
+				iter != loc.end(); iter++)
+		{
+			// request uri랑 같은 가상 디렉토리가 있음
+			if (iter->getPath() == request.getUri())
+			{
+				location = &(*iter);
+				// 있으면 거기서 인덱스 찾기
+				if (iter->getOption("index") != "")
+				{
+					resourcePath = iter->getOption("root");
+					break ;
+				}
+			}
+		}
+		// 못 찾으면 기본 값 주기
+		if (resourcePath == "")
+			this->resourcePath = location->getOption("root") + request.getUri(); //root 들어오면 더해주세요
+
 		if (checkPath(this->resourcePath) == NOT_FOUND && request.getMethod() != "PUT" && request.getMethod() != "POST")
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
 		if (request.getMethod() == "GET")

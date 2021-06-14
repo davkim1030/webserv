@@ -9,7 +9,10 @@ Location::Location(Location const &lo) : path(lo.path), option(lo.option)
 Location &Location::operator=(Location const &lo)
 {
 	if (this != &lo)
+	{
 		option = lo.option;
+		path = lo.path;
+	}
 	return *this;
 }
 
@@ -95,7 +98,7 @@ std::string Location::getPath() const
 	@param -> key -> option에 저장된 key와 매칭되는 value를 반환
 */
 std::string Location::getOption(std::string const &key)
-{
+{	
 	return option[key];
 }
 
