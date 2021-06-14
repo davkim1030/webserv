@@ -8,6 +8,9 @@ worker_processes  1; # 프로세스 실행 가능 수
 error_log  /var/log/nginx/error.log warn; # 에러 정보 저장
 pid        /var/run/nginx.pid; # 마스터 프로세스 ID 저장
 
+
+/test/dir/index.html
+
 server {
 	server_name default_server;
 	listen 80;
@@ -25,7 +28,11 @@ server {
 		root /test/;
 		allow_method GET POST DELETE HEAD;
 	}
-	
+
+	location /test/dir/index.html {
+		root /test/dir/;
+		allow_method GET POST DELETE HEAD;
+	}
 
 }
 

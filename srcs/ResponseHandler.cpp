@@ -219,15 +219,15 @@ Response ResponseHandler::makeResponse()
 
 	server->printItem();
 	try{
-		location = server->getLocation(request.getDirectory());
-		if (location == NULL)
-			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
-
 		if (isCgi())
 		{
 			std::cout << "cgi on " << std::endl;
 			cgiResponse(cgiRequest());
 		}
+
+		location = server->getLocation(request.getDirectory());
+		if (location == NULL)
+			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
 
 
 		if (!location->getOption("allow_method").empty() && request.getMethod() != "GET" && request.getMethod() != "HEAD")
