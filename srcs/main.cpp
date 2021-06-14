@@ -6,20 +6,7 @@
 #include "ServerConfig.hpp"
 #include "Exception.hpp"
 
-<<<<<<< HEAD
-
-#include <stdio.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <netinet/in.h>
-#include <string.h>
-
-#define PORT 80
-int main(int argc, char *argv[])
-=======
 int		main(int argc, char *argv[])
->>>>>>> main
 {
     Socket socket;
 
@@ -42,21 +29,6 @@ int		main(int argc, char *argv[])
             timeout.tv_usec = 0;
             socket.runServer(timeout, 100);
         }
-<<<<<<< HEAD
-
-        char buffer[30000] = {0};
-        valread = read( new_socket , buffer, 30000);
-        ServerConfig::getInstance()->saveConfig(argc, argv[1]);
-        std::vector<Server> server = ServerConfig::getInstance()->getServers();
-		Request request(buffer);
-		request.parseRequest();
-		ResponseHandler responseHandler(request, server.begin());
-		Response Res = responseHandler.makeResponse();
-	    write(new_socket , hello , strlen(hello));
-        printf("------------------Hello message sent-------------------\n");
-        close(new_socket);
-=======
->>>>>>> main
     }
     catch(const std::exception& e)
     {

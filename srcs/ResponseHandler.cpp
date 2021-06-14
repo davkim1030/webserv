@@ -191,7 +191,7 @@ int ResponseHandler::isCgi() //later
 		/test/test.bla/path/
 		/test/test.bla/path/?query_string
 	*/
-	std::string uri = request.getRawUri();
+	std::string uri = request.getUri();
 	std::cout << "uri test : " << uri << std::endl;
 
 	if (uri.find(".bla") != std::string::npos)
@@ -217,7 +217,7 @@ Response ResponseHandler::makeResponse()
 		또한 Host 헤더가 들어오면, Host헤더의 value 포트로 이동하게 해주세요!
 	*/
 
-	server->printItem();
+	server.printItem();
 	try{
 		
 		if (isCgi())
@@ -227,7 +227,7 @@ Response ResponseHandler::makeResponse()
 		}
 
 		//location에서 uri를 찾지말고 uri에서 location을 찾아야합니다.
-		location = server->getLocation(request.getUri());
+		location = server.getLocation(request.getUri());
 
 		if (location == NULL)
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
@@ -251,22 +251,7 @@ Response ResponseHandler::makeResponse()
 		this->resourcePath = location->getOption("root") + request.getUri(); //root 들어오면 더해주세요
 		if (checkPath(this->resourcePath) == NOT_FOUND && request.getMethod() != "PUT" && request.getMethod() != "POST")
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
-<<<<<<< HEAD
-
-		/*
-		* 여기에는
-		* 1. 메소드에 따라 CGI 호출 여부를 결정하는 부분
-		* 2. Transfer-Encoding 처리
-		* 3. redirection 처리
-		* 가 추가되어야 합니다.
-		*/
-
-
-
-		if (request.getMethod() == "GET" || request.getMethod() == "POST")
-=======
 		if (request.getMethod() == "GET")
->>>>>>> main
 			makeGetResponse(0);
 		if (request.getMethod() == "HEAD")
 			makeGetResponse(HEAD_METHOD);

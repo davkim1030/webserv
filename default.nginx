@@ -13,51 +13,6 @@ pid        /var/run/nginx.pid; # 마스터 프로세스 ID 저장
 
 server {
 	server_name default_server;
-<<<<<<< HEAD
-	listen 80;
-
-	location / {
-		root /test/
-		allow_method GET;
-
-		cgi_path ./
-		cgi_extention .bla
-		cgi_extention .p
-	}
-
-	location /test/ {
-		root /test/;
-		allow_method GET POST DELETE HEAD;
-	}
-
-	location /test/dir/index.html {
-		root /test/dir/;
-		allow_method GET POST DELETE HEAD;
-	}
-
-}
-
-server {
-		listen 443;
-
-		root /var/www/html;
-
-		index index.php index.html index.htm index.php; # lienldifnsil
-
-		server_name _;
-
-		location / {
-			allow_method GET POST;
-			autoindex on;
-			try_files $uri $uri/ =404;
-		}
-
-		location /test/ {
-			autoindex on;
-			allow_method GET POST HEAD DELETE
-		}
-
-=======
 	listen 8080;
 
 	location / {
@@ -76,5 +31,4 @@ server {
 		allow_method GET POST DELETE HEAD;
 
 	}
->>>>>>> main
 }
