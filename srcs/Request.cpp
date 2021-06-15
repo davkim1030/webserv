@@ -77,6 +77,7 @@ void Request::initRequest(void)
 */
 void Request::parseRequest(void)
 {
+	std::cout << "raw : " << rawRequest << std::endl;
 	this->method = parseMethod();
 	this->uri = parseUri();
 	this->httpVersion = parseHttpVersion();

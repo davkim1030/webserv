@@ -62,10 +62,11 @@ class ResponseHandler
 
 		Request request;
 		Server server;
-		Location *location;
+		Location location;
 		std::string resourcePath;
 		std::map<std::string, std::string> responseHeader;
 		std::map<std::string, std::string> mimeType;
+		std::map<std::string, std::string> metaVariable;
 
 		//각 메소드별 Response 생성함수
 		void makeTraceResponse(void);
@@ -88,6 +89,13 @@ class ResponseHandler
 
 		//경로를 확인하는 함수
 		int checkPath(std::string);
+
+
+		//joockim
+		bool isCgi();
+		char** makeCgiEnvp();
+		void cgiResponse();
+		Location findLocation(std::string uri);
 };
 
 #endif

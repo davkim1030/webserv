@@ -3,7 +3,8 @@
 
 Location::Location() {}
 
-Location::Location(Location const &lo) : path(lo.path), option(lo.option)
+Location::Location(Location const &lo)
+: path(lo.path), option(lo.option), index(lo.index), allow_method(lo.allow_method), cgi_extension(lo.cgi_extension)
 {}
 
 Location &Location::operator=(Location const &lo)
@@ -12,6 +13,9 @@ Location &Location::operator=(Location const &lo)
 	{
 		option = lo.option;
 		path = lo.path;
+		index = lo.index;
+		allow_method = lo.allow_method;
+		cgi_extension = lo.cgi_extension;
 	}
 	return *this;
 }
@@ -83,6 +87,9 @@ Location::Location(std::list<std::string> &line)
 		else
 			configParse(*it);
 	}
+	cgi_extension = splitSpaces(option["cgi_extension"]);
+	allow_method = splitSpaces(option["allow_method"]);
+	index = splitSpaces(option["index"]);
 }
 
 /*
@@ -98,7 +105,7 @@ std::string Location::getPath() const
 	@param -> key -> option에 저장된 key와 매칭되는 value를 반환
 */
 std::string Location::getOption(std::string const &key)
-{	
+{
 	return option[key];
 }
 
@@ -111,3 +118,19 @@ void Location::printItem()
 	for (std::map<std::string, std::string>::iterator bit = option.begin(); bit != option.end(); bit++)
 		std::cout << "option : {" << bit->first << "} {" << bit->second << "}" << std::endl;
 }
+
+std::vector<std::string>& 	Location::getIndexVector()
+{
+	return index;
+}
+
+std::vector<std::string>&	Location::getAllowMethodVector()
+{
+	return allow_method;
+}
+
+std::vector<std::string>&	Location::getCgiExtensionVector()
+{
+	return cgi_extension;
+}
+
