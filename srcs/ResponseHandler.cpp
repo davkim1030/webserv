@@ -135,8 +135,6 @@ int ResponseHandler::checkPath(std::string path)
 */
 char** ResponseHandler::makeCgiEnvp()
 {
-	std::map<std::string, std::string> metaVariable;
-
 	metaVariable["AUTH_TYPE"] = "null";
 	metaVariable["CONTENT_LENGTH"] = "100";
 	metaVariable["CONTENT_TYPE"] = "MIME type";
@@ -185,54 +183,93 @@ void ResponseHandler::cgiResponse()
 	int fd_read = fd[0];
 	int fd_write = fd[1];
 
-	std::string file_name = "./cgi_temp/";
-	std::cout << "file name : " << file_name << std::endl;
+	std::string tempFile = "test_file";
+	int fd_temp = open(tempFile.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0666);
+	if (fd_temp == -1)
+		throwErrorResponse(500, request.getHttpVersion());
+
+	if ((pid = fork()) == -1)
+		throwErrorResponse(500, request.getHttpVersion());
+	else if (pid == 0)
+	{
+		std::cout << "child " << std::endl;
+		close(fd_write);
+		// dup2(fd_read, 0);
+		// dup2(fd_temp, 1);
+		char *argv[3];
+		argv[0] = strdup(location.getOption("cgi_path").c_str());
+		std::cout << "cgi path : " << argv[0] << std::endl;
+
+		exit(1);
+	}
+	else
+	{
+
+	}
+
 }
 
 // cgi 실행 여부 판단
-bool ResponseHandler::isCgi() //later
+bool ResponseHandler::isCgi()
 {
-	// cgi extension 확인 후 넘기기
-	/*
-		/test/
-		/test/test.bla
-		/test/test.bla?query_string
-		/test/test.bla/path/
-		/test/test.bla/path/?query_string
+	std::string uri = request.getUri().substr(location.getPath().length());
+	std::vector<std::string> ext = location.getCgiExtensionVector();
 
-		1. .이 있는지 확인 -> .이 붙은 파일이 있어야만 검색시작 -> .기준으로 이전 /까지가 location
-		2. .이 있는 구간이 cgi 프로그램 name
-		3. ./ 이후로 /가 나오면 virtual path
-		4. ?가 있으면 query_string 저장
-	*/
-	std::string uri = request.getUri().substr(location->getPath().length());
-	std::cout << "in cgi uri : " << uri << std::endl;
+	for (std::vector<std::string>::iterator it = ext.begin(); it != ext.end(); it++)
+	{
+		int index = uri.find(*it);
+		if (index != std::string::npos && uri.compare(index, it->length(), *it) == 0)
+		{
+			int queryIndex;
+			if ((queryIndex = uri.find('?')) != -1)
+			{
+				metaVariable["QUERY_STRING"] = uri.substr(queryIndex + 1);
+				uri = uri.substr(0, queryIndex);
+			}
+			uri = uri.substr(index);
+			int pathIndex = uri.find('/');
+			// uri에서 가상 경로가 있는지 체크
+			if (pathIndex != std::string::npos)
+			{
+				metaVariable["PATH_INFO"] = uri.substr(pathIndex);
+				uri = uri.substr(0, pathIndex);
+			}
+			std::cout << "----------last test---------" << std::endl;
+			std::cout << "last uri : {" << uri << "}" << std::endl;
+			std::cout << "query : {" << metaVariable["QUERY_STRING"] << "}" << std::endl;
+			std::cout << "path info : {" << metaVariable["PATH_INFO"] << "}" << std::endl;
+			std::cout << "-=====================================-" << std::endl;
+			if(uri.compare(0, it->length() + 1,*it) != 0)
+				return false;
+			
+			return true;
+		}
+	}
 
-
-	return (true);
+	return (false);
 }
 
 
-/*
-* 입력 메소드와 헤더를 판단해 대응하는 응답값을 출력합니다.
-* @return 응답값을 담은 Response
-*/
 
-Location *ResponseHandler::findLocation(std::string uri)
+Location ResponseHandler::findLocation(std::string uri)
 {
 	std::vector<Location> ser = server.getLocationVector();
-	Location *res = NULL;
+	Location res;
 	for (std::vector<Location>::iterator it = ser.begin(); it != ser.end(); it++)
 	{
 		std::string path = it->getPath();
 		if (*path.rbegin() != '/')
 			path += '/';
 		if (uri.compare(0, path.length(), path) == 0)
-			res = &(*it);
+			res = *it;
 	}
 	return res;
 }
 
+/*
+* 입력 메소드와 헤더를 판단해 대응하는 응답값을 출력합니다.
+* @return 응답값을 담은 Response
+*/
 Response ResponseHandler::makeResponse()
 {
 	/*
@@ -243,9 +280,9 @@ Response ResponseHandler::makeResponse()
 	*/
 	try{
 		location = findLocation(request.getUri());
-		if (location == NULL)
+		if (location.getPath().empty())
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
-		
+
 		if (isCgi())
 		{
 			std::cout << "cgi on " << std::endl;
@@ -255,9 +292,9 @@ Response ResponseHandler::makeResponse()
 		std::cout << "cgi off" << std::endl;
 
 		//location에서 uri를 찾지말고 uri에서 location을 찾아야합니다.
-		if (!location->getOption("allow_method").empty() && request.getMethod() != "GET" && request.getMethod() != "HEAD")
+		if (!location.getOption("allow_method").empty() && request.getMethod() != "GET" && request.getMethod() != "HEAD")
 		{
-			std::string allow = location->getOption("allow_method");
+			std::string allow = location.getOption("allow_method");
 			if (allow.find(request.getMethod()) == std::string::npos)
 			{
 				addAllowHeader(allow);
@@ -272,7 +309,7 @@ Response ResponseHandler::makeResponse()
 		else if (request.getMethod() == "CONNECT")
 			makeConnectResponse();
 
-		this->resourcePath = location->getOption("root") + request.getUri(); //root 들어오면 더해주세요
+		this->resourcePath = location.getOption("root") + request.getUri(); //root 들어오면 더해주세요
 		if (checkPath(this->resourcePath) == NOT_FOUND && request.getMethod() != "PUT" && request.getMethod() != "POST")
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
 		if (request.getMethod() == "GET")
@@ -320,10 +357,10 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 		if (this->resourcePath[this->resourcePath.length() - 1] != '/')
 			this->resourcePath += '/';
 
-		if (!location->getOption("index").empty())
+		if (!location.getOption("index").empty())
 		{
 			bool indexFileFlag = false;
-			char **indexFile = ft_split(location->getOption("index").c_str(), ' ');
+			char **indexFile = ft_split(location.getOption("index").c_str(), ' ');
 			for (int i = 0; indexFile[i]; i++)
 			{
 				struct stat buffer;
@@ -334,7 +371,7 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 					break ;
 				}
 			}
-			if (indexFileFlag == false && location->getOption("autoindex") == "on")
+			if (indexFileFlag == false && location.getOption("autoindex") == "on")
 			{
 				addContentTypeHeader(".html");
 				throw Response(200, this->responseHeader, request.getMethod() != "HEAD" ? makeAutoIndexPage(this->resourcePath) : "", request.getHttpVersion());
@@ -484,9 +521,9 @@ void ResponseHandler::makeDeleteResponse(void)
 	if (checkPath(this->resourcePath) == ISFILE)
 	{
 		unlink(this->resourcePath.c_str());
-		if (!location->getOption("allow_method").empty())
+		if (!location.getOption("allow_method").empty())
 		{
-			std::string allow = location->getOption("allow_method");
+			std::string allow = location.getOption("allow_method");
 			addAllowHeader(allow);
 		}
 		throw Response(200, responseHeader, makeHTMLPage("File deleted"), request.getHttpVersion());
@@ -508,9 +545,9 @@ void ResponseHandler::makeTraceResponse()
 */
 void ResponseHandler::makeOptionResponse()
 {
-	if (!location->getOption("allow_method").empty())
+	if (!location.getOption("allow_method").empty())
 	{
-		std::string allow = location->getOption("allow_method");
+		std::string allow = location.getOption("allow_method");
 		addAllowHeader(allow);
 	}
 	throw Response(200, responseHeader, "", request.getHttpVersion());

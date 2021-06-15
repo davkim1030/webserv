@@ -14,8 +14,9 @@ class Location
 	private:
 		std::string							path;
 		std::map<std::string, std::string>	option;
-		std::list<std::string> index;
-		std::list<std::string> allow_method;
+		std::vector<std::string> index;
+		std::vector<std::string> allow_method;
+		std::vector<std::string> cgi_extension;
 
 	public:
 		Location();
@@ -26,6 +27,10 @@ class Location
 
 		void configParse(std::string line);
 		void saveLocation(std::string line);
+
+		std::vector<std::string>& getIndexVector();
+		std::vector<std::string>& getAllowMethodVector();
+		std::vector<std::string>& getCgiExtensionVector();
 
 		void printItem();
 
