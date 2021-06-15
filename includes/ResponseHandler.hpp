@@ -90,9 +90,10 @@ class ResponseHandler
 
 
 		//joockim
-		int isCgi();
-		char** cgiRequest();
-		void cgiResponse(char **envp);
+		bool isCgi();
+		char** makeCgiEnvp();
+		void cgiResponse();
+		Location *findLocation(std::string uri);
 };
 
 #endif

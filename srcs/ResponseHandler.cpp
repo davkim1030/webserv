@@ -133,7 +133,7 @@ int ResponseHandler::checkPath(std::string path)
 
 	
 */
-char** ResponseHandler::cgiRequest()
+char** ResponseHandler::makeCgiEnvp()
 {
 	std::map<std::string, std::string> metaVariable;
 
@@ -175,13 +175,22 @@ char** ResponseHandler::cgiRequest()
 	return res;
 }
 
-void ResponseHandler::cgiResponse(char **envp)
+void ResponseHandler::cgiResponse()
 {
+	pid_t pid;
+	
+	int fd[2];
+	if (pipe(fd) == -1)
+		throwErrorResponse(500, request.getHttpVersion());
+	int fd_read = fd[0];
+	int fd_write = fd[1];
 
+	std::string file_name = "./cgi_temp/";
+	std::cout << "file name : " << file_name << std::endl;
 }
 
 // cgi 실행 여부 판단
-int ResponseHandler::isCgi() //later 
+bool ResponseHandler::isCgi() //later
 {
 	// cgi extension 확인 후 넘기기
 	/*
@@ -190,17 +199,17 @@ int ResponseHandler::isCgi() //later
 		/test/test.bla?query_string
 		/test/test.bla/path/
 		/test/test.bla/path/?query_string
+
+		1. .이 있는지 확인 -> .이 붙은 파일이 있어야만 검색시작 -> .기준으로 이전 /까지가 location
+		2. .이 있는 구간이 cgi 프로그램 name
+		3. ./ 이후로 /가 나오면 virtual path
+		4. ?가 있으면 query_string 저장
 	*/
-	std::string uri = request.getUri();
-	std::cout << "uri test : " << uri << std::endl;
-
-	if (uri.find(".bla") != std::string::npos)
-		std::cout << "bla find " << std::endl;
-
-	
+	std::string uri = request.getUri().substr(location->getPath().length());
+	std::cout << "in cgi uri : " << uri << std::endl;
 
 
-	return (1);
+	return (true);
 }
 
 
@@ -208,6 +217,22 @@ int ResponseHandler::isCgi() //later
 * 입력 메소드와 헤더를 판단해 대응하는 응답값을 출력합니다.
 * @return 응답값을 담은 Response
 */
+
+Location *ResponseHandler::findLocation(std::string uri)
+{
+	std::vector<Location> ser = server.getLocationVector();
+	Location *res = NULL;
+	for (std::vector<Location>::iterator it = ser.begin(); it != ser.end(); it++)
+	{
+		std::string path = it->getPath();
+		if (*path.rbegin() != '/')
+			path += '/';
+		if (uri.compare(0, path.length(), path) == 0)
+			res = &(*it);
+	}
+	return res;
+}
+
 Response ResponseHandler::makeResponse()
 {
 	/*
@@ -216,21 +241,20 @@ Response ResponseHandler::makeResponse()
 		클라이언트의 소프트웨어 정보를 보내주거나(User-Agent) 하는 부분이 추가되어야 합니다.
 		또한 Host 헤더가 들어오면, Host헤더의 value 포트로 이동하게 해주세요!
 	*/
-
-	server.printItem();
 	try{
+		location = findLocation(request.getUri());
+		if (location == NULL)
+			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
 		
 		if (isCgi())
 		{
 			std::cout << "cgi on " << std::endl;
-			cgiResponse(cgiRequest());
+			cgiResponse();
+			throwErrorResponse(500, request.getHttpVersion());
 		}
+		std::cout << "cgi off" << std::endl;
 
 		//location에서 uri를 찾지말고 uri에서 location을 찾아야합니다.
-		location = server.getLocation(request.getUri());
-
-		if (location == NULL)
-			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
 		if (!location->getOption("allow_method").empty() && request.getMethod() != "GET" && request.getMethod() != "HEAD")
 		{
 			std::string allow = location->getOption("allow_method");

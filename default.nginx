@@ -18,9 +18,8 @@ server {
 	location / {
 		root /
 		allow_method GET;
-		cgi_path ./
-		cgi_extention .bla
-		cgi_extention .p
+		cgi_path ./test_sample/
+		cgi_extension .bla .php
 		index index.php index.html index.htm index.php;
 		autoindex on;
 	}
@@ -29,6 +28,11 @@ server {
 		index index.php index.html index.htm index.php;
 		root /test/;
 		allow_method GET POST DELETE HEAD;
+	}
 
+	location /test/directory {
+		index index.php index.html index.htm index.php;
+		root /test/;
+		allow_method GET POST DELETE HEAD;
 	}
 }
