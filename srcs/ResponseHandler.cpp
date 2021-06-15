@@ -136,16 +136,14 @@ int ResponseHandler::checkPath(std::string path)
 char** ResponseHandler::makeCgiEnvp()
 {
 	metaVariable["AUTH_TYPE"] = "null";
-	metaVariable["CONTENT_LENGTH"] = "100";
+	metaVariable["CONTENT_LENGTH"] = request.getHeader()["Content-Length"];
 	metaVariable["CONTENT_TYPE"] = "MIME type";
 	metaVariable["GATEWAY_INTERFACE"] = "CGI/1.1";
 
 	// /test/cgi.bla/path/?query_string -> 이렇게 들어올 수 있음
 	// 뒤에 아무것도 안들어오는 경우, /만 들어오고 끝나는 경우, /path 하고 들어오는 경우
 	//   uri 통째로 써주기 ,      /만 써주기,             /path 써주기
-	metaVariable["PATH_INFO"] = "/";
-	metaVariable["PATH_TRANSLATED"] = "root/PATH_INFO";
-	metaVariable["QUERY_STRING"] = "QUERY_STRING";
+	metaVariable["PATH_TRANSLATED"] = location.getOption("root") + metaVariable["PATH_INFO"].substr(1);
 
 	metaVariable["REMOTE_ADDR"] = "clientIP"; // 클라이언트의 IP
 	metaVariable["REMOTE_IDENT"] = ""; // 없어두됨
@@ -166,6 +164,7 @@ char** ResponseHandler::makeCgiEnvp()
 	it != metaVariable.end(); it++)
 	{
 		std::string temp = std::string(it->first + "=" + it->second);
+		std::cout << temp << std::endl;
 		res[i] = ft_strdup(temp.c_str());
 		i++;
 	}
@@ -182,6 +181,10 @@ void ResponseHandler::cgiResponse()
 		throwErrorResponse(500, request.getHttpVersion());
 	int fd_read = fd[0];
 	int fd_write = fd[1];
+	std::cout << "========================cgi response========================" << std::endl;
+	std::cout << metaVariable["PATH_INFO"] << std::endl;
+	std::cout << metaVariable["QUERY_STRING"] << std::endl;
+	std::cout << "============================================================" << std::endl;
 
 	std::string tempFile = "test_file";
 	int fd_temp = open(tempFile.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0666);
@@ -198,13 +201,14 @@ void ResponseHandler::cgiResponse()
 		// dup2(fd_temp, 1);
 		char *argv[3];
 		argv[0] = strdup(location.getOption("cgi_path").c_str());
-		std::cout << "cgi path : " << argv[0] << std::endl;
-
+		argv[1] = strdup(("." + location.getOption("root") + metaVariable["SCRIPT_NAME"]).c_str());
+		argv[2] = NULL;
+		execve(argv[0], argv, makeCgiEnvp());
 		exit(1);
 	}
 	else
 	{
-
+		close(fd_read);
 	}
 
 }
@@ -212,7 +216,6 @@ void ResponseHandler::cgiResponse()
 // cgi 실행 여부 판단
 bool ResponseHandler::isCgi()
 {
-	return false;
 	std::string uri = request.getUri().substr(location.getPath().length());
 	std::vector<std::string> ext = location.getCgiExtensionVector();
 
@@ -227,6 +230,7 @@ bool ResponseHandler::isCgi()
 				metaVariable["QUERY_STRING"] = uri.substr(queryIndex + 1);
 				uri = uri.substr(0, queryIndex);
 			}
+			metaVariable["SCRIPT_NAME"] = uri.substr(0, index + it->length());
 			uri = uri.substr(index);
 			int pathIndex = uri.find('/');
 			// uri에서 가상 경로가 있는지 체크
@@ -235,11 +239,11 @@ bool ResponseHandler::isCgi()
 				metaVariable["PATH_INFO"] = uri.substr(pathIndex);
 				uri = uri.substr(0, pathIndex);
 			}
-			std::cout << "----------last test---------" << std::endl;
-			std::cout << "last uri : {" << uri << "}" << std::endl;
-			std::cout << "query : {" << metaVariable["QUERY_STRING"] << "}" << std::endl;
-			std::cout << "path info : {" << metaVariable["PATH_INFO"] << "}" << std::endl;
-			std::cout << "-=====================================-" << std::endl;
+			// std::cout << "----------last test---------" << std::endl;
+			// std::cout << "last uri : {" << uri << "}" << std::endl;
+			// std::cout << "query : {" << metaVariable["QUERY_STRING"] << "}" << std::endl;
+			// std::cout << "path info : {" << metaVariable["PATH_INFO"] << "}" << std::endl;
+			// std::cout << "-=====================================-" << std::endl;
 			if(uri.compare(0, it->length() + 1,*it) != 0)
 				return false;
 			

@@ -16,7 +16,7 @@ server {
 	listen 8081;
 
 	location / {
-		root /
+		root ./
 		allow_method GET;
 		cgi_path ./test_sample/cgi_tester
 		cgi_extension .bla .php
@@ -26,7 +26,7 @@ server {
 
 	location /test/ {
 		index index.php index.html index.htm index.php;
-		root /test/;
+		root ./test/;
 		allow_method GET POST DELETE HEAD;
 		cgi_extension .bla .php .cpp
 		cgi_path ./test_sample/cgi_tester
@@ -34,7 +34,7 @@ server {
 
 	location /test/directory {
 		index index.php index.html index.htm index.php;
-		root /test/;
+		root ./test/;
 		allow_method GET POST DELETE HEAD;
 		cgi_extension .bla .php .py .js
 		cgi_path ./test_sample/cgi_tester
