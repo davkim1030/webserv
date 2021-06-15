@@ -212,6 +212,7 @@ void ResponseHandler::cgiResponse()
 // cgi 실행 여부 판단
 bool ResponseHandler::isCgi()
 {
+	return false;
 	std::string uri = request.getUri().substr(location.getPath().length());
 	std::vector<std::string> ext = location.getCgiExtensionVector();
 
