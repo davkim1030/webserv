@@ -1,5 +1,18 @@
 #include "Socket.hpp"
 
+// 싱글톤 사용을 위한 변수 선언
+Socket *Socket::instance;
+
+/*
+ * 싱글톤 패턴을 위해 Socket 객체를 반환하는 함수
+ */
+Socket *Socket::getInstance()
+{
+	if (instance == NULL)
+		instance = new Socket();
+	return (instance);
+}
+
 /*
  * 현재 read, write, except fd_set의 현황을 출력하는 함수
  * @param fd_set rfds: 읽기 fds
@@ -37,7 +50,7 @@ void	printFdsStatus(fd_set rfds, fd_set wfds, fd_set efds, int fdMax)
  * 기본 생성자
  * 객체의 모든 fd_set 타입 멤버 변수들의 비트 값을 모두 0으로 초기화 함
  */
-Socket::Socket() : fdMax(-1)
+Socket::Socket() : fdMax(-1), serverConfig(ServerConfig())
 {
 	FD_ZERO(&rfds);
 	FD_ZERO(&wfds);
@@ -49,6 +62,7 @@ Socket::Socket() : fdMax(-1)
  */
 Socket::~Socket()
 {
+	delete instance;
 }
 
 /*
@@ -93,16 +107,19 @@ const char *Socket::SelectException::what() const throw()
 
 /*
  * 서버 초기 설정
- * nginx config를 파싱한 데이터를 기반으로 각 서버의 데이터를 가져와서 servers 변수에 등록
- * @param int socketCnt: config 파일에서 읽은 관리할 서버 소켓의 개수
+ * nginx config를 파싱한 데이터를 우선 파싱한다.
+ * 그 데이터를 기반으로 각 서버의 데이터를 가져와서 servers 변수에 등록
+ * @param int argc: 커맨드라인의 인자 개수(argc)
+ * @param int argv: 커맨드라인에서 받은 파일 이름(argv[1])
  */
-void Socket::initServer(int socketCnt)
+void Socket::initServer(int argc, char *argv)
 {
 	std::map<std::string, int> tmp;
 
+	serverConfig.saveConfig(argc, argv);
 	std::vector<Server>::iterator iter;
-	for (iter = ServerConfig::getInstance()->getServers().begin();
-		iter != ServerConfig::getInstance()->getServers().end(); iter++)
+	for (iter = serverConfig.getServers().begin();
+		iter != serverConfig.getServers().end(); iter++)
 	{
 		char *strTmp = ft_itoa(iter->getPort());
 		std::string key = iter->getIp() + ":" + strTmp;
@@ -116,32 +133,32 @@ void Socket::initServer(int socketCnt)
 			continue ;
 
 		struct sockaddr_in	serverAddr;							// 서버 소켓의 ip주소
-		iter->setSocketFd(socket(PF_INET, SOCK_STREAM, 0));		// 소켓 fd 생성
+		iter->setFd(socket(PF_INET, SOCK_STREAM, 0));			// 소켓 fd 생성
 		ft_memset(&serverAddr, '\0', sizeof(serverAddr));		// serverAddr 초기화
 		serverAddr.sin_family = AF_INET;						// IPv4 설정
 		serverAddr.sin_addr.s_addr = inet_addr(iter->getIp().c_str());	// ip 주소 설정
 		serverAddr.sin_port = htons(iter->getPort());			// 포트 설정
 
 		// 소켓, fd 바인드
-		if (bind(iter->getSocketFd(), (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
+		if (bind(iter->getFd(), (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
 			throw BindException();
 		// 데이터를 받을 서버 소켓 열기
-		if (listen(iter->getSocketFd(), socketCnt) == -1)
+		if (listen(iter->getFd(), serverConfig.getServers().size()) == -1)
 			throw ListenException();
 		
 		std::cout << iter->getIp() << ":" << iter->getPort() << std::endl;
 		
 		// 생성한 서버 소켓 fd 값을 fd_set 변수들에 대해 설정
-		FD_SET(iter->getSocketFd(), &rfds);
-		FD_SET(iter->getSocketFd(), &wfds);
-		FD_SET(iter->getSocketFd(), &efds);
+		FD_SET(iter->getFd(), &rfds);
+		FD_SET(iter->getFd(), &wfds);
+		FD_SET(iter->getFd(), &efds);
 
-		servers[iter->getSocketFd()] = *iter;	// Socket에서 관리할 서버 리스트에 위에서 생성한 서버 추가
-		tmp[key] = iter->getSocketFd();			// 중복 방지를 위해 tmp map에 추가
+		servers[iter->getFd()] = *iter;	// Socket에서 관리할 서버 리스트에 위에서 생성한 서버 추가
+		tmp[key] = iter->getFd();			// 중복 방지를 위해 tmp map에 추가
 
 		// select()로 감시할 fd의 최대값 업데이트
-		if (fdMax < iter->getSocketFd())
-			fdMax = iter->getSocketFd();
+		if (fdMax < iter->getFd())
+			fdMax = iter->getFd();
 	}
 }
 
@@ -204,7 +221,7 @@ void Socket::runServer(struct timeval timeout, unsigned int bufferSize)
 					
 					// clients map에 관리하는 클라이언트 정보 등록
 					clients[clientSocket].setServerSocketFd(i);
-					clients[clientSocket].setSocketFd(clientSocket);
+					clients[clientSocket].setFd(clientSocket);
 					clients[clientSocket].setLastReqMs(ft_get_time());
 				}
 				else						// 클라이언트 소켓

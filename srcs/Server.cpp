@@ -3,10 +3,13 @@
 #include "Server.hpp"
 #include "Exception.hpp"
 
-Server::Server() {}
+Server::Server() : IoObject(SERVER), port(-1)
+{}
 
-Server::Server(Server const &serv) : option(serv.option), location(serv.location),
-		ip(serv.ip), port(serv.port), serverName(serv.serverName), socketFd(serv.socketFd)
+Server::Server(Server const &serv)
+	: IoObject(serv.fd, serv.buffer, serv.status, SERVER),
+	option(serv.option), location(serv.location),
+	ip(serv.ip), port(serv.port), serverName(serv.serverName)
 {}
 
 Server &Server::operator=(Server const &serv)
@@ -18,7 +21,10 @@ Server &Server::operator=(Server const &serv)
 		ip = serv.ip;
 		port = serv.port;
 		serverName = serv.serverName;
-		socketFd = serv.socketFd;
+		fd = serv.fd;
+		buffer = serv.buffer;
+		status = serv.status;
+		type = serv.type;
     }
     return *this;
 }
@@ -189,11 +195,6 @@ const std::string &Server::getServerName() const
 	return (serverName);
 }
 
-int Server::getSocketFd() const
-{
-	return (socketFd);
-}
-
 // setters
 
 void Server::setIp(const std::string &ip)
@@ -211,11 +212,6 @@ void Server::setServerName(const std::string &serverName)
 	this->serverName = serverName;
 }
 
-void Server::setSocketFd(int socketFd)
-{
-	this->socketFd = socketFd;
-}
-
 /*
 	server가 가진 option목록 출력 후 location을 순환하며 printitem() 호출
 */
@@ -230,4 +226,16 @@ void Server::printItem()
 		it->printItem();
 
 	std::cout << "==================================================" << std::endl;
+}
+
+void	Server::doRead()
+{
+	int i = 1;
+	i++;
+}
+
+void	Server::doWrite()
+{
+	int i = 1;
+	i++;
 }

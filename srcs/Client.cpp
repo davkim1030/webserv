@@ -5,7 +5,7 @@
  * 클라이언트 클래스 기본 생성자
  * fd 값들을 -1로 지정하여 초기화 하지 않으면 사용 못 하게 함
  */
-Client::Client() : status(REQUEST_RECEIVING), serverSocketFd(-1), socketFd(-1),
+Client::Client() : IoObject(CLIENT), serverSocketFd(-1),
 		request(""), response(200, std::map<std::string, std::string>(), "")
 {
 	lastReqMs = ft_get_time();
@@ -15,9 +15,11 @@ Client::Client() : status(REQUEST_RECEIVING), serverSocketFd(-1), socketFd(-1),
  * 복사 생성자
  * @param const Client &other: 복사할 객체
  */
-Client::Client(const Client &other) : status(other.status), serverSocketFd(other.serverSocketFd),
-	socketFd(other.socketFd), request(other.request), response(other.response),
-	remainBody(other.remainBody), lastReqMs(other.lastReqMs)
+Client::Client(const Client &other)
+	: IoObject(other.fd, other.buffer, other.status, CLIENT),
+	serverSocketFd(other.serverSocketFd), request(other.request),
+	response(other.response), remainBody(other.remainBody),
+	lastReqMs(other.lastReqMs)
 {
 }
 
@@ -26,11 +28,11 @@ Client::Client(const Client &other) : status(other.status), serverSocketFd(other
  * @param: int serverSocketFd: 클라이언트가 연결된 서버의 소켓 fd
  * @param: int socketFd: 클라이언트에 할당된 소켓 fd
  */
-Client::Client(int serverSocketFd, int socketFd)
-	: serverSocketFd(serverSocketFd), socketFd(socketFd),
+Client::Client(int serverSocketFd, int fd)
+	: IoObject(fd, "", REQUEST_RECEIVING, CLIENT),
+	serverSocketFd(serverSocketFd),
 	request(""), response(200, std::map<std::string, std::string>(), "")
 {
-	status = REQUEST_RECEIVING;
 	remainBody = 0;
 	lastReqMs = ft_get_time();
 }
@@ -48,18 +50,15 @@ Client &Client::operator=(const Client &other)
 	{
 		status = other.status;
 		serverSocketFd = other.serverSocketFd;
-		socketFd = other.socketFd;
+		fd = other.fd;
+		buffer = other.buffer;
+		status = other.status;
 		request = other.request;
 		response = other.response;
 		remainBody = other.remainBody;
 		lastReqMs = other.lastReqMs;
 	}
 	return *this;
-}
-
-void	Client::setSocketFd(int socketFd)
-{
-	this->socketFd = socketFd;
 }
 
 void	Client::setServerSocketFd(int serverSocketFd)
@@ -85,11 +84,6 @@ void	Client::setLastReqMs(unsigned long lastReqMs)
 void	Client::setResponse(const Response &response)
 {
 	this->response = response;
-}
-
-int		Client::getSocketFd()
-{
-	return (socketFd);
 }
 
 int		Client::getServerSocketFd()
@@ -120,4 +114,16 @@ long long	Client::getRemainBody()
 unsigned long	Client::getLastReqMs()
 {
 	return (lastReqMs);
+}
+
+void	Client::doRead()
+{
+	int i = 1;
+	i++;
+}
+
+void	Client::doWrite()
+{
+	int i = 1;
+	i++;
 }

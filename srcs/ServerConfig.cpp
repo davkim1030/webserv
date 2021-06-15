@@ -4,8 +4,8 @@
 #include "ServerConfig.hpp"
 #include "Exception.hpp"
 
-// static variable extern
-ServerConfig *ServerConfig::instance;
+ServerConfig::ServerConfig()
+{}
 
 // copy constructor
 ServerConfig::ServerConfig(ServerConfig const &co) : option(co.option), server(co.server) {}
@@ -23,16 +23,6 @@ ServerConfig &ServerConfig::operator=(ServerConfig const &co)
 
 // destructor
 ServerConfig::~ServerConfig() {}
-
-/*
-	인스턴스 생성 및 반환
-*/
-ServerConfig* ServerConfig::getInstance()
-{
-	if (instance == NULL)
-		instance = new ServerConfig();
-	return instance;
-}
 
 /*
 	private 멤버 변수 server 반환 getter
