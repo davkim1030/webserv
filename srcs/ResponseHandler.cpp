@@ -276,6 +276,9 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 */
 void ResponseHandler::makeHeadResponse(void)
 {
+	addContentTypeHeader(".html");
+	addDateHeader();
+	addServerHeader();
 	if (server.getOption("allowed_method").find("HEAD") == std::string::npos)
 		throw Response(405, responseHeader, "", request.getHttpVersion());
 	makeGetResponse(HEAD_METHOD);

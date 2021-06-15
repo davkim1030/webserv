@@ -43,5 +43,9 @@ class Client : public IoObject
 		// Inherited Functions
 		void	doRead();
 		void	doWrite();
+		IoObject	*clone();
+
+		// member methods
+		bool	headerParsable();
 };
 #endif

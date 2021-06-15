@@ -228,14 +228,22 @@ void Server::printItem()
 	std::cout << "==================================================" << std::endl;
 }
 
+// TODO: 구현 필요
 void	Server::doRead()
 {
 	int i = 1;
 	i++;
 }
 
+// TODO: 구현 필요
 void	Server::doWrite()
 {
 	int i = 1;
 	i++;
+}
+
+IoObject *Server::clone()
+{
+	IoObject *tmp = new Server(*this);
+	return tmp;
 }

@@ -116,14 +116,31 @@ unsigned long	Client::getLastReqMs()
 	return (lastReqMs);
 }
 
+// TODO: 구현 필요
 void	Client::doRead()
 {
 	int i = 1;
 	i++;
 }
 
+// TODO: 구현 필요
 void	Client::doWrite()
 {
 	int i = 1;
 	i++;
+}
+
+/*
+ * 현재 buffer 데이터로 HTTP Request Message의 header 부분이 추출 가능한지 확인
+ * @return bool: 헤더가 다 들어왔는지
+ */
+bool	Client::headerParsable()
+{
+	return (buffer.find("\r\n"));
+}
+
+IoObject *Client::clone()
+{
+	IoObject *tmp = new Client(*this);
+	return tmp;
 }
