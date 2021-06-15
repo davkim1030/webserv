@@ -216,6 +216,7 @@ void ResponseHandler::cgiResponse()
 // cgi 실행 여부 판단
 bool ResponseHandler::isCgi()
 {
+	return false; //테스터용 
 	std::string uri = request.getUri().substr(location.getPath().length());
 	std::vector<std::string> ext = location.getCgiExtensionVector();
 
@@ -288,7 +289,7 @@ Response ResponseHandler::makeResponse()
 		if (location.getPath().empty())
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
 
-		if (!isCgi()) // 테스터용으로 결과 반전 시켜둠
+		if (isCgi())
 		{
 			std::cout << "cgi on " << std::endl;
 			cgiResponse();
