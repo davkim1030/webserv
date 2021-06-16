@@ -78,7 +78,10 @@ class ResponseHandler
 		void makePostResponse(void);
 		void makeDeleteResponse(void);
 
+		//경로에서 확장자를 추출하는 함수
 		std::string fileExtension(std::string);
+		//URI에서 root 문자열을 삭제하는 함수
+		std::string parseResourcePath(std::string);
 
 		//에러 Response를 던지는 함수
 		void throwErrorResponse(int, std::string) throw(Response);
@@ -89,7 +92,6 @@ class ResponseHandler
 
 		//경로를 확인하는 함수
 		int checkPath(std::string);
-
 
 		//joockim
 		bool isCgi();

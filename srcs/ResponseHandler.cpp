@@ -216,7 +216,7 @@ void ResponseHandler::cgiResponse()
 // cgi 실행 여부 판단
 bool ResponseHandler::isCgi()
 {
-	return false; //테스터용 
+	return false; //테스터용
 	std::string uri = request.getUri().substr(location.getPath().length());
 	std::vector<std::string> ext = location.getCgiExtensionVector();
 
@@ -315,12 +315,11 @@ Response ResponseHandler::makeResponse()
 		else if (request.getMethod() == "CONNECT")
 			makeConnectResponse();
 
-		// 못 찾으면 기본 값 주기
-		// if (resourcePath == "")
-		this->resourcePath = location.getOption("root") + request.getUri(); //root 들어오면 더해주세요
-
+		this->resourcePath = parseResourcePath(request.getUri());
+		std::cout << resourcePath << "1=======================================" << std::endl;
 		if (checkPath(this->resourcePath) == NOT_FOUND && request.getMethod() != "PUT" && request.getMethod() != "POST")
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
+		std::cout << "2=======================================" << std::endl;
 		if (request.getMethod() == "GET")
 			makeGetResponse(0);
 		if (request.getMethod() == "HEAD")
@@ -344,6 +343,16 @@ Response ResponseHandler::makeResponse()
 }
 
 /*
+* 	URI에서 location root 문자열을 삭제하는 함수
+작성중
+*/
+std::string ResponseHandler::parseResourcePath(std::string)
+{
+
+}
+
+
+/*
 * GET 메소드의 Response를 생성합니다.
 * 기본 헤더 : Date, Server
 * 엔티티 헤더 : Last-Modified
@@ -356,7 +365,6 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 	int fd;
 	struct stat	sb;
 	int res;
-
 	addDateHeader();
 	addServerHeader();
 	if (checkPath(this->resourcePath) == ISDIR)
