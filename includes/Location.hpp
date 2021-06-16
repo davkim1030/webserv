@@ -36,7 +36,7 @@ class Location
 
 		std::string getOption(std::string const &key);
 		std::string getPath() const;
-		
+
 };
 
 #endif

@@ -264,9 +264,8 @@ Location ResponseHandler::findLocation(std::string uri)
 	for (std::vector<Location>::iterator it = ser.begin(); it != ser.end(); it++)
 	{
 		std::string path = it->getPath();
-		if (*path.rbegin() != '/')
-			path += '/';
-		if (uri.compare(0, path.length(), path) == 0)
+		std::string tempPath = path + '/';
+		if (uri.compare(0, path.length(), path) == 0 || uri.compare(0, tempPath.length(), tempPath) == 0)
 			res = *it;
 	}
 	return res;
@@ -314,12 +313,10 @@ Response ResponseHandler::makeResponse()
 			makeOptionResponse();
 		else if (request.getMethod() == "CONNECT")
 			makeConnectResponse();
-
 		this->resourcePath = parseResourcePath(request.getUri());
-		std::cout << resourcePath << "1=======================================" << std::endl;
+
 		if (checkPath(this->resourcePath) == NOT_FOUND && request.getMethod() != "PUT" && request.getMethod() != "POST")
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
-		std::cout << "2=======================================" << std::endl;
 		if (request.getMethod() == "GET")
 			makeGetResponse(0);
 		if (request.getMethod() == "HEAD")
@@ -343,14 +340,20 @@ Response ResponseHandler::makeResponse()
 }
 
 /*
-* 	URI에서 location root 문자열을 삭제하는 함수
-작성중
+* Request URI에서 Location->path를 찾아, root 값으로 치환해줍니다.
+* @param Request URI
+* @return PATH가 ROOT로 치환된 URI
 */
-std::string ResponseHandler::parseResourcePath(std::string)
+std::string ResponseHandler::parseResourcePath(std::string uri)
 {
-
+	std::string path = this->location.getPath();
+	if (*path.rbegin() != '/')
+			path += '/';
+	std::string root = this->location.getOption("root");
+	size_t path_pos = uri.find_first_of(path);
+	uri.replace(path_pos, path.length(), root);
+	return uri;
 }
-
 
 /*
 * GET 메소드의 Response를 생성합니다.
@@ -369,7 +372,6 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 	addServerHeader();
 	if (checkPath(this->resourcePath) == ISDIR)
 	{
-
 		if (this->resourcePath[this->resourcePath.length() - 1] != '/')
 			this->resourcePath += '/';
 
@@ -393,6 +395,8 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 				addContentTypeHeader(".html");
 				throw Response(200, this->responseHeader, request.getMethod() != "HEAD" ? makeAutoIndexPage(this->resourcePath) : "", request.getHttpVersion());
 			}
+			if (checkPath(this->resourcePath) == NOT_FOUND || checkPath(this->resourcePath) == ISDIR)
+				throwErrorResponse(NOT_FOUND, request.getHttpVersion());
 		}
 	}
 	if ((fd = open(this->resourcePath.c_str(), O_RDONLY)) < 0)
