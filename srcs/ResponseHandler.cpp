@@ -135,23 +135,37 @@ int ResponseHandler::checkPath(std::string path)
 */
 char** ResponseHandler::makeCgiEnvp()
 {
-	metaVariable["AUTH_TYPE"] = "null";
+	if (metaVariable["PATH_INFO"].empty())
+		metaVariable["PATH_INFO"] = request.getUri();
+
+	metaVariable["AUTH_TYPE"] = request.getHeader()["Authorization"];
+	if (metaVariable["AUTH_TYPE"].empty())
+		metaVariable["AUTH_TYPE"] = "null";
+
 	metaVariable["CONTENT_LENGTH"] = request.getHeader()["Content-Length"];
-	metaVariable["CONTENT_TYPE"] = "MIME type";
-	metaVariable["GATEWAY_INTERFACE"] = "CGI/1.1";
+	if (metaVariable["CONTENT_LENGTH"].empty())
+		metaVariable["CONTENT_LENGTH"] = "0";
+
+	metaVariable["CONTENT_TYPE"] = request.getHeader()["Content-Type"];
+	if (metaVariable["CONTENT_TYPE"].empty())
+		metaVariable["CONTENT_TYPE"] = "null";
+	metaVariable["GATEWAY_INTERFACE"] = "Cgi/1.1";
+
+	metaVariable["REQUEST_URI"] = request.getUri();
+	if (metaVariable.count("PATH_INFO") == 1)
+		metaVariable["REQUEST_URI"] = metaVariable["PATH_INFO"];
 
 	// /test/cgi.bla/path/?query_string -> 이렇게 들어올 수 있음
 	// 뒤에 아무것도 안들어오는 경우, /만 들어오고 끝나는 경우, /path 하고 들어오는 경우
 	//   uri 통째로 써주기 ,      /만 써주기,             /path 써주기
+
 	metaVariable["PATH_TRANSLATED"] = location.getOption("root") + metaVariable["PATH_INFO"].substr(1);
 
-	metaVariable["REMOTE_ADDR"] = "clientIP"; // 클라이언트의 IP
-	metaVariable["REMOTE_IDENT"] = ""; // 없어두됨
-	metaVariable["REMOTE_USER"] = ""; // 없어두됨 REMOTE 둘 다 AUTH 파일에 넘겨져 온다고 생각 중
+	metaVariable["REMOTE_ADDR"] = "127.0.0.1"; // 클라이언트의 IP
+	// metaVariable["REMOTE_IDENT"] = ""; // 없어두됨
+	// metaVariable["REMOTE_USER"] = ""; // 없어두됨 REMOTE 둘 다 AUTH 파일에 넘겨져 온다고 생각 중
 	
 	metaVariable["REQUEST_METHOD"] = "GET";
-	metaVariable["REQUEST_URI"] = "URI";
-	metaVariable["SCRIPT_NAME"] = ".bla file";
 	metaVariable["SERVER_NAME"] = "my server name";
 	metaVariable["SERVER_PORT"] = "server port";
 	metaVariable["SERVER_PROTOCOL"] = "HTTP/1.1";
@@ -181,10 +195,8 @@ void ResponseHandler::cgiResponse()
 		throwErrorResponse(500, request.getHttpVersion());
 	int fd_read = fd[0];
 	int fd_write = fd[1];
-	std::cout << "========================cgi response========================" << std::endl;
-	std::cout << metaVariable["PATH_INFO"] << std::endl;
-	std::cout << metaVariable["QUERY_STRING"] << std::endl;
-	std::cout << "============================================================" << std::endl;
+
+	fcntl(fd[1], F_SETFL, O_NONBLOCK);
 
 	std::string tempFile = "test_file";
 	int fd_temp = open(tempFile.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0666);
@@ -201,14 +213,16 @@ void ResponseHandler::cgiResponse()
 		// dup2(fd_temp, 1);
 		char *argv[3];
 		argv[0] = strdup(location.getOption("cgi_path").c_str());
-		argv[1] = strdup(("." + location.getOption("root") + metaVariable["SCRIPT_NAME"]).c_str());
+		argv[1] = strdup((location.getOption("root") + metaVariable["SCRIPT_NAME"]).c_str());
 		argv[2] = NULL;
 		execve(argv[0], argv, makeCgiEnvp());
 		exit(1);
 	}
 	else
 	{
+		waitpid(pid, NULL, WNOHANG);
 		close(fd_read);
+
 	}
 
 }
