@@ -180,6 +180,11 @@ bool Request::isParsable()
 	return (rawRequest.find("\r\n"));
 }
 
+void Request::setHeader(std::map<std::string, std::string> &header)
+{
+	this->header = header;
+}
+
 /*
 * 가공되지 않은 HTTP 요청 문자열에 인자로 받은 string을 할당합니다.
 */
@@ -229,4 +234,18 @@ std::string Request::getRawBody(void) const {	return this->rawBody;	}
 std::string const &Request::getHost(void)
 {
 	return host;
+}
+
+/*
+ * 전체 줄에서 첫 줄만 자르는 부분
+ * @param const std::string &firstLine: 자를 First Line 문자열이나 전체 메세지
+ */
+void	Request::parseFirstLine(const std::string &firstLine)
+{
+	std::string tmp = firstLine;
+	method = tmp.substr(0, tmp.find(' '));
+	tmp = tmp.substr(tmp.find(' ') + 1);
+	uri = tmp.substr(0, tmp.find(' '));
+	tmp = tmp.substr(tmp.find(' ') + 1);
+	httpVersion = tmp.substr(0, tmp.find("\r\n"));
 }

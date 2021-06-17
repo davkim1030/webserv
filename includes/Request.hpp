@@ -26,10 +26,16 @@ class Request
 		std::string const &getRawRequest(void);
 		std::string const &getHost(void);
 
+		void	setHeader(std::map<std::string, std::string> &header);
+
 		void	initRequest(void);
 		void	setRawRequest(std::string);
 		void	parseRequest(void);
 		bool	isParsable();
+		void	parseFirstLine(const std::string &firtLine);
+
+		static std::map<std::string, std::string> parseHeader(std::string);
+		std::string parseBody(void);
 
 	private:
 		Request();
@@ -49,8 +55,6 @@ class Request
 		std::string parseMethod(void);
 		std::string parseUri(void);
 		std::string parseHttpVersion(void);
-		std::map<std::string, std::string> parseHeader(std::string);
-		std::string parseBody(void);
 };
 
 

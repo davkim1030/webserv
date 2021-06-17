@@ -6,7 +6,8 @@
 // 클라이언트의 상태를 나타내는 enum
 enum Status
 {
-	REQUEST_RECEIVING,	// 리퀘스트를 수신중
+	REQUEST_RECEIVING_HEADER,	// 헤더 리퀘스트를 수신중
+	REQUEST_RECEIVING_BODY,		// 바디 리퀘스트를 수신중
 	RESPONSE_READY		// 리스폰스를 줄 준비가 됨
 };
 

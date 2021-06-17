@@ -1,12 +1,12 @@
 #include "IoObject.hpp"
 
 IoObject::IoObject()
-: fd(-1), buffer(), status(REQUEST_RECEIVING), type(NONE)
+: fd(-1), buffer(), status(REQUEST_RECEIVING_HEADER), type(NONE)
 {
 }
 
 IoObject::IoObject(Type type)
-: fd(-1), buffer(), status(REQUEST_RECEIVING), type(type)
+: fd(-1), buffer(), status(REQUEST_RECEIVING_HEADER), type(type)
 {
 }
 

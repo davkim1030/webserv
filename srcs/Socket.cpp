@@ -149,9 +149,9 @@ void Socket::initServer(int argc, char *argv)
 
 		struct sockaddr_in	serverAddr;							// 서버 소켓의 ip주소
 		iter->setFd(socket(PF_INET, SOCK_STREAM, 0));			// 소켓 fd 생성
-		char reuseAddr = 1;
+		int reuseAddr = 1;
 		// 이전 포트 사용하게 설정
-		setsockopt(iter->getFd(), SOL_SOCKET, SO_REUSEADDR, (const char *)&reuseAddr, sizeof(reuseAddr));
+		setsockopt(iter->getFd(), SOL_SOCKET, SO_REUSEADDR, &reuseAddr, sizeof(int));
 		ft_memset(&serverAddr, '\0', sizeof(serverAddr));		// serverAddr 초기화
 		serverAddr.sin_family = AF_INET;						// IPv4 설정
 		serverAddr.sin_addr.s_addr = inet_addr(iter->getIp().c_str());	// ip 주소 설정
@@ -265,19 +265,25 @@ void Socket::runServer(struct timeval timeout)
 						// read 에러가 났다면
 					}
 					// 현재 데이터를 받고 있고 request의 header를 파싱이 가능(CRLF 존재)할 때
-					if (tmpClient->getStatus() == REQUEST_RECEIVING && tmpClient->headerParsable())
+					// TODO: 헤더 파싱이 가능하면 -> 헤더만 파싱
+					if (tmpClient->getStatus() == REQUEST_RECEIVING_HEADER && tmpClient->headerParsable())
 					{
-						// 리퀘스트 파싱
 						tmpClient->getRequest().initRequest();
-						tmpClient->getRequest().setRawRequest(tmpClient->getBuffer());
-						tmpClient->getRequest().parseRequest();	// TODO: client.buffer를 파싱하도록 변경해야 함
-						std::string serverName = tmpClient->getRequest().getHost();
-						size_t	idx;
-						if ((idx = serverName.find(':') ) != std::string::npos)
-							serverName = serverName.substr(0, idx);
+						// std::cout << tmpClient->getBuffer() << std::endl;
+						tmpClient->getRequest().parseFirstLine(tmpClient->getBuffer());
+						std::map<std::string, std::string> tmpHeader
+							= Request::parseHeader(tmpClient->getBuffer());
+						tmpClient->getRequest().setHeader(tmpHeader);
+						tmpClient->setBuffer(tmpClient->getBuffer().substr(tmpClient->getBuffer().find("\r\n\r\n") + 4));
+						tmpClient->setStatus(REQUEST_RECEIVING_BODY);
+					}
+					// TODO: 바디도 파싱 가능하면 그 때서야 바디 파싱
+					if (tmpClient->getStatus() == REQUEST_RECEIVING_BODY && tmpClient->bodyParsable())
+					{
 						// 클라이언트에 대해 리스폰스 생성
 						tmpClient->setResponse(ResponseHandler(tmpClient->getRequest(),
 							*(dynamic_cast<Server *>(pool[tmpClient->getServerSocketFd()]))).makeResponse());
+						tmpClient->setBuffer(tmpClient->getResponse().getMessage());
 						tmpClient->getRequest().initRequest();
 						tmpClient->setStatus(RESPONSE_READY);		// 현재 리스폰스 가능하다고 설정
 					}
@@ -320,7 +326,7 @@ void Socket::runServer(struct timeval timeout)
 						else
 						{
 							tmpClient->getResponse().initResponse();
-							tmpClient->setStatus(REQUEST_RECEIVING);
+							tmpClient->setStatus(REQUEST_RECEIVING_HEADER);
 							clearConnectedSocket(i);
 							FD_CLR(i, &wfds);
 						}

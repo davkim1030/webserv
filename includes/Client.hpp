@@ -47,5 +47,6 @@ class Client : public IoObject
 
 		// member methods
 		bool	headerParsable();
+		bool	bodyParsable();
 };
 #endif

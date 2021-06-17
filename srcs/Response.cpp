@@ -208,7 +208,7 @@ std::string Response::getMessage()
     result = version + " " + strTmp + " " + statusMessage + "\r\n";
     for (std::map<std::string, std::string>::iterator iter = header.begin();
             iter != header.end(); iter++)
-        result += iter->first + ": " + iter->second + "\n";
+        result += iter->first + ": " + iter->second + "\r\n";
     result += "\r\n" + body + "\r\n";
     free(strTmp);
     return (result);

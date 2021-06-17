@@ -29,7 +29,7 @@ Client::Client(const Client &other)
  * @param: int socketFd: 클라이언트에 할당된 소켓 fd
  */
 Client::Client(int serverSocketFd, int fd)
-	: IoObject(fd, "", REQUEST_RECEIVING, CLIENT),
+	: IoObject(fd, "", REQUEST_RECEIVING_HEADER, CLIENT),
 	serverSocketFd(serverSocketFd),
 	request(""), response(200, std::map<std::string, std::string>(), "")
 {
@@ -136,7 +136,14 @@ void	Client::doWrite()
  */
 bool	Client::headerParsable()
 {
-	return (buffer.find("\r\n"));
+	return (buffer.find("\r\n\r\n") != std::string::npos);
+}
+
+bool	Client::bodyParsable()
+{
+	if (request.getHeader().find("Content-Length") != request.getHeader().end())
+		return (buffer.size() >= (unsigned long)ft_atoi(request.getHeader()["Content-Length"].c_str()));
+	return (buffer.find("\r\n\r\n") != std::string::npos);
 }
 
 IoObject *Client::clone()
