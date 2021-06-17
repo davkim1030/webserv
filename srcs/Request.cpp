@@ -121,7 +121,7 @@ int ft_hex_atoi(const std::string &str)
 std::string Request::parseBody(void) {
 	size_t dataSize;
 	std::string data;
-	std::string rawBody = this->rawRequest.substr(ft_atoi(this->getHeader()["Content-Length"].c_str()));
+	std::string rawBody = this->rawRequest.substr(rawRequest.find("\r\n\r\n") + 4);
 
 	/* 현재 주석 따라 작성중 */
 	//response를 보내주기 전에, 읽어온 body를 계속해서 write하며, statuscode를 갱신 해주어야합니다.

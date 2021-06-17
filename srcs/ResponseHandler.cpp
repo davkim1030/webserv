@@ -479,7 +479,10 @@ void ResponseHandler::makePostResponse(void)
 			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0)
 				throwErrorResponse(SERVER_ERR, request.getHttpVersion());
 
-			write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			if (request.getHeader()["Transfer-Encoding"] != "chunked")
+				write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			else
+				write(fd, request.getRawBody().c_str(), request.getRawBody().length());
 			close(fd);
 			addContentLocationHeader();
 			throw Response(201, responseHeader, "", request.getHttpVersion());
@@ -488,7 +491,10 @@ void ResponseHandler::makePostResponse(void)
 		{
 			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_APPEND )) < 0)
 				throwErrorResponse(SERVER_ERR, request.getHttpVersion());
-			write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			if (request.getHeader()["Transfer-Encoding"] != "chunked")
+				write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			else
+				write(fd, request.getRawBody().c_str(), request.getRawBody().length());
 			close(fd);
 			addContentLocationHeader();
 			throw Response(200, responseHeader, "", request.getHttpVersion());
@@ -522,7 +528,10 @@ void ResponseHandler::makePutResponse(void)
 			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0)
 				throwErrorResponse(SERVER_ERR, request.getHttpVersion());
 
-			write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			if (request.getHeader()["Transfer-Encoding"] != "chunked")
+				write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			else
+				write(fd, request.getRawBody().c_str(), request.getRawBody().length());
 			close(fd);
 			addContentLocationHeader();
 			throw Response(201, responseHeader, "", request.getHttpVersion());
@@ -531,7 +540,10 @@ void ResponseHandler::makePutResponse(void)
 		{
 			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_TRUNC)) < 0)
 				throwErrorResponse(SERVER_ERR, request.getHttpVersion());
-			write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			if (request.getHeader()["Transfer-Encoding"] != "chunked")
+				write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			else
+				write(fd, request.getRawBody().c_str(), request.getRawBody().length());
 			close(fd);
 			addContentLocationHeader();
 			throw Response(200, responseHeader, "", request.getHttpVersion());
