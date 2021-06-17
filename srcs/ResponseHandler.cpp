@@ -216,7 +216,6 @@ void ResponseHandler::cgiResponse()
 // cgi 실행 여부 판단
 bool ResponseHandler::isCgi()
 {
-	return false; //테스터용
 	std::string uri = request.getUri().substr(location.getPath().length());
 	std::vector<std::string> ext = location.getCgiExtensionVector();
 
@@ -245,7 +244,7 @@ bool ResponseHandler::isCgi()
 			// std::cout << "query : {" << metaVariable["QUERY_STRING"] << "}" << std::endl;
 			// std::cout << "path info : {" << metaVariable["PATH_INFO"] << "}" << std::endl;
 			// std::cout << "-=====================================-" << std::endl;
-			if(uri.compare(0, it->length() + 1,*it) != 0)
+			if(uri.compare(0, it->length() + 1, *it) != 0)
 				return false;
 
 			return true;
@@ -434,7 +433,14 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 void ResponseHandler::makeHeadResponse(void)
 {
 	if (server.getOption("allowed_method").find("HEAD") == std::string::npos)
+	{
+		addContentTypeHeader(".html");
+		addDateHeader();
+		addServerHeader();
+		Response tmp(405, responseHeader, "", request.getHttpVersion());
+		std::cout << "HEAD test\n" << tmp.getMessage() << std::endl;
 		throw Response(405, responseHeader, "", request.getHttpVersion());
+	}
 	makeGetResponse(HEAD_METHOD);
 }
 
