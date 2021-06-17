@@ -6,7 +6,7 @@
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
 
-ResponseHandler::ResponseHandler(Request &request, Server &server)
+ResponseHandler::ResponseHandler(const Request &request, const Server &server)
 :request(request), server(server){
 	this->mimeType[".aac"] = "audio/aac";
 	this->mimeType[".abw"] = "application/x-abiword";

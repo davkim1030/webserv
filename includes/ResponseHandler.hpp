@@ -24,7 +24,7 @@ class ResponseHandler
 {
 	public:
 		// 생성자 & 소멸자 & 대입연산자 오버로딩
-		ResponseHandler(Request &request, Server &server);
+		ResponseHandler(const Request &request, const Server &server);
 		~ResponseHandler(void);
 		ResponseHandler & operator=( ResponseHandler const & rhs );
 

@@ -123,12 +123,15 @@ std::string Request::parseBody(void) {
 	std::string data;
 	std::string rawBody = this->rawRequest.substr(this->getHeader()["Content-Length"]);
 
+	//response를 보내주기 전에, 읽어온 body를 계속해서 write하며, statuscode를 갱신 해주어야합니다.
 	while ((dataSize = ft_hex_atoi(rawBody.substr(0, rawBody.find("\r\n")).c_str())) != 0)
 	{
 		rawBody = rawBody.substr(rawBody.find("\r\n") + 2);
 		data += rawBody.substr(0, dataSize);
 		rawBody = rawBody.substr(rawBody.find("\r\n") + 2);
 	}
+	//read가 안되는 상황이 오면 write를 해줍니다.
+	//statuscode가 EOF가 아니면 다시 이 함수로 돌아옵니다.
 	return data;
 }
 
