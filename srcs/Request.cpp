@@ -87,7 +87,7 @@ void Request::parseRequest(void)
 
 	this->header = parseHeader(this->getRawHeader());
 	if (this->getHeader()["Transfer-Encoding"] != "chunked")
-		this->rawBody = this->rawRequest.substr(headerEndPos + 4, this->rawRequest.length() - headerEndPos);
+		this->rawBody = this->rawRequest.substr(headerEndPos + 4, this->getHeader()["Content-Length"]);
 	else
 		this->rawBody = parseBody();
 }
@@ -121,7 +121,7 @@ int ft_hex_atoi(const std::string &str)
 std::string Request::parseBody(void) {
 	size_t dataSize;
 	std::string data;
-	std::string rawBody = this->rawRequest.substr(this->rawRequest.find("\r\n\r\n") + 4);
+	std::string rawBody = this->rawRequest.substr(this->getHeader()["Content-Length"]);
 
 	while ((dataSize = ft_hex_atoi(rawBody.substr(0, rawBody.find("\r\n")).c_str())) != 0)
 	{
