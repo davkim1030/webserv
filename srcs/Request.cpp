@@ -87,7 +87,7 @@ void Request::parseRequest(void)
 
 	this->header = parseHeader(this->getRawHeader());
 	if (this->getHeader()["Transfer-Encoding"] != "chunked")
-		this->rawBody = this->rawRequest.substr(headerEndPos + 4, this->getHeader()["Content-Length"]);
+		this->rawBody = this->rawRequest.substr(headerEndPos + 4, ft_atoi(this->getHeader()["Content-Length"].c_str()));
 	else
 		this->rawBody = parseBody();
 }
@@ -121,8 +121,9 @@ int ft_hex_atoi(const std::string &str)
 std::string Request::parseBody(void) {
 	size_t dataSize;
 	std::string data;
-	std::string rawBody = this->rawRequest.substr(this->getHeader()["Content-Length"]);
+	std::string rawBody = this->rawRequest.substr(ft_atoi(this->getHeader()["Content-Length"].c_str()));
 
+	/* 현재 주석 따라 작성중 */
 	//response를 보내주기 전에, 읽어온 body를 계속해서 write하며, statuscode를 갱신 해주어야합니다.
 	while ((dataSize = ft_hex_atoi(rawBody.substr(0, rawBody.find("\r\n")).c_str())) != 0)
 	{
