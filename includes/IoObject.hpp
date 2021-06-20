@@ -52,8 +52,6 @@ class IoObject
 		void		setStatus(Status status);
 
 		// inheriting functions
-		virtual void doRead() = 0;		// 하위 클래스가 읽기 작업을 하게 함
-		virtual void doWrite() = 0;		// 하위 클래스가 쓰기 작업을 하게 함
 		virtual IoObject *clone() = 0;
 };
 #endif

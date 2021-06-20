@@ -48,8 +48,6 @@ class Server : public IoObject
 		int		sliceOptions();
 
 		// Inherited Functions
-		void	doRead();
-		void	doWrite();
 		IoObject	*clone();
 };
 #endif

@@ -41,8 +41,6 @@ class Client : public IoObject
 		unsigned long	getLastReqMs();
 
 		// Inherited Functions
-		void	doRead();
-		void	doWrite();
 		IoObject	*clone();
 
 		// member methods

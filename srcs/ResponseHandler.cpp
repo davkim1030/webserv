@@ -322,13 +322,13 @@ Response ResponseHandler::makeResponse()
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
 		if (request.getMethod() == "GET")
 			makeGetResponse(0);
-		if (request.getMethod() == "HEAD")
+		else if (request.getMethod() == "HEAD")
 			makeHeadResponse();
-		if (request.getMethod() == "POST")
+		else if (request.getMethod() == "POST")
 			makePostResponse();
-		if (request.getMethod() == "PUT")
+		else if (request.getMethod() == "PUT")
 			makePutResponse();
-		if (request.getMethod() == "DELETE")
+		else if (request.getMethod() == "DELETE")
 			makeDeleteResponse();
 	}
 	catch (Response &e)
@@ -338,7 +338,7 @@ Response ResponseHandler::makeResponse()
 
 	responseHeader.clear();
 	resourcePath.clear();
-	throwErrorResponse(500, request.getHttpVersion());
+	// throwErrorResponse(500, request.getHttpVersion());
 	return Response(500, responseHeader, makeHTMLPage("500"), request.getHttpVersion());
 }
 
@@ -354,10 +354,14 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 	std::string body;
 	int fd;
 	struct stat	sb;
-	int res;
 
-	addDateHeader();
-	addServerHeader();
+	if ((fd = open(this->resourcePath.c_str(), O_RDONLY)) < 0)
+		throwErrorResponse(SERVER_ERR, request.getHttpVersion());
+	if (fstat(fd, &sb) < 0)
+	{
+		close(fd);
+		throwErrorResponse(SERVER_ERR, request.getHttpVersion());
+	}
 	if (checkPath(this->resourcePath) == ISDIR)
 	{
 
@@ -386,32 +390,30 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 			}
 		}
 	}
-	if ((fd = open(this->resourcePath.c_str(), O_RDONLY)) < 0)
-		throwErrorResponse(SERVER_ERR, request.getHttpVersion());
-	if (fstat(fd, &sb) < 0)
+
+	Resource resource(fd);
+	IoStatus result = resource.getIoStatus();
+	if (result == PROCESSING)
 	{
-		close(fd);
-		throwErrorResponse(SERVER_ERR, request.getHttpVersion());
+		
+		throw Response(0, responseHeader, "", "");
 	}
-	char *buffer;
-	while((res = get_next_line(fd, &buffer)) > 0)
+	else if (result == DONE)
 	{
-		body += buffer;
-		body += "\r\n";
-		free(buffer);
+		addDateHeader();
+		addServerHeader();
+		body = resource.getBuffer();
+		addContentTypeHeader(fileExtension(resourcePath.substr(1)));
+		addContentLanguageHeader();
+		addContentLocationHeader();
+		addContentLengthHeader((int)sb.st_size);
+		addLastModifiedHeader(resourcePath);
+		if (httpStatus == HEAD_METHOD)
+			throw Response(200, responseHeader, "", request.getHttpVersion());
+		throw Response(200, responseHeader, body, request.getHttpVersion());
 	}
-	if (res < 0)
+	else if (result == ERROR)
 		throwErrorResponse(SERVER_ERR, request.getHttpVersion());
-	body += buffer;
-	free(buffer);
-	addContentTypeHeader(fileExtension(resourcePath.substr(1)));
-	addContentLanguageHeader();
-	addContentLocationHeader();
-	addContentLengthHeader((int)sb.st_size);
-	addLastModifiedHeader(resourcePath);
-	if (httpStatus == HEAD_METHOD)
-		throw Response(200, responseHeader, "", request.getHttpVersion());
-	throw Response(200, responseHeader, body, request.getHttpVersion());
 }
 
 /*

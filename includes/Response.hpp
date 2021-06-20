@@ -89,6 +89,7 @@ public:
 
     // Methods
     std::string getMessage();
+    int getStatusCode();
     int getLastResponse();
 
     void setLastResponse(int lastResponse);

@@ -116,20 +116,6 @@ unsigned long	Client::getLastReqMs()
 	return (lastReqMs);
 }
 
-// TODO: 구현 필요
-void	Client::doRead()
-{
-	int i = 1;
-	i++;
-}
-
-// TODO: 구현 필요
-void	Client::doWrite()
-{
-	int i = 1;
-	i++;
-}
-
 /*
  * 현재 buffer 데이터로 HTTP Request Message의 header 부분이 추출 가능한지 확인
  * @return bool: 헤더가 다 들어왔는지
@@ -141,7 +127,7 @@ bool	Client::headerParsable()
 
 bool	Client::bodyParsable()
 {
-	if (request.getHeader().find("Content-Length") != request.getHeader().end())
+	if (request.getHeader().count("Content-Length") != 0)
 		return (buffer.size() >= (unsigned long)ft_atoi(request.getHeader()["Content-Length"].c_str()));
 	return (buffer.find("\r\n\r\n") != std::string::npos);
 }

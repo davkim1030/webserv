@@ -6,6 +6,7 @@
 # include "Request.hpp"
 # include "Location.hpp"
 # include "Server.hpp"
+# include "Resource.hpp"
 
 class Response;
 class Server;

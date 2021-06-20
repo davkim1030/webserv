@@ -39,6 +39,8 @@ Response::Response(int statusCode, std::map<std::string, std::string> header,
 {
     switch (statusCode)
     {
+        case 0:
+            statusMessage = "";
         case 100:
             statusMessage = Response::_100;
             break ;
@@ -209,7 +211,7 @@ std::string Response::getMessage()
     for (std::map<std::string, std::string>::iterator iter = header.begin();
             iter != header.end(); iter++)
         result += iter->first + ": " + iter->second + "\r\n";
-    result += "\r\n" + body + "\r\n";
+    result += "\r\n" + body;
     free(strTmp);
     return (result);
 }
@@ -235,6 +237,11 @@ void    Response::initResponse()
     header.clear();
     body.clear();
     lastResponse = 0;
+}
+
+int     Response::getStatusCode()
+{
+    return statusCode;
 }
 
 const std::string    Response::_100 = "Continue";

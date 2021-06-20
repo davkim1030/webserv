@@ -207,6 +207,7 @@ void Socket::runServer(struct timeval timeout)
 		if (fdNum == 0) // 처리할 요구가 없으면 다시 위로
 			continue ;
 		
+		printFdsStatus(rfds, wfds, efds, fdMax);
 		// fd를 0부터 fdMax까지 반복하며 set된 플래그 값이 있는지 확인하여 처리
 		for (int i = 0; i < fdMax + 1; i++)
 		{
@@ -246,7 +247,7 @@ void Socket::runServer(struct timeval timeout)
 					Client	*tmpClient;
 					int		len;				// 한 번의 read로 읽은 길이
 					bool	isReadable = false;	// 더 읽을 수 있는지
-					char	buf[IO_BUFFER_SIZE];	// read한 값 저장할 버퍼
+					char	buf[IO_BUFFER_SIZE + 1];	// read한 값 저장할 버퍼
 
 					tmpClient = dynamic_cast<Client *>(pool[i]);
 					tmpClient->setLastReqMs(ft_get_time());		// 마지막 연결 시간 업데이트
@@ -256,21 +257,14 @@ void Socket::runServer(struct timeval timeout)
 						buf[len] = 0;
 						tmpClient->setBuffer(tmpClient->getBuffer() + buf);
 					}
-					else if (len == 0)
-					{
-						// 읽은게 없다면
-					}
-					else
-					{
-						// read 에러가 났다면
-					}
 					// 현재 데이터를 받고 있고 request의 header를 파싱이 가능(CRLF 존재)할 때
 					// TODO: 헤더 파싱이 가능하면 -> 헤더만 파싱
 					if (tmpClient->getStatus() == REQUEST_RECEIVING_HEADER && tmpClient->headerParsable())
 					{
 						tmpClient->getRequest().initRequest();
-						// std::cout << tmpClient->getBuffer() << std::endl;
+						std::cout << tmpClient->getBuffer() << std::endl;
 						tmpClient->getRequest().parseFirstLine(tmpClient->getBuffer());
+						tmpClient->setBuffer(tmpClient->getBuffer().substr(tmpClient->getBuffer().find("\r\n", 0) + 2));
 						std::map<std::string, std::string> tmpHeader
 							= Request::parseHeader(tmpClient->getBuffer());
 						tmpClient->getRequest().setHeader(tmpHeader);
@@ -278,11 +272,12 @@ void Socket::runServer(struct timeval timeout)
 						tmpClient->setStatus(REQUEST_RECEIVING_BODY);
 					}
 					// TODO: 바디도 파싱 가능하면 그 때서야 바디 파싱
-					if (tmpClient->getStatus() == REQUEST_RECEIVING_BODY && tmpClient->bodyParsable())
+					Response tmpRes = ResponseHandler(tmpClient->getRequest(),
+							*(dynamic_cast<Server *>(pool[tmpClient->getServerSocketFd()]))).makeResponse();
+					if (tmpClient->getStatus() == REQUEST_RECEIVING_BODY && (tmpClient->bodyParsable() || tmpRes.getStatusCode() != 0))
 					{
 						// 클라이언트에 대해 리스폰스 생성
-						tmpClient->setResponse(ResponseHandler(tmpClient->getRequest(),
-							*(dynamic_cast<Server *>(pool[tmpClient->getServerSocketFd()]))).makeResponse());
+						tmpClient->setResponse(tmpRes);
 						tmpClient->setBuffer(tmpClient->getResponse().getMessage());
 						tmpClient->getRequest().initRequest();
 						tmpClient->setStatus(RESPONSE_READY);		// 현재 리스폰스 가능하다고 설정
@@ -295,6 +290,36 @@ void Socket::runServer(struct timeval timeout)
 							std::cout << "Disconnected " << i << " in Server" << std::endl;
 						else
 							std::cout << "Error occured client " << i << " in Server" << std::endl;
+					}
+				}
+				else if (pool[i]->getType() == RESOURCE)		// 리소스 읽기 경우
+				{
+					Resource	*tmpResource;
+					int		len;				// 한 번의 read로 읽은 길이
+					bool	isReadable = false;
+					char	buf[IO_BUFFER_SIZE + 1];	// read한 값 저장할 버퍼
+
+					tmpResource = dynamic_cast<Resource *>(pool[i]);
+					if ((len = read(i, buf, IO_BUFFER_SIZE)) > 0)
+					{
+						buf[len] = 0;
+						isReadable = true;
+						tmpResource->setBuffer(tmpResource->getBuffer() + buf);
+					}
+					else if (len == 0)
+					{
+						// 읽은게 없다면
+						buf[len] = 0;
+						tmpResource->setBuffer(tmpResource->getBuffer() + buf);
+						tmpResource->setIoStatus(DONE);
+					}
+					else
+						tmpResource->setIoStatus(ERROR);
+					if (isReadable == false)
+					{
+						clearConnectedSocket(i);
+						if (len < 0)
+							std::cout << "Error occured while reading static file " << i << " in Server" << std::endl;
 					}
 				}
 			}
@@ -335,6 +360,23 @@ void Socket::runServer(struct timeval timeout)
 				else if (pool[i]->getType() == RESOURCE)
 				{
 					// reource 쓰기 경우
+					Resource *tmpResource = dynamic_cast<Resource *>(pool[i]);
+					// response를 줄 준비가 되었다면
+					if (tmpResource->getStatus() == RESPONSE_READY)
+					{
+						// 해당 내용을 리소스 fd에 write
+						int writeLen = 0;
+						writeLen = write(i, tmpResource->getBuffer().c_str(), tmpResource->getBuffer().size());
+						if (writeLen != (int)tmpResource->getBuffer().size())
+						{
+							tmpResource->setBuffer(tmpResource->getBuffer().substr(writeLen));
+						}
+						else
+						{
+							clearConnectedSocket(i);
+							FD_CLR(i, &wfds);
+						}
+					}
 				}
 			}
 			else if (FD_ISSET(i, &cpyEfds))	// except 요청이 온 경우
@@ -380,4 +422,9 @@ void	Socket::updateFdMax()
 			tmp = (*iter)->getFd();
 	}
 	fdMax = tmp;
+}
+
+std::vector<IoObject *> &Socket::getPool()
+{
+	return (pool);
 }

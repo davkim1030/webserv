@@ -9,7 +9,8 @@ SRC		=	main.cpp \
 			Response.cpp \
 			Request.cpp \
 			ResponseHandler.cpp \
-			ResponseHeader.cpp
+			ResponseHeader.cpp \
+			Resource.cpp
 
 SRCDIR	=	./srcs/
 SRCS	=	$(addprefix $(SRCDIR), $(SRC))

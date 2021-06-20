@@ -4,6 +4,7 @@
 # include "webserv.h"
 # include "Client.hpp"
 # include "Server.hpp"
+# include "Resource.hpp"
 # include "ServerConfig.hpp"
 # include "Location.hpp"
 # include "ResponseHandler.hpp"
@@ -68,5 +69,7 @@ class Socket
 		void runServer(struct timeval timeout);
 		static Socket *getInstance();
 		void initServer(int argc, char *argv);
+
+		std::vector<IoObject *> &getPool();
 };
 #endif
