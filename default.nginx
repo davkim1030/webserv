@@ -8,24 +8,45 @@ worker_processes  1; # 프로세스 실행 가능 수
 error_log  /var/log/nginx/error.log warn; # 에러 정보 저장
 pid        /var/run/nginx.pid; # 마스터 프로세스 ID 저장
 
+
+/test/dir/index.html
+
 server {
 	server_name default_server;
-	listen 8080;
+	listen 8081;
 
 	location / {
-		root /
+		root ./
 		allow_method GET;
-		cgi_path ./
-		cgi_extention .bla
-		cgi_extention .p
+
+		cgi_path ./test_sample/cgi_tester
+		cgi_extension .bla .php
 		index index.php index.html index.htm index.php;
 		autoindex on;
 	}
 
+	location /directory {
+		root ./test/YoupiBanane/;
+		allow_method GET POST DELETE HEAD;
+		cgi_path ./
+		cgi_extension .bla
+		cgi_extension .p
+		index youpi.bad_extension;
+	}
+
 	location /test/ {
 		index index.php index.html index.htm index.php;
-		root /test/;
+		root ./test/;
 		allow_method GET POST DELETE HEAD;
+		cgi_extension .bla .php .cpp
+		cgi_path ./test_sample/cgi_tester
+	}
 
+	location /test/directory {
+		index index.php index.html index.htm index.php;
+		root ./test/;
+		allow_method GET POST DELETE HEAD;
+		cgi_extension .bla .php .py .js
+		cgi_path ./test_sample/cgi_tester
 	}
 }

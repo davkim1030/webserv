@@ -1,4 +1,5 @@
 SRC		=	main.cpp \
+			IoObject.cpp \
 			Socket.cpp \
 			Client.cpp \
 			ServerConfig.cpp \

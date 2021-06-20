@@ -19,7 +19,10 @@ class Socket
 		fd_set	wfds;	// 쓰기 fd set
 		fd_set	efds;	// 예외 fd set
 		int		fdMax;	// 처리할 최대 fd 값
+		static Socket	*instance;	// 프로그램에서 유일하게 사용할 소켓 인스턴스
+		ServerConfig	serverConfig;	// config 파일에서 읽을 서버 설정 값들
 
+		std::vector<IoObject *>	pool;	// Server, Client, Resource, CGI 객체들의 IO를 담당할 벡터
 		std::map<int, Server> servers;	// 프로그램에서 처리할 서버들 정보
 		std::map<int, Client> clients;	// 프로그램에 연결된 클라이언트 정보
 
@@ -62,7 +65,8 @@ class Socket
 		Socket();
 		~Socket();
 
-		void initServer(int socketCnt);
 		void runServer(struct timeval timeout, unsigned int bufferSize);
+		static Socket *getInstance();
+		void initServer(int argc, char *argv);
 };
 #endif

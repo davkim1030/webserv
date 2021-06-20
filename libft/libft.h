@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   libft.h                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: hyukim <hyukim@student.42.fr>              +#+  +:+       +#+        */
+/*   By: seohchoi <seohchoi@student.42seoul.kr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2020/02/25 11:39:22 by sunpark           #+#    #+#             */
-/*   Updated: 2021/06/10 16:06:19 by hyukim           ###   ########.fr       */
+/*   Updated: 2021/06/20 15:49:48 by seohchoi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,8 @@
 # include <stdlib.h>
 # include <unistd.h>
 # include <fcntl.h>
+# include <vector>
+# include <string>
 
 # define GNL_BUFFER_SIZE 1024
 # define GNL_FD_SIZE 1024
@@ -90,5 +92,6 @@ int					get_next_line(int fd, char **line);
 int					ft_printf(const char *format, ...);
 
 unsigned long		ft_get_time(void);
+std::vector<std::string> splitSpaces(const std::string &str);
 
 #endif

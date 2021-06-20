@@ -3,10 +3,13 @@
 #include "Server.hpp"
 #include "Exception.hpp"
 
-Server::Server() {}
+Server::Server() : IoObject(SERVER), port(-1)
+{}
 
-Server::Server(Server const &serv) : option(serv.option), location(serv.location),
-		ip(serv.ip), port(serv.port), serverName(serv.serverName), socketFd(serv.socketFd)
+Server::Server(Server const &serv)
+	: IoObject(serv.fd, serv.buffer, serv.status, SERVER),
+	option(serv.option), location(serv.location),
+	ip(serv.ip), port(serv.port), serverName(serv.serverName)
 {}
 
 Server &Server::operator=(Server const &serv)
@@ -18,7 +21,10 @@ Server &Server::operator=(Server const &serv)
 		ip = serv.ip;
 		port = serv.port;
 		serverName = serv.serverName;
-		socketFd = serv.socketFd;
+		fd = serv.fd;
+		buffer = serv.buffer;
+		status = serv.status;
+		type = serv.type;
     }
     return *this;
 }
@@ -189,11 +195,6 @@ const std::string &Server::getServerName() const
 	return (serverName);
 }
 
-int Server::getSocketFd() const
-{
-	return (socketFd);
-}
-
 // setters
 
 void Server::setIp(const std::string &ip)
@@ -209,11 +210,6 @@ void Server::setPort(unsigned int port)
 void Server::setServerName(const std::string &serverName)
 {
 	this->serverName = serverName;
-}
-
-void Server::setSocketFd(int socketFd)
-{
-	this->socketFd = socketFd;
 }
 
 /*
@@ -232,33 +228,14 @@ void Server::printItem()
 	std::cout << "==================================================" << std::endl;
 }
 
-/*
- * 입력 받은 문자열을 띄어쓰기, 탭 단위로 나눠서 std::vector로 리턴
- * @param const std::string &str : 띄어쓰기로 나눌 문자열
- * @return std::vector<std::string> & : 문자열을 나눈 결과
- */
-std::vector<std::string> Server::splitSpaces(const std::string &str)
+void	Server::doRead()
 {
-	std::vector<std::string>	result;
-	char	*cur = const_cast<char *>(str.c_str());
-	char	*prev = cur;
+	int i = 1;
+	i++;
+}
 
-	// NULL 만날 때까지 반복
-	while (*cur)
-	{
-		if (ft_isblank(*cur))
-		{
-			result.push_back(str.substr(prev - str.c_str(), cur - prev));
-			// *cur가 0이면 멈춰야 함, *cur가 space이면 다음으로 가야함
-			while (*cur != '\0' && (*cur == ' ' || *cur == '\t'))
-				cur++;
-			prev = cur;
-		}
-		else
-			cur++;
-	}
-	// 루프 다 돌고 나서 안 들어간 값이 있으면 추가
-	if (cur != prev)
-		result.push_back(str.substr(prev - str.c_str(), cur - prev));
-	return (result);
+void	Server::doWrite()
+{
+	int i = 1;
+	i++;
 }
