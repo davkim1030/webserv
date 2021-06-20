@@ -221,7 +221,7 @@ bool ResponseHandler::isCgi()
 
 	for (std::vector<std::string>::iterator it = ext.begin(); it != ext.end(); it++)
 	{
-		int index = uri.find(*it);
+		size_t index = uri.find(*it);
 		if (index != std::string::npos && uri.compare(index, it->length(), *it) == 0)
 		{
 			int queryIndex;
@@ -232,7 +232,7 @@ bool ResponseHandler::isCgi()
 			}
 			metaVariable["SCRIPT_NAME"] = uri.substr(0, index + it->length());
 			uri = uri.substr(index);
-			int pathIndex = uri.find('/');
+			size_t pathIndex = uri.find('/');
 			// uri에서 가상 경로가 있는지 체크
 			if (pathIndex != std::string::npos)
 			{

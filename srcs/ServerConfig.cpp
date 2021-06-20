@@ -153,13 +153,21 @@ void ServerConfig::saveConfig(int argc, char *path)
 */
 int ServerConfig::checkDuplicatePort()
 {
+	if (server.empty() == true)
+		return -1;
 	for (std::vector<Server>::iterator sit = server.begin(); sit != --server.end(); sit++)
-		for (std::vector<Server>::iterator next_sit = sit; next_sit != --server.end(); )
+	{
+		std::cout << sit->getServerName() << ":" << sit->getPort() << std::endl;;
+		for (std::vector<Server>::iterator nextSit = sit; nextSit != server.end(); )
 		{
-			next_sit++;
-			if (sit->getPort() == next_sit->getPort())
+			nextSit++;
+			std::cout << nextSit->getServerName() << ":"<< nextSit->getPort() << "/";
+			if (sit->getPort() == nextSit->getPort())
 				return -1;
 		}
+		std::cout << std::endl;
+	}
+
 	return 0;
 }
 
@@ -172,7 +180,7 @@ void ServerConfig::printItem()
 	std::cout << "===========Server config=========" << std::endl;
 	for (it = option.begin(); it != option.end(); it++)
 		std::cout << "config : {" << it->first << "} {" << it->second << "}" << std::endl;
-	
+
 	for (std::vector<Server>::iterator sit = server.begin(); sit != server.end(); sit++)
 		sit->printItem();
 }
