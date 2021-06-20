@@ -6,7 +6,7 @@
 /*   By: hyukim <hyukim@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2020/02/25 11:39:22 by sunpark           #+#    #+#             */
-/*   Updated: 2021/06/10 16:06:19 by hyukim           ###   ########.fr       */
+/*   Updated: 2021/06/14 16:58:37 by hyukim           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,9 @@
 # include <stdlib.h>
 # include <unistd.h>
 # include <fcntl.h>
+# include <vector>
+# include <string>
+
 # include <vector>
 # include <string>
 

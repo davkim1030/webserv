@@ -11,8 +11,8 @@ Location &Location::operator=(Location const &lo)
 {
 	if (this != &lo)
 	{
-		path = lo.path;
 		option = lo.option;
+		path = lo.path;
 		index = lo.index;
 		allow_method = lo.allow_method;
 		cgi_extension = lo.cgi_extension;

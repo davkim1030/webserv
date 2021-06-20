@@ -6,7 +6,7 @@
 #    By: hyukim <hyukim@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2020/02/25 11:37:14 by sunpark           #+#    #+#              #
-#    Updated: 2021/06/10 16:06:41 by hyukim           ###   ########.fr        #
+#    Updated: 2021/06/14 16:59:56 by hyukim           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -55,4 +55,4 @@ re:			fclean all
 
 reclean:	fclean all clean
 
-.PHONY:		all clean fclean re reclean .cpp.o
+/PHONY:		all clean fclean re reclean .cpp.o

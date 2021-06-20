@@ -6,7 +6,7 @@
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
 
-ResponseHandler::ResponseHandler(Request &request, Server &server)
+ResponseHandler::ResponseHandler(const Request &request, const Server &server)
 :request(request), server(server){
 	this->mimeType[".aac"] = "audio/aac";
 	this->mimeType[".abw"] = "application/x-abiword";
@@ -131,7 +131,7 @@ int ResponseHandler::checkPath(std::string path)
 		6-4. execve(실행할 파일 이름, (여긴 좀 더 알아볼 것_), 가공해둔 envp)
 	7. execve에서 실행된 결과를 pipe를 통해 가져와서 body로 넘겨주기
 
-	
+
 */
 char** ResponseHandler::makeCgiEnvp()
 {
@@ -160,11 +160,10 @@ char** ResponseHandler::makeCgiEnvp()
 	//   uri 통째로 써주기 ,      /만 써주기,             /path 써주기
 
 	metaVariable["PATH_TRANSLATED"] = location.getOption("root") + metaVariable["PATH_INFO"].substr(1);
-
 	metaVariable["REMOTE_ADDR"] = "127.0.0.1"; // 클라이언트의 IP
 	// metaVariable["REMOTE_IDENT"] = ""; // 없어두됨
 	// metaVariable["REMOTE_USER"] = ""; // 없어두됨 REMOTE 둘 다 AUTH 파일에 넘겨져 온다고 생각 중
-	
+
 	metaVariable["REQUEST_METHOD"] = "GET";
 	metaVariable["SERVER_NAME"] = "my server name";
 	metaVariable["SERVER_PORT"] = "server port";
@@ -189,7 +188,7 @@ char** ResponseHandler::makeCgiEnvp()
 void ResponseHandler::cgiResponse()
 {
 	pid_t pid;
-	
+
 	int fd[2];
 	if (pipe(fd) == -1)
 		throwErrorResponse(500, request.getHttpVersion());
@@ -258,9 +257,9 @@ bool ResponseHandler::isCgi()
 			// std::cout << "query : {" << metaVariable["QUERY_STRING"] << "}" << std::endl;
 			// std::cout << "path info : {" << metaVariable["PATH_INFO"] << "}" << std::endl;
 			// std::cout << "-=====================================-" << std::endl;
-			if(uri.compare(0, it->length() + 1,*it) != 0)
+			if(uri.compare(0, it->length() + 1, *it) != 0)
 				return false;
-			
+
 			return true;
 		}
 	}
@@ -277,9 +276,8 @@ Location ResponseHandler::findLocation(std::string uri)
 	for (std::vector<Location>::iterator it = ser.begin(); it != ser.end(); it++)
 	{
 		std::string path = it->getPath();
-		if (*path.rbegin() != '/')
-			path += '/';
-		if (uri.compare(0, path.length(), path) == 0)
+		std::string tempPath = path + '/';
+		if (uri.compare(0, path.length(), path) == 0 || uri.compare(0, tempPath.length(), tempPath) == 0)
 			res = *it;
 	}
 	return res;
@@ -327,14 +325,14 @@ Response ResponseHandler::makeResponse()
 			makeOptionResponse();
 		else if (request.getMethod() == "CONNECT")
 			makeConnectResponse();
+		this->resourcePath = parseResourcePath(request.getUri());
 
-		this->resourcePath = location.getOption("root") + request.getUri(); //root 들어오면 더해주세요
 		if (checkPath(this->resourcePath) == NOT_FOUND && request.getMethod() != "PUT" && request.getMethod() != "POST")
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
 		if (request.getMethod() == "GET")
 			makeGetResponse(0);
 		if (request.getMethod() == "HEAD")
-			makeGetResponse(HEAD_METHOD);
+			makeHeadResponse();
 		if (request.getMethod() == "POST")
 			makePostResponse();
 		if (request.getMethod() == "PUT")
@@ -350,12 +348,27 @@ Response ResponseHandler::makeResponse()
 	responseHeader.clear();
 	resourcePath.clear();
 	throwErrorResponse(500, request.getHttpVersion());
-	return Response(500, responseHeader, makeHTMLPage(ft_itoa(500)), request.getHttpVersion());
+	return Response(500, responseHeader, makeHTMLPage("500"), request.getHttpVersion());
+}
+
+/*
+* Request URI에서 Location->path를 찾아, root 값으로 치환해줍니다.
+* @param Request URI
+* @return PATH가 ROOT로 치환된 URI
+*/
+std::string ResponseHandler::parseResourcePath(std::string uri)
+{
+	std::string path = this->location.getPath();
+	if (*path.rbegin() != '/')
+			path += '/';
+	std::string root = this->location.getOption("root");
+	size_t path_pos = uri.find_first_of(path);
+	uri.replace(path_pos, path.length(), root);
+	return uri;
 }
 
 /*
 * GET 메소드의 Response를 생성합니다.
-* @param send_body HEAD를 실행했을 경우 send_body 가 false값으로 들어옵니다.
 * 기본 헤더 : Date, Server
 * 엔티티 헤더 : Last-Modified
 * 컨텐츠 헤더 : Content-Language, Content-Length, Content-Location,	Content-Type
@@ -367,25 +380,24 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 	int fd;
 	struct stat	sb;
 	int res;
-
 	addDateHeader();
 	addServerHeader();
 	if (checkPath(this->resourcePath) == ISDIR)
 	{
-
 		if (this->resourcePath[this->resourcePath.length() - 1] != '/')
 			this->resourcePath += '/';
 
 		if (!location.getOption("index").empty())
 		{
 			bool indexFileFlag = false;
-			char **indexFile = ft_split(location.getOption("index").c_str(), ' ');
-			for (int i = 0; indexFile[i]; i++)
+			std::vector<std::string> indexFile = splitSpaces(location.getOption("index"));
+			for (std::vector<std::string>::iterator iter = indexFile.begin();
+					iter != indexFile.end(); iter++)
 			{
 				struct stat buffer;
-				if (stat((this->resourcePath + indexFile[i]).c_str(), &buffer) == 0)
+				if (stat((this->resourcePath + *iter).c_str(), &buffer) == 0)
 				{
-					this->resourcePath = this->resourcePath + indexFile[i];
+					this->resourcePath = this->resourcePath + *iter;
 					indexFileFlag = true;
 					break ;
 				}
@@ -395,6 +407,8 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 				addContentTypeHeader(".html");
 				throw Response(200, this->responseHeader, request.getMethod() != "HEAD" ? makeAutoIndexPage(this->resourcePath) : "", request.getHttpVersion());
 			}
+			if (checkPath(this->resourcePath) == NOT_FOUND || checkPath(this->resourcePath) == ISDIR)
+				throwErrorResponse(NOT_FOUND, request.getHttpVersion());
 		}
 	}
 	if ((fd = open(this->resourcePath.c_str(), O_RDONLY)) < 0)
@@ -423,6 +437,24 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 	if (httpStatus == HEAD_METHOD)
 		throw Response(200, responseHeader, "", request.getHttpVersion());
 	throw Response(200, responseHeader, body, request.getHttpVersion());
+}
+
+/*
+* HEAD 메소드의 Response를 생성합니다.
+* allowed method인지 확인하고 이상이 없으면 makeGetResponse 함수를 호출한다.
+*/
+void ResponseHandler::makeHeadResponse(void)
+{
+	if (server.getOption("allowed_method").find("HEAD") == std::string::npos)
+	{
+		addContentTypeHeader(".html");
+		addDateHeader();
+		addServerHeader();
+		Response tmp(405, responseHeader, "", request.getHttpVersion());
+		std::cout << "HEAD test\n" << tmp.getMessage() << std::endl;
+		throw Response(405, responseHeader, "", request.getHttpVersion());
+	}
+	makeGetResponse(HEAD_METHOD);
 }
 
 /*
@@ -460,7 +492,10 @@ void ResponseHandler::makePostResponse(void)
 			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0)
 				throwErrorResponse(SERVER_ERR, request.getHttpVersion());
 
-			write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			if (request.getHeader()["Transfer-Encoding"] != "chunked")
+				write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			else
+				write(fd, request.getRawBody().c_str(), request.getRawBody().length());
 			close(fd);
 			addContentLocationHeader();
 			throw Response(201, responseHeader, "", request.getHttpVersion());
@@ -469,7 +504,10 @@ void ResponseHandler::makePostResponse(void)
 		{
 			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_APPEND )) < 0)
 				throwErrorResponse(SERVER_ERR, request.getHttpVersion());
-			write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			if (request.getHeader()["Transfer-Encoding"] != "chunked")
+				write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			else
+				write(fd, request.getRawBody().c_str(), request.getRawBody().length());
 			close(fd);
 			addContentLocationHeader();
 			throw Response(200, responseHeader, "", request.getHttpVersion());
@@ -503,7 +541,10 @@ void ResponseHandler::makePutResponse(void)
 			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0)
 				throwErrorResponse(SERVER_ERR, request.getHttpVersion());
 
-			write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			if (request.getHeader()["Transfer-Encoding"] != "chunked")
+				write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			else
+				write(fd, request.getRawBody().c_str(), request.getRawBody().length());
 			close(fd);
 			addContentLocationHeader();
 			throw Response(201, responseHeader, "", request.getHttpVersion());
@@ -512,7 +553,10 @@ void ResponseHandler::makePutResponse(void)
 		{
 			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_TRUNC)) < 0)
 				throwErrorResponse(SERVER_ERR, request.getHttpVersion());
-			write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			if (request.getHeader()["Transfer-Encoding"] != "chunked")
+				write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			else
+				write(fd, request.getRawBody().c_str(), request.getRawBody().length());
 			close(fd);
 			addContentLocationHeader();
 			throw Response(200, responseHeader, "", request.getHttpVersion());
@@ -639,7 +683,9 @@ std::string ResponseHandler::makeHTMLPage(std::string str)
 
 void ResponseHandler::throwErrorResponse(int httpStatus, std::string version) throw(Response)
 {
-	std::string body = makeHTMLPage(ft_itoa(httpStatus));
+	char	*strTmp = ft_itoa(httpStatus);
+	std::string body = makeHTMLPage(strTmp);
+	free(strTmp);
 	addDateHeader();
 	addServerHeader();
 	addContentTypeHeader(".html");

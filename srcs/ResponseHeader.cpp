@@ -66,14 +66,16 @@ void ResponseHandler::addLastModifiedHeader(std::string path)
 	struct tm*	timeinfo;
 
 	if (stat(path.c_str(), &statbuff) < 0)
-		throw Response(500, responseHeader, makeHTMLPage(ft_itoa(500)), request.getHttpVersion());
+		throw Response(500, responseHeader, makeHTMLPage("500"), request.getHttpVersion());
 	timeinfo = localtime(&statbuff.st_mtime);
 	addResponseHeader("Last-Modified", getFormatTime(timeinfo));
 }
 
 void ResponseHandler::addContentLengthHeader(int length)
 {
-	addResponseHeader("Content-Length", ft_itoa(length));
+	char *lenStr = ft_itoa(length);
+	addResponseHeader("Content-Length", static_cast<std::string>(lenStr));
+	free(lenStr);
 }
 
 void ResponseHandler::addContentLanguageHeader()
