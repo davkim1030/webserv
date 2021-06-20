@@ -1,0 +1,17 @@
+AUTH_TYPE=null
+CONTENT_LENGTH=0
+CONTENT_TYPE=null
+GATEWAY_INTERFACE=Cgi/1.1
+PATH_INFO=/test/test.bla
+PATH_TRANSLATED=./test/test/test.bla
+REMOTE_ADDR=127.0.0.1
+REQUEST_METHOD=GET
+REQUEST_URI=/test/test.bla
+SCRIPT_NAME=test.bla
+SERVER_NAME=my server name
+SERVER_PORT=server port
+SERVER_PROTOCOL=HTTP/1.1
+SERVER_SOFTWARE=joockim/1.1
+Status: 200 OK
+Content-Type: text/html; charset=utf-8
+

@@ -63,9 +63,10 @@ class ResponseHandler
 		Request request;
 		Server server;
 		Location location;
-		std::string resourcePath;
 		std::map<std::string, std::string> responseHeader;
 		std::map<std::string, std::string> mimeType;
+
+		std::string resourcePath;
 		std::map<std::string, std::string> metaVariable;
 
 		//각 메소드별 Response 생성함수

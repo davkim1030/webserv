@@ -208,8 +208,8 @@ void ResponseHandler::cgiResponse()
 	{
 		std::cout << "child " << std::endl;
 		close(fd_write);
-		// dup2(fd_read, 0);
-		// dup2(fd_temp, 1);
+		dup2(fd_read, 0);
+		dup2(fd_temp, 1);
 		char *argv[3];
 		argv[0] = strdup(location.getOption("cgi_path").c_str());
 		argv[1] = strdup((location.getOption("root") + metaVariable["SCRIPT_NAME"]).c_str());
@@ -217,11 +217,36 @@ void ResponseHandler::cgiResponse()
 		execve(argv[0], argv, makeCgiEnvp());
 		exit(1);
 	}
-	else
-	{
-		waitpid(pid, NULL, WNOHANG);
-		close(fd_read);
 
+	int stat = 0;
+	int i = 100;
+	while(i)
+	{
+		if (stat == 0)
+		{
+			std::cout << "testestsetset" << std::endl;
+			write(fd_write, request.getRawBody().c_str(), strlen(request.getRawBody().c_str()));
+			close(fd_read);
+			close(fd_write);
+			stat = 1;
+		}
+		else if (stat == 1)
+		{
+			int status;
+			int s = waitpid(pid, &status, WNOHANG);
+			if (s)
+			{
+				lseek(fd_temp, 0, SEEK_SET);
+				char buf[10000];
+				int size = read(fd_temp, buf, 10000);
+				buf[size] = 0;
+				std::cout << "==============test===============" << std::endl;
+				std::cout << buf << std::endl;
+				std::cout << "==============test===============" << std::endl;
+				close(fd_temp);
+				break ;
+			}
+		}
 	}
 
 }
@@ -246,17 +271,11 @@ bool ResponseHandler::isCgi()
 			metaVariable["SCRIPT_NAME"] = uri.substr(0, index + it->length());
 			uri = uri.substr(index);
 			int pathIndex = uri.find('/');
-			// uri에서 가상 경로가 있는지 체크
 			if (pathIndex != std::string::npos)
 			{
 				metaVariable["PATH_INFO"] = uri.substr(pathIndex);
 				uri = uri.substr(0, pathIndex);
 			}
-			// std::cout << "----------last test---------" << std::endl;
-			// std::cout << "last uri : {" << uri << "}" << std::endl;
-			// std::cout << "query : {" << metaVariable["QUERY_STRING"] << "}" << std::endl;
-			// std::cout << "path info : {" << metaVariable["PATH_INFO"] << "}" << std::endl;
-			// std::cout << "-=====================================-" << std::endl;
 			if(uri.compare(0, it->length() + 1, *it) != 0)
 				return false;
 
@@ -304,6 +323,9 @@ Response ResponseHandler::makeResponse()
 		{
 			std::cout << "cgi on " << std::endl;
 			cgiResponse();
+
+
+
 			throwErrorResponse(500, request.getHttpVersion());
 		}
 		std::cout << "cgi off" << std::endl;
