@@ -318,13 +318,13 @@ Response ResponseHandler::makeResponse()
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
 		if (request.getMethod() == "GET")
 			makeGetResponse(0);
-		if (request.getMethod() == "HEAD")
+		else if (request.getMethod() == "HEAD")
 			makeHeadResponse();
-		if (request.getMethod() == "POST")
+		else if (request.getMethod() == "POST")
 			makePostResponse();
-		if (request.getMethod() == "PUT")
+		else if (request.getMethod() == "PUT")
 			makePutResponse();
-		if (request.getMethod() == "DELETE")
+		else if (request.getMethod() == "DELETE")
 			makeDeleteResponse();
 	}
 	catch (Response &e)
@@ -334,7 +334,11 @@ Response ResponseHandler::makeResponse()
 
 	responseHeader.clear();
 	resourcePath.clear();
-	throwErrorResponse(500, request.getHttpVersion());
+
+	addDateHeader();
+	addServerHeader();
+	addContentTypeHeader(".html");
+	addContentLengthHeader((int)makeHTMLPage(500).length());
 	return Response(500, responseHeader, makeHTMLPage("500"), request.getHttpVersion());
 }
 
