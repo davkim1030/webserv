@@ -23,7 +23,7 @@ LIBH	=	libft.h
 INCDIR	=	./includes/
 
 GPP		=	clang++
-GPPFLAG	=	-g #-Wall -Wextra -Werror
+GPPFLAG	=	-g -Wall -Wextra -Werror
 RM		=	rm -f
 
 %.o:		%.cpp
