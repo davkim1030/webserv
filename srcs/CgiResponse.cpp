@@ -46,7 +46,7 @@ char** CgiResponse::makeCgiEnvp()
 	std::vector<std::string> extensions = location.getCgiExtensionVector();
 	for (std::vector<std::string>::iterator it = extensions.begin(); it != extensions.end(); it++)
 	{
-
+		
 	}
 
 

@@ -217,38 +217,6 @@ void ResponseHandler::cgiResponse()
 		execve(argv[0], argv, makeCgiEnvp());
 		exit(1);
 	}
-
-	int stat = 0;
-	int i = 100;
-	while(i)
-	{
-		if (stat == 0)
-		{
-			std::cout << "testestsetset" << std::endl;
-			write(fd_write, request.getRawBody().c_str(), strlen(request.getRawBody().c_str()));
-			close(fd_read);
-			close(fd_write);
-			stat = 1;
-		}
-		else if (stat == 1)
-		{
-			int status;
-			int s = waitpid(pid, &status, WNOHANG);
-			if (s)
-			{
-				lseek(fd_temp, 0, SEEK_SET);
-				char buf[10000];
-				int size = read(fd_temp, buf, 10000);
-				buf[size] = 0;
-				std::cout << "==============test===============" << std::endl;
-				std::cout << buf << std::endl;
-				std::cout << "==============test===============" << std::endl;
-				close(fd_temp);
-				break ;
-			}
-		}
-	}
-
 }
 
 // cgi 실행 여부 판단
@@ -323,9 +291,6 @@ Response ResponseHandler::makeResponse()
 		{
 			std::cout << "cgi on " << std::endl;
 			cgiResponse();
-
-
-
 			throwErrorResponse(500, request.getHttpVersion());
 		}
 		std::cout << "cgi off" << std::endl;
