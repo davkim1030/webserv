@@ -17,6 +17,8 @@
 # include <stdlib.h>
 # include <unistd.h>
 # include <fcntl.h>
+# include <vector>
+# include <string>
 
 # include <vector>
 # include <string>

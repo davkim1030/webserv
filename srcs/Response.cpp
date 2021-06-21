@@ -213,6 +213,7 @@ std::string Response::getMessage()
         result += iter->first + ": " + iter->second + "\r\n";
     result += "\r\n" + body;
     free(strTmp);
+	std::cout << "~~~~~~~~~~~"  << std::endl << result << std::endl;
     return (result);
 }
 

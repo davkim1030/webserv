@@ -25,7 +25,7 @@ class ResponseHandler
 {
 	public:
 		// 생성자 & 소멸자 & 대입연산자 오버로딩
-		ResponseHandler(Request &request, Server &server);
+		ResponseHandler(const Request &request, const Server &server);
 		~ResponseHandler(void);
 		ResponseHandler & operator=( ResponseHandler const & rhs );
 
@@ -69,6 +69,7 @@ class ResponseHandler
 		std::map<std::string, std::string> mimeType;
 		std::map<std::string, std::string> metaVariable;
 
+
 		//각 메소드별 Response 생성함수
 		void makeTraceResponse(void);
 		void makeOptionResponse(void);
@@ -79,7 +80,10 @@ class ResponseHandler
 		void makePostResponse(void);
 		void makeDeleteResponse(void);
 
+		//경로에서 확장자를 추출하는 함수
 		std::string fileExtension(std::string);
+		//URI에서 root 문자열을 삭제하는 함수
+		std::string parseResourcePath(std::string);
 
 		//에러 Response를 던지는 함수
 		void throwErrorResponse(int, std::string) throw(Response);

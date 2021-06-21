@@ -6,7 +6,7 @@
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
 
-ResponseHandler::ResponseHandler(Request &request, Server &server)
+ResponseHandler::ResponseHandler(const Request &request, const Server &server)
 :request(request), server(server){
 	this->mimeType[".aac"] = "audio/aac";
 	this->mimeType[".abw"] = "application/x-abiword";
@@ -135,23 +135,36 @@ int ResponseHandler::checkPath(std::string path)
 */
 char** ResponseHandler::makeCgiEnvp()
 {
-	metaVariable["AUTH_TYPE"] = "null";
+	if (metaVariable["PATH_INFO"].empty())
+		metaVariable["PATH_INFO"] = request.getUri();
+
+	metaVariable["AUTH_TYPE"] = request.getHeader()["Authorization"];
+	if (metaVariable["AUTH_TYPE"].empty())
+		metaVariable["AUTH_TYPE"] = "null";
+
 	metaVariable["CONTENT_LENGTH"] = request.getHeader()["Content-Length"];
-	metaVariable["CONTENT_TYPE"] = "MIME type";
-	metaVariable["GATEWAY_INTERFACE"] = "CGI/1.1";
+	if (metaVariable["CONTENT_LENGTH"].empty())
+		metaVariable["CONTENT_LENGTH"] = "0";
+
+	metaVariable["CONTENT_TYPE"] = request.getHeader()["Content-Type"];
+	if (metaVariable["CONTENT_TYPE"].empty())
+		metaVariable["CONTENT_TYPE"] = "null";
+	metaVariable["GATEWAY_INTERFACE"] = "Cgi/1.1";
+
+	metaVariable["REQUEST_URI"] = request.getUri();
+	if (metaVariable.count("PATH_INFO") == 1)
+		metaVariable["REQUEST_URI"] = metaVariable["PATH_INFO"];
 
 	// /test/cgi.bla/path/?query_string -> 이렇게 들어올 수 있음
 	// 뒤에 아무것도 안들어오는 경우, /만 들어오고 끝나는 경우, /path 하고 들어오는 경우
 	//   uri 통째로 써주기 ,      /만 써주기,             /path 써주기
-	metaVariable["PATH_TRANSLATED"] = location.getOption("root") + metaVariable["PATH_INFO"].substr(1);
 
-	metaVariable["REMOTE_ADDR"] = "clientIP"; // 클라이언트의 IP
-	metaVariable["REMOTE_IDENT"] = ""; // 없어두됨
-	metaVariable["REMOTE_USER"] = ""; // 없어두됨 REMOTE 둘 다 AUTH 파일에 넘겨져 온다고 생각 중
+	metaVariable["PATH_TRANSLATED"] = location.getOption("root") + metaVariable["PATH_INFO"].substr(1);
+	metaVariable["REMOTE_ADDR"] = "127.0.0.1"; // 클라이언트의 IP
+	// metaVariable["REMOTE_IDENT"] = ""; // 없어두됨
+	// metaVariable["REMOTE_USER"] = ""; // 없어두됨 REMOTE 둘 다 AUTH 파일에 넘겨져 온다고 생각 중
 
 	metaVariable["REQUEST_METHOD"] = "GET";
-	metaVariable["REQUEST_URI"] = "URI";
-	metaVariable["SCRIPT_NAME"] = ".bla file";
 	metaVariable["SERVER_NAME"] = "my server name";
 	metaVariable["SERVER_PORT"] = "server port";
 	metaVariable["SERVER_PROTOCOL"] = "HTTP/1.1";
@@ -181,10 +194,8 @@ void ResponseHandler::cgiResponse()
 		throwErrorResponse(500, request.getHttpVersion());
 	int fd_read = fd[0];
 	int fd_write = fd[1];
-	std::cout << "========================cgi response========================" << std::endl;
-	std::cout << metaVariable["PATH_INFO"] << std::endl;
-	std::cout << metaVariable["QUERY_STRING"] << std::endl;
-	std::cout << "============================================================" << std::endl;
+
+	fcntl(fd[1], F_SETFL, O_NONBLOCK);
 
 	std::string tempFile = "test_file";
 	int fd_temp = open(tempFile.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0666);
@@ -197,20 +208,15 @@ void ResponseHandler::cgiResponse()
 	{
 		std::cout << "child " << std::endl;
 		close(fd_write);
-		// dup2(fd_read, 0);
-		// dup2(fd_temp, 1);
+		dup2(fd_read, 0);
+		dup2(fd_temp, 1);
 		char *argv[3];
 		argv[0] = strdup(location.getOption("cgi_path").c_str());
-		argv[1] = strdup(("." + location.getOption("root") + metaVariable["SCRIPT_NAME"]).c_str());
+		argv[1] = strdup((location.getOption("root") + metaVariable["SCRIPT_NAME"]).c_str());
 		argv[2] = NULL;
 		execve(argv[0], argv, makeCgiEnvp());
 		exit(1);
 	}
-	else
-	{
-		close(fd_read);
-	}
-
 }
 
 // cgi 실행 여부 판단
@@ -233,18 +239,12 @@ bool ResponseHandler::isCgi()
 			metaVariable["SCRIPT_NAME"] = uri.substr(0, index + it->length());
 			uri = uri.substr(index);
 			size_t pathIndex = uri.find('/');
-			// uri에서 가상 경로가 있는지 체크
 			if (pathIndex != std::string::npos)
 			{
 				metaVariable["PATH_INFO"] = uri.substr(pathIndex);
 				uri = uri.substr(0, pathIndex);
 			}
-			// std::cout << "----------last test---------" << std::endl;
-			// std::cout << "last uri : {" << uri << "}" << std::endl;
-			// std::cout << "query : {" << metaVariable["QUERY_STRING"] << "}" << std::endl;
-			// std::cout << "path info : {" << metaVariable["PATH_INFO"] << "}" << std::endl;
-			// std::cout << "-=====================================-" << std::endl;
-			if(uri.compare(0, it->length() + 1,*it) != 0)
+			if(uri.compare(0, it->length() + 1, *it) != 0)
 				return false;
 
 			return true;
@@ -263,9 +263,8 @@ Location ResponseHandler::findLocation(std::string uri)
 	for (std::vector<Location>::iterator it = ser.begin(); it != ser.end(); it++)
 	{
 		std::string path = it->getPath();
-		if (*path.rbegin() != '/')
-			path += '/';
-		if (uri.compare(0, path.length(), path) == 0)
+		std::string tempPath = path + '/';
+		if (uri.compare(0, path.length(), path) == 0 || uri.compare(0, tempPath.length(), tempPath) == 0)
 			res = *it;
 	}
 	return res;
@@ -288,7 +287,7 @@ Response ResponseHandler::makeResponse()
 		if (location.getPath().empty())
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
 
-		if (isCgi()) // 테스터용으로 결과 반전 시켜둠
+		if (isCgi())
 		{
 			std::cout << "cgi on " << std::endl;
 			cgiResponse();
@@ -313,10 +312,7 @@ Response ResponseHandler::makeResponse()
 			makeOptionResponse();
 		else if (request.getMethod() == "CONNECT")
 			makeConnectResponse();
-
-		// 못 찾으면 기본 값 주기
-		// if (resourcePath == "")
-		this->resourcePath = location.getOption("root") + request.getUri(); //root 들어오면 더해주세요
+		this->resourcePath = parseResourcePath(request.getUri());
 
 		if (checkPath(this->resourcePath) == NOT_FOUND && request.getMethod() != "PUT" && request.getMethod() != "POST")
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
@@ -343,6 +339,22 @@ Response ResponseHandler::makeResponse()
 }
 
 /*
+* Request URI에서 Location->path를 찾아, root 값으로 치환해줍니다.
+* @param Request URI
+* @return PATH가 ROOT로 치환된 URI
+*/
+std::string ResponseHandler::parseResourcePath(std::string uri)
+{
+	std::string path = this->location.getPath();
+	if (*path.rbegin() != '/')
+			path += '/';
+	std::string root = this->location.getOption("root");
+	size_t path_pos = uri.find_first_of(path);
+	uri.replace(path_pos, path.length(), root);
+	return uri;
+}
+
+/*
 * GET 메소드의 Response를 생성합니다.
 * 기본 헤더 : Date, Server
 * 엔티티 헤더 : Last-Modified
@@ -364,7 +376,6 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 	}
 	if (checkPath(this->resourcePath) == ISDIR)
 	{
-
 		if (this->resourcePath[this->resourcePath.length() - 1] != '/')
 			this->resourcePath += '/';
 
@@ -388,6 +399,8 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 				addContentTypeHeader(".html");
 				throw Response(200, this->responseHeader, request.getMethod() != "HEAD" ? makeAutoIndexPage(this->resourcePath) : "", request.getHttpVersion());
 			}
+			if (checkPath(this->resourcePath) == NOT_FOUND || checkPath(this->resourcePath) == ISDIR)
+				throwErrorResponse(NOT_FOUND, request.getHttpVersion());
 		}
 	}
 
@@ -469,7 +482,10 @@ void ResponseHandler::makePostResponse(void)
 			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0)
 				throwErrorResponse(SERVER_ERR, request.getHttpVersion());
 
-			write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			if (request.getHeader()["Transfer-Encoding"] != "chunked")
+				write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			else
+				write(fd, request.getRawBody().c_str(), request.getRawBody().length());
 			close(fd);
 			addContentLocationHeader();
 			throw Response(201, responseHeader, "", request.getHttpVersion());
@@ -478,7 +494,10 @@ void ResponseHandler::makePostResponse(void)
 		{
 			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_APPEND )) < 0)
 				throwErrorResponse(SERVER_ERR, request.getHttpVersion());
-			write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			if (request.getHeader()["Transfer-Encoding"] != "chunked")
+				write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			else
+				write(fd, request.getRawBody().c_str(), request.getRawBody().length());
 			close(fd);
 			addContentLocationHeader();
 			throw Response(200, responseHeader, "", request.getHttpVersion());
@@ -512,7 +531,10 @@ void ResponseHandler::makePutResponse(void)
 			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0)
 				throwErrorResponse(SERVER_ERR, request.getHttpVersion());
 
-			write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			if (request.getHeader()["Transfer-Encoding"] != "chunked")
+				write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			else
+				write(fd, request.getRawBody().c_str(), request.getRawBody().length());
 			close(fd);
 			addContentLocationHeader();
 			throw Response(201, responseHeader, "", request.getHttpVersion());
@@ -521,7 +543,10 @@ void ResponseHandler::makePutResponse(void)
 		{
 			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_TRUNC)) < 0)
 				throwErrorResponse(SERVER_ERR, request.getHttpVersion());
-			write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			if (request.getHeader()["Transfer-Encoding"] != "chunked")
+				write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
+			else
+				write(fd, request.getRawBody().c_str(), request.getRawBody().length());
 			close(fd);
 			addContentLocationHeader();
 			throw Response(200, responseHeader, "", request.getHttpVersion());

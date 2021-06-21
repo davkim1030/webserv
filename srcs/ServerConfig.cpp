@@ -142,8 +142,25 @@ void ServerConfig::saveConfig(int argc, char *path)
 	if (line != NULL)
 		free(line);
 	close(fd);
+	if (checkDuplicatePort() < 0)
+		parenFlag--;
 	if (parenFlag != 0)
 		throw WrongFileFormatException();
+}
+
+/*
+	각 서버들 내에 중복되는 port가 있는지 검사해주는 함수
+*/
+int ServerConfig::checkDuplicatePort()
+{
+	for (std::vector<Server>::iterator sit = server.begin(); sit != --server.end(); sit++)
+		for (std::vector<Server>::iterator next_sit = sit; next_sit != --server.end(); )
+		{
+			next_sit++;
+			if (sit->getPort() == next_sit->getPort())
+				return -1;
+		}
+	return 0;
 }
 
 /*

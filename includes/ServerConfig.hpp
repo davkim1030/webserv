@@ -12,7 +12,7 @@ class Server;
 	@member variable -> option : 기본 config 저장
 	@member variable -> server : server 블럭이 저장된 vector 컨테이너
 */
-class ServerConfig
+class 	ServerConfig
 {
 	private:
 		std::map<std::string, std::string> option;
@@ -30,6 +30,7 @@ class ServerConfig
 		void	configParse(std::string line);
 		int		openfile(int argc, char *path);
 		void	saveConfig(int argc, char *path);
+		int		checkDuplicatePort();
 
 		void	printItem();
 };
