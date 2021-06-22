@@ -23,8 +23,7 @@ class NormalResponse : public ResponseMaker
 		void		addContentLocationHeader(void);
 		void		addAllowHeader(std::string);
 		void		addHostHeader(void);
-
-		int			checkPath(std::string);
+		
 		Response	makeResponse(const std::string &resource);
 		std::string	parseResourcePath(std::string);
 		void 		makeGetResponse(int);

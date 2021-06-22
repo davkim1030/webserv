@@ -404,7 +404,7 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 		}
 	}
 
-	Resource resource(fd);
+	Resource resource(fd, -1);
 	IoStatus result = resource.getIoStatus();
 	if (result == PROCESSING)
 	{

@@ -6,7 +6,7 @@
 #    By: hyukim <hyukim@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2020/02/25 11:37:14 by sunpark           #+#    #+#              #
-#    Updated: 2021/06/14 16:59:56 by hyukim           ###   ########.fr        #
+#    Updated: 2021/06/23 06:06:01 by hyukim           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -17,7 +17,7 @@ SRCS	= ft_memset.cpp ft_bzero.cpp ft_memcpy.cpp ft_memccpy.cpp ft_memmove.cpp \
 		  ft_strnstr.cpp ft_atoi.cpp ft_calloc.cpp ft_strdup.cpp ft_substr.cpp \
 		  ft_strjoin.cpp ft_strtrim.cpp ft_split.cpp ft_itoa.cpp ft_strmapi.cpp \
 		  ft_putchar_fd.cpp ft_putstr_fd.cpp ft_putendl_fd.cpp ft_putnbr_fd.cpp \
-		  ft_get_time.cpp ft_split_space.cpp
+		  ft_get_time.cpp ft_split_space.cpp ftLog.cpp
 OBJS	= $(SRCS:.cpp=.o)
 
 BSRCS	= ft_lstnew.cpp ft_lstadd_front.cpp ft_lstsize.cpp ft_lstlast.cpp \

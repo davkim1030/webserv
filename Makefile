@@ -14,7 +14,8 @@ SRC		=	main.cpp \
 			ResponseMaker.cpp \
 			CgiResponse.cpp \
 			NormalResponse.cpp \
-			Cgi.cpp
+			CgiWriter.cpp \
+			CgiResource.cpp
 
 SRCDIR	=	./srcs/
 SRCS	=	$(addprefix $(SRCDIR), $(SRC))
@@ -28,7 +29,7 @@ LIBH	=	libft.h
 INCDIR	=	./includes/
 
 GPP		=	clang++
-GPPFLAG	=	-g -Wall -Wextra -Werror
+GPPFLAG	=	-g #-Wall -Wextra -Werror
 RM		=	rm -f
 
 %.o:		%.cpp

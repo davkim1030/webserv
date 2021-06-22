@@ -18,18 +18,20 @@ class Resource : public IoObject
 {
 	private:
 		Resource();
-		IoStatus ioStatus;
+		IoStatus	ioStatus;
+		int			clientFd;
 	public:
 		Resource(const Resource &other);
-		Resource(int fd);
-		Resource(int fd, const std::string &buffer, Status status, IoStatus ioStatus);
+		Resource(int fd, int clientFd);
+		Resource(int fd, const std::string &buffer, Status status, IoStatus ioStatus, int clientFd);
 		~Resource();
 		Resource &operator=(const Resource &other);
 		
 		void	setIoStatus(IoStatus ioStatus);
 
 		IoStatus	getIoStatus();
-
+		int			getClientFd();
+		
 		IoObject *clone();
 };
 #endif

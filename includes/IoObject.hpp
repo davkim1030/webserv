@@ -8,7 +8,8 @@ enum Status
 {
 	REQUEST_RECEIVING_HEADER,	// 헤더 리퀘스트를 수신중
 	REQUEST_RECEIVING_BODY,		// 바디 리퀘스트를 수신중
-	RESPONSE_READY		// 리스폰스를 줄 준비가 됨
+	RESPONSE_READY,				// 리스폰스를 줄 준비가 됨
+	PROCESSING_ERROR			// 처리 도중 에러를 만남
 };
 
 // 오브젝트들의 타입을 지정
@@ -18,7 +19,8 @@ enum Type
 	SERVER,				// 서버 타입
 	CLIENT,				// 클라이언트 타입
 	RESOURCE,			// 리소스 타입
-	CGI
+	CGI,
+	CGI_RESOURCE
 };
 
 /*

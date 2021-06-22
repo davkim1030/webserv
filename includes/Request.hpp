@@ -33,10 +33,12 @@ class Request
 		void	initRequest(void);
 		void	setRawRequest(std::string);
 		void	setLocation(const Location &location);
+		void	setRawBody(const std::string &rawBody);
 		bool	isParsable();
 		std::string	parseFirstLine(const std::string &firtLine);
 
 		static std::map<std::string, std::string> parseHeader(std::string);
+		static std::string parseChunkedBody(std::string body);
 		std::string parseBody(void);
 
 	private:

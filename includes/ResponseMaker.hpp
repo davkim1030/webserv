@@ -12,6 +12,7 @@
 #define SERVER_ERR 500
 #define FORBIDDEN 403
 #define METHOD_NOT_ALLOWED 405
+#define NOT_EXIST 0
 #define ISFILE 1
 #define ISDIR 2
 #define HEAD_METHOD 3
@@ -32,15 +33,17 @@ class ResponseMaker
 		ResponseMaker &operator=(const ResponseMaker&);
 		virtual ~ResponseMaker();
 
-		void        addResponseHeader(std::string, std::string);
+		void		addResponseHeader(std::string, std::string);
 		std::string getFormatTime(const struct tm*);
-		void        addDateHeader(void);
-		void        addServerHeader(void);
+		void		addDateHeader(void);
+		void		addServerHeader(void);
 		void		addContentTypeHeader(std::string);
 		void		addContentLengthHeader(int);
 
 		std::string makeHTMLPage(std::string);
-		void        throwErrorResponse(int, std::string) throw(Response);
+		void		throwErrorResponse(int, std::string) throw(Response);
+
+		int 		checkPath(std::string path);
 };
 
 

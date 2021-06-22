@@ -1,5 +1,6 @@
 #include "CgiResponse.hpp"
 #include "Socket.hpp"
+#include "CgiResource.hpp"
 
 // CgiResponse::CgiResponse() {}
 
@@ -23,33 +24,33 @@ CgiResponse::CgiResponse(const Request& request, const Server& server, const Loc
 CgiResponse::~CgiResponse()
 {}
 
-
-
-/*
-	cgi 처리 단계
-	1. 들어온 파일 확인해서 cgi 확장자인지 확인
-	2. cgi 이름에 맞는 파일이 있는지 찾기 ex) test.bla 들어오면 cgi_test 찾기
-	3. uri 내부에 ?가 있는지 확인 후 ? 뒤에 있는 정보들은 query_string으로 저장
-	4. 기본 환경변수 목록 만들기 -> map으로 저장해두면 편할 것 같음
-	5. 저장된 환경변수 char** 형태로 가공
-	6. 완성된 환경변수를 이용 해 cgi call
-		6-1. pipe 생성 후 fcntl로 파일 속성 변경 (NON_BLOCK)
-		6-2. fork로 프로세스 분리
-		6-3. 가공된 정보를 통해 cgi 실행
-		6-4. execve(실행할 파일 이름, (여긴 좀 더 알아볼 것_), 가공해둔 envp)
-	7. execve에서 실행된 결과를 pipe를 통해 가져와서 body로 넘겨주기
-
-
-*/
-char** CgiResponse::makeCgiEnvp()
+void	CgiResponse::makeVariable()
 {
+
 	std::string uri = request.getUri().substr(location.getPath().length());
+	std::cout << uri << std::endl;
 	std::vector<std::string> extensions = location.getCgiExtensionVector();
 	for (std::vector<std::string>::iterator it = extensions.begin(); it != extensions.end(); it++)
 	{
-		
+		size_t index = uri.find(*it);
+		if (index != std::string::npos && uri.compare(index, it->length(), *it) == 0)
+		{
+			int queryIndex;
+			if ((queryIndex = uri.find('?')) != -1)
+			{
+				metaVariable["QUERY_STRING"] = uri.substr(queryIndex + 1);
+				uri = uri.substr(0, queryIndex);
+			}
+			metaVariable["SCRIPT_NAME"] = uri.substr(0, index + it->length());
+			uri = uri.substr(index);
+			size_t pathIndex = uri.find('/');
+			if (pathIndex != std::string::npos)
+			{
+				metaVariable["PATH_INFO"] = uri.substr(pathIndex);
+				uri = uri.substr(0, pathIndex);
+			}
+		}
 	}
-
 
 	if (metaVariable["PATH_INFO"].empty())
 		metaVariable["PATH_INFO"] = request.getUri();
@@ -86,14 +87,21 @@ char** CgiResponse::makeCgiEnvp()
 	metaVariable["SERVER_PROTOCOL"] = "HTTP/1.1";
 	metaVariable["SERVER_SOFTWARE"] = "joockim/1.1";
 
+	// TODO : 파일 존재 유무 확인하기
+	// TODO : root 붙이고 나서 /가 하나 더 붙는 경우 ex) ./test//test.bla 같은 경우로 들어옴
+	std::cout << location.getOption("root") + metaVariable["SCRIPT_NAME"] << std::endl;
+	// 위는 execve() 전에 들어가 있는 코드
 
+}
+
+char** CgiResponse::makeCgiEnvp()
+{
 	char **res = (char **)malloc(sizeof(char *) * metaVariable.size() + 1);
 	int i = 0;
 	for (std::map<std::string, std::string>::const_iterator it = metaVariable.begin();
 	it != metaVariable.end(); it++)
 	{
 		std::string temp = std::string(it->first + "=" + it->second);
-		std::cout << temp << std::endl;
 		res[i] = ft_strdup(temp.c_str());
 		i++;
 	}
@@ -101,11 +109,11 @@ char** CgiResponse::makeCgiEnvp()
 	return res;
 }
 
-void CgiResponse::cgiResponse()
+void CgiResponse::cgiResponse(int clientFd)
 {
 	pid_t pid;
-
 	int fd[2];
+
 	if (pipe(fd) == -1)
 		throwErrorResponse(500, request.getHttpVersion());
 	int fd_read = fd[0];
@@ -113,13 +121,36 @@ void CgiResponse::cgiResponse()
 
 	fcntl(fd[1], F_SETFL, O_NONBLOCK);
 
-	std::string tempFile = "test_file";
+	int checkRes = checkPath("./cgi_files");
+
+	if (checkRes == ISFILE)
+	{
+		Socket::getInstance()->getPool()[clientFd]->setStatus(PROCESSING_ERROR);
+		return ;
+	}
+	else if (checkRes == NOT_EXIST)
+	{
+		if (mkdir("./cgi_files/", 0766) == -1)
+		{
+			Socket::getInstance()->getPool()[clientFd]->setStatus(PROCESSING_ERROR);
+			return ;
+		}
+	}
+	char *num = ft_itoa(clientFd);
+	std::string tempFile = "./cgi_files/cgi_result" + std::string(num);
+	free(num);
+	// TODO: 다 읽고 파일 지워야 함
 	int fd_temp = open(tempFile.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0666);
 	if (fd_temp == -1)
-		throwErrorResponse(500, request.getHttpVersion());
-
+	{
+		Socket::getInstance()->getPool()[clientFd]->setStatus(PROCESSING_ERROR);
+		return ;
+	}
 	if ((pid = fork()) == -1)
-		throwErrorResponse(500, request.getHttpVersion());
+	{
+		Socket::getInstance()->getPool()[clientFd]->setStatus(PROCESSING_ERROR);
+		return ;
+	}
 	else if (pid == 0)
 	{
 		int execveRet;
@@ -138,16 +169,43 @@ void CgiResponse::cgiResponse()
 	{
 		close(fd_read);
 
-		Cgi *cgi = new Cgi(fd_write, pid);
-		Socket::getInstance()->getPool()[fd_write] = cgi;
+		CgiWriter *pipe = new CgiWriter(fd_write, clientFd);
+		Socket::getInstance()->getPool()[fd_write] = pipe;
 		Socket::getInstance()->updateFds(fd_write, FD_WRITE);
 
-		Resource *resource = new Resource(fd_temp);
+		CgiResource *resource = new CgiResource(fd_temp, pid, clientFd);
 		Socket::getInstance()->getPool()[fd_temp] = resource;
-		Socket::getInstance()->updateFds(fd_write, FD_READ);
+		Socket::getInstance()->updateFds(fd_temp, FD_READ);
 
 		Socket::getInstance()->updateFdMax();
 		return ;
 	}
 
+}
+
+Response	CgiResponse::cgiResultPasring(std::string cgiResult)
+{
+	int statusCode;
+	std::map<std::string, std::string> header;
+	std::string body;
+	std::string tmp;
+
+	tmp = cgiResult.substr(cgiResult.find("Status: ") + 8, 3);
+	statusCode = ft_atoi(tmp.c_str());
+	tmp = cgiResult.substr(cgiResult.find("\r\n") + 2);
+	while (tmp.compare(0, 2, "\r\n") != 0)
+	{
+		std::string line = tmp.substr(0, tmp.find("\r\n"));
+		if (line.length() == 0)
+			break ;
+		else
+		{
+			std::string key = line.substr(0, line.find(": "));
+			std::string value = line.substr(line.find(": ") + 2);
+			header[key] = value;
+		}
+		tmp = tmp.substr(tmp.find("\r\n") + 2);
+	}
+	body = tmp.substr(2);
+	return Response(statusCode, header, body);
 }

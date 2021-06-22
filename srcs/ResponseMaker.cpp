@@ -195,3 +195,24 @@ void ResponseMaker::throwErrorResponse(int httpStatus, std::string version) thro
 }
 
 
+// ====================== Response ====================
+
+/*
+ * 경로가 존재하는지 / 파일인지 / 경로인지 판별합니다.
+ * @param 체크할 경로
+ * @return 경로가 존재하지 않을 경우 0 반환, 파일일 경우 1 반환, 디렉토리일경우 2 반환
+ */
+int ResponseMaker::checkPath(std::string path)
+{
+	struct stat buffer;
+
+	int exist = stat(path.c_str(), &buffer);
+	if (exist == 0)
+	{
+		if (S_ISREG(buffer.st_mode))
+			return (ISFILE);
+		else if (S_ISDIR(buffer.st_mode))
+			return (ISDIR);
+	}
+	return (NOT_FOUND);
+}

@@ -6,7 +6,7 @@
 /*   By: hyukim <hyukim@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2020/02/25 11:39:22 by sunpark           #+#    #+#             */
-/*   Updated: 2021/06/14 16:58:37 by hyukim           ###   ########.fr       */
+/*   Updated: 2021/06/23 06:08:56 by hyukim           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,11 +17,10 @@
 # include <stdlib.h>
 # include <unistd.h>
 # include <fcntl.h>
-# include <vector>
-# include <string>
 
 # include <vector>
 # include <string>
+# include <iostream>
 
 # define GNL_BUFFER_SIZE 1024
 # define GNL_FD_SIZE 1024
@@ -96,5 +95,6 @@ int					ft_printf(const char *format, ...);
 
 unsigned long		ft_get_time(void);
 std::vector<std::string> splitSpaces(const std::string &str);
+void				ftLog(std::string key, std::string value);
 
 #endif

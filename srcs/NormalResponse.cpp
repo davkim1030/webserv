@@ -57,34 +57,6 @@ void NormalResponse::addHostHeader()
 	addResponseHeader("Host", resourcePath);
 }
 
-
-
-
-
-// ====================== Response ====================
-
-/*
- * 경로가 존재하는지 / 파일인지 / 경로인지 판별합니다.
- * @param 체크할 경로
- * @return 경로가 존재하지 않을 경우 0 반환, 파일일 경우 1 반환, 디렉토리일경우 2 반환
- */
-int NormalResponse::checkPath(std::string path)
-{
-	struct stat buffer;
-
-	int exist = stat(path.c_str(), &buffer);
-	if (exist == 0)
-	{
-		if (S_ISREG(buffer.st_mode))
-			return (ISFILE);
-		else if (S_ISDIR(buffer.st_mode))
-			return (ISDIR);
-	}
-	return (NOT_FOUND);
-}
-
-
-
 /*
 * 입력 메소드와 헤더를 판단해 대응하는 응답값을 출력합니다.
 * @param 파싱과 읽기를 완료한 resource string
@@ -163,7 +135,6 @@ void NormalResponse::makeGetResponse(int httpStatus)
 {
 	int fd;
 	struct stat	sb;
-	int res;
 
 	addDateHeader();
 	addServerHeader();
@@ -203,7 +174,8 @@ void NormalResponse::makeGetResponse(int httpStatus)
 		close(fd);
 		throwErrorResponse(SERVER_ERR, request.getHttpVersion());
 	}
-	Resource *resource = new Resource(fd);
+	int amsd; // TODO : ERROR케이스 아무거나 막 넣어둔거니 꼭 없애줘야함
+	Resource *resource = new Resource(fd, amsd);
 	Socket::getInstance()->getPool()[fd] = resource;
 	// FD_SET(fd, Socket::getFdSet);
 	Socket::getInstance()->updateFdMax();

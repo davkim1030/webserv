@@ -2,24 +2,27 @@
 #define CGIRESPONSE_HPP
 
 #include "ResponseMaker.hpp"
-#include "Cgi.hpp"
+#include "CgiWriter.hpp"
 #include "Resource.hpp"
 
 class CgiResponse : public ResponseMaker
 {
-    private:
-        std::map<std::string, std::string> metaVariable;
+	private:
+		std::map<std::string, std::string> metaVariable;
 
-        CgiResponse();
+		CgiResponse();
 
-    public:
-        CgiResponse(const Request&, const Server&, const Location&);
-        CgiResponse(const CgiResponse &cg);
-        CgiResponse &operator=(const CgiResponse &cg);
-        ~CgiResponse();
-    
-		char** makeCgiEnvp();
-		void cgiResponse();
+	public:
+		CgiResponse(const Request&, const Server&, const Location&);
+		CgiResponse(const CgiResponse &cg);
+		CgiResponse &operator=(const CgiResponse &cg);
+		~CgiResponse();
+		
+		void	makeVariable();
+		char**	makeCgiEnvp();
+		void	cgiResponse(int clientFd);
+
+		static	Response	cgiResultPasring(std::string cgiResult);
 
 };
 

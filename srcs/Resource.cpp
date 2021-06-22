@@ -7,7 +7,7 @@
  * fd=-1, buffer="", status=REQUEST_RECEIVING_HEADER, type=RESOURECE로 셋팅
  */
 Resource::Resource()
-: IoObject(-1, "", REQUEST_RECEIVING_HEADER, RESOURCE), ioStatus(PROCESSING)
+: IoObject(-1, "", REQUEST_RECEIVING_HEADER, RESOURCE), ioStatus(PROCESSING), clientFd(-1)
 {
 }
 
@@ -15,12 +15,12 @@ Resource::Resource()
  * 복사 생성자
  */
 Resource::Resource(const Resource &other)
-: IoObject(other.fd, other.buffer, other.status, RESOURCE), ioStatus(other.ioStatus)
+: IoObject(other.fd, other.buffer, other.status, RESOURCE), ioStatus(other.ioStatus), clientFd(other.clientFd)
 {
 }
 
-Resource::Resource(int fd)
-: IoObject(fd, "", REQUEST_RECEIVING_HEADER, RESOURCE), ioStatus(PROCESSING)
+Resource::Resource(int fd, int clientFd)
+: IoObject(fd, "", REQUEST_RECEIVING_HEADER, RESOURCE), ioStatus(PROCESSING), clientFd(clientFd)
 {
 }
 
@@ -30,8 +30,8 @@ Resource::Resource(int fd)
  * @param const std::string buffer: 읽기/쓰기 도중 남은 데이터 저장할 공간
  * @param Status status: 현재 상태를 나타냄
  */
-Resource::Resource(int fd, const std::string &buffer, Status status, IoStatus ioStatus)
-: IoObject(fd, buffer, status, RESOURCE), ioStatus(ioStatus)
+Resource::Resource(int fd, const std::string &buffer, Status status, IoStatus ioStatus, int clientFd)
+: IoObject(fd, buffer, status, RESOURCE), ioStatus(ioStatus), clientFd(clientFd)
 {
 }
 
@@ -49,6 +49,7 @@ Resource &Resource::operator=(const Resource &other)
 		status = other.status;
 		type = RESOURCE;
 		ioStatus = other.ioStatus;
+		clientFd = other.clientFd;
 	}
 	return (*this);
 }
@@ -74,4 +75,9 @@ void	Resource::setIoStatus(IoStatus ioStatus)
 IoStatus	Resource::getIoStatus()
 {
 	return (ioStatus);
+}
+
+int			Resource::getClientFd()
+{
+	return clientFd;
 }

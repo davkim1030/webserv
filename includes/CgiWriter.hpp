@@ -1,10 +1,10 @@
-#ifndef CGI_HPP
-#define CGI_HPP
+#ifndef CGIWRITER_HPP
+#define CGIWRITER_HPP
 
 #include "webserv.h"
 #include "IoObject.hpp"
 
-class Cgi : public IoObject
+class CgiWriter : public IoObject
 {
 
 		// int				fd;		// 파일 또는 소켓 fd
@@ -12,17 +12,21 @@ class Cgi : public IoObject
 		// Status			status;	// 현재 리스폰스를 줄 수 있는지 상태를 저장
 		// Type			type;	// server, client, resource 중에 어떤 객체인지 지정
 	private:
-		pid_t pid;
+		int		clientFd;
+		int		pos;
 
 	public:
-		Cgi();
-		Cgi(int fd, pid_t pid);
-		Cgi(const Cgi &cgi);
-		Cgi &operator=(const Cgi &cgi);
-		~Cgi();
+		CgiWriter();
+		CgiWriter(int fd, int clientFd);
+		CgiWriter(const CgiWriter &cgi);
+		CgiWriter &operator=(const CgiWriter &cgi);
+		~CgiWriter();
 
-		IoObject *clone();
+		IoObject	*clone();
+		int			getClientFd();
+		int			getPos();
 
+		void		setPos(int pos);
 
 };
 
