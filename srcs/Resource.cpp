@@ -60,67 +60,6 @@ Resource::~Resource()
 {
 }
 
-/*
- * 읽기 동작을 수행하는 멤버 함수
- * @std::string &content: 읽은 파일 내용
- * @return int:
- * 		-1 : 에러 발생
- * 		0 : 모두 읽음
- * 		1 : 읽는 중
- */
-/*
- 읽는 중 -> content에 값을 반환하지 않음
- 다 읽음 -> content에 값을 반환
-*/
-int		Resource::doRead(std::string &content)
-{
-	try
-	{
-		if (Socket::getInstance()->getPool()[fd] == NULL)
-		{
-			Socket::getInstance()->getPool()[fd] = new Resource(*this);
-			content = "";
-			ioStatus = PROCESSING;
-			return (1);
-		}
-		content = buffer;
-		buffer = "";
-	}
-	catch(const std::exception& e)
-	{
-		return (-1);
-	}
-	return (ioStatus == DONE ? 0 : 1);
-}
-
-/*
- * 쓰기 동작을 수행하는 멤버 함수
- * @param const std::string &content: 쓰기 동작을 수행할 내용
- * @return int:
- * 		-1 : 에러 발생
- * 		0 : 모두 씀
- * 		1 : 쓰는 중
- */
-int		Resource::doWrite(const std::string &content)
-{
-	try
-	{
-		if (Socket::getInstance()->getPool()[fd] == NULL)
-		{
-			Socket::getInstance()->getPool()[fd] = new Resource(*this);
-			buffer = content;
-			ioStatus = PROCESSING;
-			return (1);
-		}
-		buffer += content;
-	}
-	catch(const std::exception& e)
-	{
-		return (-1);
-	}
-	return (ioStatus == DONE ? 0 : 1);
-}
-
 IoObject *Resource::clone()
 {
 	IoObject *resource = new Resource(*this);

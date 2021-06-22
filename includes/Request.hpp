@@ -2,6 +2,7 @@
 # define REQUEST_HPP
 
 # include "webserv.h"
+# include "Location.hpp"
 
 /*
  * HTTP request를 파싱하는 클래스
@@ -25,14 +26,15 @@ class Request
 		std::string getRawBody(void) const;
 		std::string const &getRawRequest(void);
 		std::string const &getHost(void);
+		Location getLocation();
 
 		void	setHeader(std::map<std::string, std::string> &header);
 
 		void	initRequest(void);
 		void	setRawRequest(std::string);
-		void	parseRequest(void);
+		void	setLocation(const Location &location);
 		bool	isParsable();
-		void	parseFirstLine(const std::string &firtLine);
+		std::string	parseFirstLine(const std::string &firtLine);
 
 		static std::map<std::string, std::string> parseHeader(std::string);
 		std::string parseBody(void);
@@ -51,6 +53,7 @@ class Request
 		std::map<std::string, std::string> header;
 
 		std::string	rawBody;
+		Location	location;
 
 		std::string parseMethod(void);
 		std::string parseUri(void);

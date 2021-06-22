@@ -2,11 +2,13 @@
 #define NORMALRESPONSE_HPP
 
 #include "ResponseMaker.hpp"
+#include "Resource.hpp"
 
 class NormalResponse : public ResponseMaker
 {
 	private:
 		std::string resourcePath;
+		std::string resource;
 
 		NormalResponse();
 
@@ -23,13 +25,13 @@ class NormalResponse : public ResponseMaker
 		void		addHostHeader(void);
 
 		int			checkPath(std::string);
-		Response	makeResponse(void);
+		Response	makeResponse(const std::string &resource);
 		std::string	parseResourcePath(std::string);
 		void 		makeGetResponse(int);
 		void 		makeHeadResponse(void);
 		std::string	fileExtension(std::string);
-		void 		makePostResponse(void);
-		void 		makePutResponse(void);
+		/*void 		makePostResponse(void);
+		void 		makePutResponse(void);*/
 		void 		makeDeleteResponse(void);
 		void 		makeTraceResponse(void);
 		void 		makeOptionResponse(void);

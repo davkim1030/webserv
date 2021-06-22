@@ -17,6 +17,7 @@ void	sigintHandler(int signo)
 
 int		main(int argc, char *argv[])
 {
+	// TODO: 루트 로케이션이 없으면 에러 처리 
 	try
 	{
 		if (argc >= 3)

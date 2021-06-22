@@ -25,9 +25,6 @@ class Resource : public IoObject
 		Resource(int fd, const std::string &buffer, Status status, IoStatus ioStatus);
 		~Resource();
 		Resource &operator=(const Resource &other);
-
-		int		doWrite(const std::string &content);
-		int		doRead(std::string &content);
 		
 		void	setIoStatus(IoStatus ioStatus);
 

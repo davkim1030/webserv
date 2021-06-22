@@ -2,6 +2,8 @@
 #define CGIRESPONSE_HPP
 
 #include "ResponseMaker.hpp"
+#include "Cgi.hpp"
+#include "Resource.hpp"
 
 class CgiResponse : public ResponseMaker
 {
@@ -16,7 +18,6 @@ class CgiResponse : public ResponseMaker
         CgiResponse &operator=(const CgiResponse &cg);
         ~CgiResponse();
     
-        bool isCgi();
 		char** makeCgiEnvp();
 		void cgiResponse();
 

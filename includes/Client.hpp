@@ -4,6 +4,7 @@
 # include "IoObject.hpp"
 # include "Request.hpp"
 # include "Response.hpp"
+# include "Server.hpp"
 
 /*
  * 서버에 연결된 하나의 클라이언트
@@ -33,6 +34,7 @@ class Client : public IoObject
 		void		setResponse(const Response &response);
 
 		// getters
+		Server		getServer();
 		int			getServerSocketFd();
 		Request		&getRequest();
 		Response	&getResponse();
@@ -45,6 +47,5 @@ class Client : public IoObject
 
 		// member methods
 		bool	headerParsable();
-		bool	bodyParsable();
 };
 #endif

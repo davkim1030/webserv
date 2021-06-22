@@ -1,4 +1,5 @@
 #include "CgiResponse.hpp"
+#include "Socket.hpp"
 
 // CgiResponse::CgiResponse() {}
 
@@ -15,7 +16,7 @@ CgiResponse &CgiResponse::operator=(const CgiResponse &cg)
     return *this;
 }
 
-CgiResponse::CgiResponse(const Request&, const Server&, const Location&)
+CgiResponse::CgiResponse(const Request& request, const Server& server, const Location& location)
 : ResponseMaker(request, server, location)
 {}
 
@@ -121,49 +122,32 @@ void CgiResponse::cgiResponse()
 		throwErrorResponse(500, request.getHttpVersion());
 	else if (pid == 0)
 	{
+		int execveRet;
 		std::cout << "child " << std::endl;
 		close(fd_write);
-		// dup2(fd_read, 0);
-		// dup2(fd_temp, 1);
+		dup2(fd_read, 0);
+		dup2(fd_temp, 1);
 		char *argv[3];
 		argv[0] = strdup(location.getOption("cgi_path").c_str());
 		argv[1] = strdup((location.getOption("root") + metaVariable["SCRIPT_NAME"]).c_str());
 		argv[2] = NULL;
-		execve(argv[0], argv, makeCgiEnvp());
-		exit(1);
+		execveRet = execve(argv[0], argv, makeCgiEnvp());
+		exit(execveRet);
 	}
 	else
 	{
-		waitpid(pid, NULL, WNOHANG);
 		close(fd_read);
 
+		Cgi *cgi = new Cgi(fd_write, pid);
+		Socket::getInstance()->getPool()[fd_write] = cgi;
+		Socket::getInstance()->updateFds(fd_write, FD_WRITE);
+
+		Resource *resource = new Resource(fd_temp);
+		Socket::getInstance()->getPool()[fd_temp] = resource;
+		Socket::getInstance()->updateFds(fd_write, FD_READ);
+
+		Socket::getInstance()->updateFdMax();
+		return ;
 	}
 
-}
-
-// cgi 실행 여부 판단
-bool CgiResponse::isCgi()
-{
-	std::string uri = request.getUri().substr(location.getPath().length());
-	std::vector<std::string> ext = location.getCgiExtensionVector();
-
-	for (std::vector<std::string>::iterator it = ext.begin(); it != ext.end(); it++)
-	{
-		size_t index = uri.find(*it);
-		if (index != std::string::npos && uri.compare(index, it->length(), *it) == 0)
-		{
-			int queryIndex;
-			if ((queryIndex = uri.find('?')) != -1)
-				uri = uri.substr(0, queryIndex);
-			uri = uri.substr(index);
-			size_t pathIndex = uri.find('/');
-			if (pathIndex != std::string::npos)
-				uri = uri.substr(0, pathIndex);
-			if(uri.compare(0, it->length() + 1, *it) != 0)
-				return false;
-			return true;
-		}
-	}
-
-	return (false);
 }

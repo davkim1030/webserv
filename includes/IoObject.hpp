@@ -17,7 +17,8 @@ enum Type
 	NONE,				// 기본 값. 해당 값이면 에러
 	SERVER,				// 서버 타입
 	CLIENT,				// 클라이언트 타입
-	RESOURCE			// 리소스 타입
+	RESOURCE,			// 리소스 타입
+	CGI
 };
 
 /*

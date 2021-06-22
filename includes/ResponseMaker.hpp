@@ -30,7 +30,7 @@ class ResponseMaker
 		ResponseMaker(const ResponseMaker&);
 		ResponseMaker(const Request&, const Server&, const Location&);
 		ResponseMaker &operator=(const ResponseMaker&);
-		virtual ~ResponseMaker() = 0;
+		virtual ~ResponseMaker();
 
 		void        addResponseHeader(std::string, std::string);
 		std::string getFormatTime(const struct tm*);
@@ -41,12 +41,6 @@ class ResponseMaker
 
 		std::string makeHTMLPage(std::string);
 		void        throwErrorResponse(int, std::string) throw(Response);
-
-		Location	findLocation(std::string uri);
-
-
-
-
 };
 
 

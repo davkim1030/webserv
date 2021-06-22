@@ -1,5 +1,7 @@
 #include "webserv.h"
 #include "Client.hpp"
+#include "Server.hpp"
+#include "Socket.hpp"
 
 /*
  * 클라이언트 클래스 기본 생성자
@@ -124,16 +126,13 @@ bool	Client::headerParsable()
 {
 	return (buffer.find("\r\n\r\n") != std::string::npos);
 }
-
-bool	Client::bodyParsable()
-{
-	if (request.getHeader().count("Content-Length") != 0)
-		return (buffer.size() >= (unsigned long)ft_atoi(request.getHeader()["Content-Length"].c_str()));
-	return (buffer.find("\r\n\r\n") != std::string::npos);
-}
-
 IoObject *Client::clone()
 {
 	IoObject *tmp = new Client(*this);
 	return tmp;
+}
+
+Server Client::getServer()
+{
+	return *dynamic_cast<Server *>(Socket::getInstance()->getPool()[serverSocketFd]);
 }

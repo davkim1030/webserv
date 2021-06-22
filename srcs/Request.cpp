@@ -1,5 +1,6 @@
 #include "webserv.h"
 #include "Request.hpp"
+#include  "Location.hpp"
 
 /*
 ** ------------------------------- CONSTRUCTOR --------------------------------
@@ -24,6 +25,7 @@ Request::Request( const Request & src )
 	this->rawHeader = src.getRawHeader();
 	this->header = src.getHeader();
 	this->rawBody = src.getRawBody();
+	this->location = src.location;
 }
 
 /*
@@ -49,6 +51,7 @@ Request &				Request::operator=( Request const & rhs )
 		this->rawHeader = rhs.getRawHeader();
 		this->header = rhs.getHeader();
 		this->rawBody = rhs.getRawBody();
+		this->location = rhs.location;
 	}
 	return *this;
 }
@@ -70,26 +73,6 @@ void Request::initRequest(void)
 	this->header.clear();
 
 	this->rawBody.clear();
-}
-
-/*
-* 가공되지 않은 HTTP 요청 문자열을 가져와 method, uri, httpVersion, header, body를 파싱합니다.
-*/
-void Request::parseRequest(void)
-{
-	this->method = parseMethod();
-	this->uri = parseUri();
-	this->httpVersion = parseHttpVersion();
-
-	std::size_t headerStartPos = this->rawRequest.find("\r\n") + 2;
-	std::size_t headerEndPos = this->rawRequest.find("\r\n\r\n");
-	this->rawHeader = this->rawRequest.substr(headerStartPos, headerEndPos - headerStartPos + 2);
-
-	this->header = parseHeader(this->getRawHeader());
-	if (this->getHeader()["Transfer-Encoding"] != "chunked")
-		this->rawBody = this->rawRequest.substr(headerEndPos + 4, ft_atoi(this->getHeader()["Content-Length"].c_str()));
-	else
-		this->rawBody = parseBody();
 }
 
 /*
@@ -244,7 +227,7 @@ std::string const &Request::getHost(void)
  * 전체 줄에서 첫 줄만 자르는 부분
  * @param const std::string &firstLine: 자를 First Line 문자열이나 전체 메세지
  */
-void	Request::parseFirstLine(const std::string &firstLine)
+std::string	Request::parseFirstLine(const std::string &firstLine)
 {
 	std::string tmp = firstLine;
 	method = tmp.substr(0, tmp.find(' '));
@@ -252,4 +235,15 @@ void	Request::parseFirstLine(const std::string &firstLine)
 	uri = tmp.substr(0, tmp.find(' '));
 	tmp = tmp.substr(tmp.find(' ') + 1);
 	httpVersion = tmp.substr(0, tmp.find("\r\n"));
+	return firstLine.substr(firstLine.find("\r\n") + 2);
+}
+
+Location	Request::getLocation()
+{
+	return location;
+}
+
+void	Request::setLocation(const Location &location)
+{
+	this->location = location;
 }

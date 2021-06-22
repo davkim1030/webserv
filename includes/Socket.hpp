@@ -11,6 +11,13 @@
 # include "Exception.hpp"
 # include <climits>
 
+enum FdType
+{
+	FD_READ,
+	FD_WRITE,
+	FD_EXCEPT
+};
+
 /*
  * 소켓 통신 서버
  */
@@ -31,7 +38,9 @@ class Socket
 		Socket &operator=(Socket const &so);
 
 		void clearConnectedSocket(int fd);
-		void updateFdMax();
+		Location findLocation(Server server, std::string uri);
+		bool isCgi(std::string rawUri, Location location);
+
 
 		class SocketException : public std::exception
 		{
@@ -69,6 +78,8 @@ class Socket
 		void runServer(struct timeval timeout);
 		static Socket *getInstance();
 		void initServer(int argc, char *argv);
+		void updateFdMax();
+		void updateFds(int fd, FdType fdType);
 
 		std::vector<IoObject *> &getPool();
 };

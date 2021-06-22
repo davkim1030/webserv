@@ -1,4 +1,5 @@
 #include "NormalResponse.hpp"
+#include "Socket.hpp"
 
 NormalResponse::NormalResponse(const Request& request, const Server& server, const Location& location)
 : ResponseMaker(request, server, location)
@@ -86,15 +87,13 @@ int NormalResponse::checkPath(std::string path)
 
 /*
 * 입력 메소드와 헤더를 판단해 대응하는 응답값을 출력합니다.
+* @param 파싱과 읽기를 완료한 resource string
 * @return 응답값을 담은 Response
 */
-Response NormalResponse::makeResponse()
+Response NormalResponse::makeResponse(const std::string &resource)
 {
+	this->resource = resource;
 	try{
-		location = findLocation(request.getUri());
-		if (location.getPath().empty())
-			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
-
 		//location에서 uri를 찾지말고 uri에서 location을 찾아야합니다.
 		if (!location.getOption("allow_method").empty() && request.getMethod() != "GET" && request.getMethod() != "HEAD")
 		{
@@ -105,7 +104,6 @@ Response NormalResponse::makeResponse()
 				throwErrorResponse(METHOD_NOT_ALLOWED, request.getHttpVersion());
 			}
 		}
-
 		if (request.getMethod() == "TRACE")
 			makeTraceResponse();
 		else if (request.getMethod() == "OPTIONS")
@@ -120,10 +118,10 @@ Response NormalResponse::makeResponse()
 			makeGetResponse(0);
 		if (request.getMethod() == "HEAD")
 			makeHeadResponse();
-		if (request.getMethod() == "POST")
+		/*if (request.getMethod() == "POST")
 			makePostResponse();
 		if (request.getMethod() == "PUT")
-			makePutResponse();
+			makePutResponse();*/
 		if (request.getMethod() == "DELETE")
 			makeDeleteResponse();
 	}
@@ -163,10 +161,10 @@ std::string NormalResponse::parseResourcePath(std::string uri)
 */
 void NormalResponse::makeGetResponse(int httpStatus)
 {
-	std::string body;
 	int fd;
 	struct stat	sb;
 	int res;
+
 	addDateHeader();
 	addServerHeader();
 	if (checkPath(this->resourcePath) == ISDIR)
@@ -205,17 +203,13 @@ void NormalResponse::makeGetResponse(int httpStatus)
 		close(fd);
 		throwErrorResponse(SERVER_ERR, request.getHttpVersion());
 	}
-	char *buffer;
-	while((res = get_next_line(fd, &buffer)) > 0)
-	{
-		body += buffer;
-		body += "\n";
-		free(buffer);
-	}
-	if (res < 0)
+	Resource *resource = new Resource(fd);
+	Socket::getInstance()->getPool()[fd] = resource;
+	// FD_SET(fd, Socket::getFdSet);
+	Socket::getInstance()->updateFdMax();
+
+	if (this->resource.size() < 0 || this->resource.empty())
 		throwErrorResponse(SERVER_ERR, request.getHttpVersion());
-	body += buffer;
-	free(buffer);
 	addContentTypeHeader(fileExtension(resourcePath.substr(1)));
 	addContentLanguageHeader();
 	addContentLocationHeader();
@@ -223,7 +217,7 @@ void NormalResponse::makeGetResponse(int httpStatus)
 	addLastModifiedHeader(resourcePath);
 	if (httpStatus == HEAD_METHOD)
 		throw Response(200, responseHeader, "", request.getHttpVersion());
-	throw Response(200, responseHeader, body, request.getHttpVersion());
+	throw Response(200, responseHeader, this->resource, request.getHttpVersion());
 }
 
 /*
@@ -265,8 +259,7 @@ std::string NormalResponse::fileExtension(std::string resourcePath)
 * 기존에 있는 것을 성공적으로 수정 - 200 (OK) 또는 204 (No Content) 응답
 * 실패 : 500(SERVER ERR)
 * 권한없음 : 403(forbidden)
-*/
-
+*//*
 void NormalResponse::makePostResponse(void)
 {
 	int fd;
@@ -302,7 +295,7 @@ void NormalResponse::makePostResponse(void)
 		default :
 			throwErrorResponse(FORBIDDEN, request.getHttpVersion());
 	}
-}
+}*/
 
 /*
 * 클라이언트가 서버에게 지정한 URL에 지정한 데이터를 저장하거나 대체할 것을 요청한다.
@@ -315,7 +308,7 @@ void NormalResponse::makePostResponse(void)
 * 기존에 있는 것을 성공적으로 수정 - 200 (OK) 또는 204 (No Content) 응답
 * 실패 : 500(SERVER ERR)
 * 권한없음 : 403(forbidden)
-*/
+*//*
 void NormalResponse::makePutResponse(void)
 {
 	int fd;
@@ -351,7 +344,7 @@ void NormalResponse::makePutResponse(void)
 		default :
 			throwErrorResponse(FORBIDDEN, request.getHttpVersion());
 	}
-}
+}*/
 
 /*
 * DELETE 메소드의 작업을 수행한다.

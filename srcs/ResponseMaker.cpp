@@ -83,6 +83,9 @@ ResponseMaker &ResponseMaker::operator=(const ResponseMaker &res)
 	return *this;
 }
 
+ResponseMaker::~ResponseMaker()
+{}
+
 /*
 * 응답 헤더에 키와 키에 따른 밸류를 할당합니다.
 * @param 새로이 추가될 헤더의 키, 헤더의 밸류
@@ -192,17 +195,3 @@ void ResponseMaker::throwErrorResponse(int httpStatus, std::string version) thro
 }
 
 
-
-Location ResponseMaker::findLocation(std::string uri)
-{
-	std::vector<Location> ser = server.getLocationVector();
-	Location res;
-	for (std::vector<Location>::iterator it = ser.begin(); it != ser.end(); it++)
-	{
-		std::string path = it->getPath();
-		std::string tempPath = path + '/';
-		if (uri.compare(0, path.length(), path) == 0 || uri.compare(0, tempPath.length(), tempPath) == 0)
-			res = *it;
-	}
-	return res;
-}
