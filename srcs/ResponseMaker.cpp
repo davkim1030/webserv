@@ -1,4 +1,5 @@
 #include "ResponseMaker.hpp"
+#include "Socket.hpp"
 
 // ResponseMaker::ResponseMaker() {}
 
@@ -170,7 +171,7 @@ std::string ResponseMaker::makeHTMLPage(std::string str)
 	return (body);
 }
 
-void ResponseMaker::throwErrorResponse(int httpStatus, std::string version) throw(Response)
+Response ResponseMaker::makeErrorResponse(int httpStatus, std::string version)
 {
 	char	*strTmp = ft_itoa(httpStatus);
 	std::string body = makeHTMLPage(strTmp);
@@ -182,15 +183,15 @@ void ResponseMaker::throwErrorResponse(int httpStatus, std::string version) thro
 	switch (httpStatus)
 	{
 		case NOT_FOUND:
-			throw Response(404, responseHeader, body, version);
+			return Response(404, responseHeader, body, version);
 		case SERVER_ERR:
-			throw Response(500, responseHeader, body, version);
+			return Response(500, responseHeader, body, version);
 		case FORBIDDEN:
-			throw Response(403, responseHeader, body, version);
+			return Response(403, responseHeader, body, version);
 		case METHOD_NOT_ALLOWED:
-			throw Response(405, responseHeader, body, version);
+			return Response(405, responseHeader, body, version);
 		default:
-			throw Response(404, responseHeader, body, version);
+			return Response(404, responseHeader, body, version);
 	}
 }
 
@@ -215,4 +216,12 @@ int ResponseMaker::checkPath(std::string path)
 			return (ISDIR);
 	}
 	return (NOT_FOUND);
+}
+
+void	ResponseMaker::updateErrorStatus(int clientFd, int statusCode)
+{
+	Socket::getInstance()->getPool()[clientFd]->setStatus(PROCESSING_ERROR);
+	(*dynamic_cast<Client *>(Socket::getInstance()->getPool()[clientFd])).getResponse().setStatusCode(statusCode);
+	Socket::getInstance()->updateFds(clientFd, FD_WRITE);
+	return ;
 }
