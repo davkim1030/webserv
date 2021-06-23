@@ -1,6 +1,7 @@
 #include "CgiResponse.hpp"
 #include "Socket.hpp"
 #include "CgiResource.hpp"
+#include "Client.hpp"
 
 // CgiResponse::CgiResponse() {}
 
@@ -24,11 +25,12 @@ CgiResponse::CgiResponse(const Request& request, const Server& server, const Loc
 CgiResponse::~CgiResponse()
 {}
 
-void	CgiResponse::makeVariable()
+void	CgiResponse::makeVariable(int clientFd)
 {
-
-	std::string uri = request.getUri().substr(location.getPath().length());
-	std::cout << uri << std::endl;
+	std::string path = location.getPath();
+	if (*path.rbegin() == '/')
+		path = path.substr(0, path.length() - 1);
+	std::string uri = request.getUri().substr(path.length());
 	std::vector<std::string> extensions = location.getCgiExtensionVector();
 	for (std::vector<std::string>::iterator it = extensions.begin(); it != extensions.end(); it++)
 	{
@@ -72,25 +74,30 @@ void	CgiResponse::makeVariable()
 	if (metaVariable.count("PATH_INFO") == 1)
 		metaVariable["REQUEST_URI"] = metaVariable["PATH_INFO"];
 
-	// /test/cgi.bla/path/?query_string -> 이렇게 들어올 수 있음
-	// 뒤에 아무것도 안들어오는 경우, /만 들어오고 끝나는 경우, /path 하고 들어오는 경우
-	//   uri 통째로 써주기 ,      /만 써주기,             /path 써주기
-
 	metaVariable["PATH_TRANSLATED"] = location.getOption("root") + metaVariable["PATH_INFO"].substr(1);
-	metaVariable["REMOTE_ADDR"] = "127.0.0.1"; // 클라이언트의 IP
-	// metaVariable["REMOTE_IDENT"] = ""; // 없어두됨
-	// metaVariable["REMOTE_USER"] = ""; // 없어두됨 REMOTE 둘 다 AUTH 파일에 넘겨져 온다고 생각 중
+	metaVariable["REMOTE_ADDR"] = server.getIp();
 
 	metaVariable["REQUEST_METHOD"] = "GET";
-	metaVariable["SERVER_NAME"] = "my server name";
-	metaVariable["SERVER_PORT"] = "server port";
+	metaVariable["SERVER_NAME"] = "BSJ_we are never die";
+
+	char *port = ft_itoa(server.getPort());
+	metaVariable["SERVER_PORT"] = std::string(port);
+	free(port);
+
 	metaVariable["SERVER_PROTOCOL"] = "HTTP/1.1";
 	metaVariable["SERVER_SOFTWARE"] = "joockim/1.1";
 
-	// TODO : 파일 존재 유무 확인하기
-	// TODO : root 붙이고 나서 /가 하나 더 붙는 경우 ex) ./test//test.bla 같은 경우로 들어옴
-	std::cout << location.getOption("root") + metaVariable["SCRIPT_NAME"] << std::endl;
-	// 위는 execve() 전에 들어가 있는 코드
+	std::string filePath = location.getOption("root");
+	filePath = filePath.substr(0, filePath.length() - 1) + metaVariable["SCRIPT_NAME"];
+
+	if (checkPath(filePath) == NOT_FOUND || checkPath(filePath) == ISDIR)
+	{
+		// error
+	}
+
+
+	// TODO : 파일 존재 유무 확인하기 -> 어떤 파일? cgi에 넣을 .bla 파일
+
 
 }
 
@@ -115,29 +122,28 @@ void CgiResponse::cgiResponse(int clientFd)
 	int fd[2];
 
 	if (pipe(fd) == -1)
-		throwErrorResponse(500, request.getHttpVersion());
+		return updateErrorStatus(clientFd, 500);
 	int fd_read = fd[0];
 	int fd_write = fd[1];
 
 	fcntl(fd[1], F_SETFL, O_NONBLOCK);
 
 	int checkRes = checkPath("./cgi_files");
-
-	if (checkRes == ISFILE)
+	std::cout << checkRes << std::endl;
+	if (checkRes != ISFILE)
 	{
-		Socket::getInstance()->getPool()[clientFd]->setStatus(PROCESSING_ERROR);
-		return ;
+		return updateErrorStatus(clientFd, 404);
 	}
-	else if (checkRes == NOT_EXIST)
+	else if (checkRes == NOT_FOUND)
 	{
-		if (mkdir("./cgi_files/", 0766) == -1)
+		if (mkdir(CGI_DIR, 0766) == -1)
 		{
 			Socket::getInstance()->getPool()[clientFd]->setStatus(PROCESSING_ERROR);
 			return ;
 		}
 	}
 	char *num = ft_itoa(clientFd);
-	std::string tempFile = "./cgi_files/cgi_result" + std::string(num);
+	std::string tempFile = std::string(CGI_DIR) + std::string(CGI_PATH) + std::string(num);
 	free(num);
 	// TODO: 다 읽고 파일 지워야 함
 	int fd_temp = open(tempFile.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0666);
@@ -154,13 +160,14 @@ void CgiResponse::cgiResponse(int clientFd)
 	else if (pid == 0)
 	{
 		int execveRet;
-		std::cout << "child " << std::endl;
 		close(fd_write);
 		dup2(fd_read, 0);
 		dup2(fd_temp, 1);
 		char *argv[3];
 		argv[0] = strdup(location.getOption("cgi_path").c_str());
-		argv[1] = strdup((location.getOption("root") + metaVariable["SCRIPT_NAME"]).c_str());
+		std::string root = location.getOption("root");
+		root = root.substr(0, root.length() - 1);
+		argv[1] = strdup((root + metaVariable["SCRIPT_NAME"]).c_str());
 		argv[2] = NULL;
 		execveRet = execve(argv[0], argv, makeCgiEnvp());
 		exit(execveRet);

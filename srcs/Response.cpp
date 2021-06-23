@@ -249,6 +249,11 @@ int     Response::getStatusCode()
     return statusCode;
 }
 
+void    Response::setStatusCode(int statusCode)
+{
+    this->statusCode = statusCode;
+}
+
 const std::string    Response::_100 = "Continue";
 const std::string    Response::_101 = "Switching Protocols";
 

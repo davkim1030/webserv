@@ -5,10 +5,14 @@
 #include "CgiWriter.hpp"
 #include "Resource.hpp"
 
+#define CGI_DIR		"./cgi_files/"
+#define CGI_PATH	"cgi_result"
+
 class CgiResponse : public ResponseMaker
 {
 	private:
 		std::map<std::string, std::string> metaVariable;
+
 
 		CgiResponse();
 
@@ -18,7 +22,7 @@ class CgiResponse : public ResponseMaker
 		CgiResponse &operator=(const CgiResponse &cg);
 		~CgiResponse();
 		
-		void	makeVariable();
+		void	makeVariable(int clientFd);
 		char**	makeCgiEnvp();
 		void	cgiResponse(int clientFd);
 

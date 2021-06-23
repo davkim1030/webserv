@@ -210,7 +210,7 @@ void Socket::runServer(struct timeval timeout)
 		if (fdNum == 0) // 처리할 요구가 없으면 다시 위로
 			continue ;
 
-		// printFdsStatus(rfds, wfds, efds, fdMax);
+		printFdsStatus(rfds, wfds, efds, fdMax);
 		// fd를 0부터 fdMax까지 반복하며 set된 플래그 값이 있는지 확인하여 처리
 		for (int i = 0; i < fdMax + 1; i++)
 		{
@@ -280,7 +280,7 @@ void Socket::runServer(struct timeval timeout)
 						if (isCgi(tmpClient->getRequest().getUri(), tmpClient->getRequest().getLocation()))
 						{
 							CgiResponse cgiResponse(tmpClient->getRequest(), tmpClient->getServer(), tmpClient->getRequest().getLocation());
-							cgiResponse.makeVariable();
+							cgiResponse.makeVariable(i);
 							cgiResponse.cgiResponse(i);
 						}
 					}
@@ -380,7 +380,13 @@ void Socket::runServer(struct timeval timeout)
 				if (pool[i]->getType() == CLIENT)
 				{
 					Client *tmpClnt = dynamic_cast<Client *>(pool[i]);
-					if (isCgi(tmpClnt->getRequest().getUri(), tmpClnt->getRequest().getLocation()))
+					if (tmpClnt->getStatus() == PROCESSING_ERROR)
+					{
+						std::cout << "ERROR : " << tmpClnt->getResponse().getStatusCode() << std::endl;
+						std::string res = tmpClnt->getResponse().getMessage();
+						ftLog("error log", res);
+					}
+					else if (isCgi(tmpClnt->getRequest().getUri(), tmpClnt->getRequest().getLocation()))
 					{
 						std::string msg = CgiResponse::cgiResultPasring(tmpClnt->getBuffer()).getMessage();
 						write(i, msg.c_str(), msg.length());

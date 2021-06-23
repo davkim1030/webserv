@@ -41,9 +41,10 @@ class ResponseMaker
 		void		addContentLengthHeader(int);
 
 		std::string makeHTMLPage(std::string);
-		void		throwErrorResponse(int, std::string) throw(Response);
+		Response	makeErrorResponse(int, std::string);
 
 		int 		checkPath(std::string path);
+		void		updateErrorStatus(int clientFd, int statusCode);
 };
 
 

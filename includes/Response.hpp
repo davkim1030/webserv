@@ -93,6 +93,7 @@ public:
     int getLastResponse();
 
     void setLastResponse(int lastResponse);
+    void setStatusCode(int statusCode);
     void initResponse();
 
 };
