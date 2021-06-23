@@ -25,7 +25,7 @@ class CgiResponse : public ResponseMaker
 		CgiResponse &operator=(const CgiResponse &cg);
 		~CgiResponse();
 		
-		void	makeVariable(int clientFd);
+		bool	makeVariable(int clientFd);
 		char**	makeCgiEnvp();
 		void	cgiResponse(int clientFd);
 

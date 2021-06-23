@@ -1,5 +1,7 @@
 #include "ResponseHandler.hpp"
 
+/* 노말리스폰스랑 합병 */
+
 ResponseHandler::ResponseHandler(const Request& request, const Location& location, int clientFd):
 request(request), location(location), clientFd(clientFd){
 	this->resourcePath = parseResourcePath(request.getUri());
@@ -9,26 +11,37 @@ ResponseHandler::ResponseHandler(const ResponseHandler& other)
 {
 	this->resourcePath = other.resourcePath;
 	this->location = other.location;
+	this->request = other.request;
+	this->fd = other.fd;
+	this->sb = other.sb;
+	this->clientFd = other.clientFd;
 }
 
 ResponseHandler &ResponseHandler::operator=(const ResponseHandler& other)
 {
 	this->resourcePath = other.resourcePath;
 	this->location = other.location;
+	this->request = other.request;
+	this->fd = other.fd;
+	this->sb = other.sb;
+	this->clientFd = other.clientFd;
 }
 
 ResponseHandler::~ResponseHandler()
 {}
 
-int ResponseHandler::checkAllowMethod(void)
+bool ResponseHandler::checkAllowMethod(void)
 {
 	if (!location.getOption("allow_method").empty() && request.getMethod() != "GET" && request.getMethod() != "HEAD")
 	{
 		std::string allow = location.getOption("allow_method");
 		if (allow.find(request.getMethod()) == std::string::npos)
-			return METHOD_NOT_ALLOWED;
+		{
+			updateErrorStatus(clientFd, METHOD_NOT_ALLOWED);
+			return (false);
+		}
 	}
-	return CHECK_SUCCES;
+	return (true);
 }
 
 /*
@@ -67,10 +80,8 @@ int ResponseMaker::checkPath(std::string path)
 	return (NOT_FOUND);
 }
 
-int ResponseHandler::tryToOpen(int openFlag)
+bool ResponseHandler::tryToOpen(int openFlag)
 {
-	if (checkAllowMethod() == METHOD_NOT_ALLOWED)
-		return (METHOD_NOT_ALLOWED);
 	if (checkPath(this->resourcePath) == NOT_FOUND && request.getMethod() != "PUT" && request.getMethod() != "POST")
 		return (NOT_FOUND);
 	if ((this->fd = open(this->resourcePath.c_str(), openFlag)) < 0)
@@ -162,4 +173,36 @@ int ResponseHandler::checkGetMethodIndex(void)
 		}
 	}
 	return (CHECK_SUCCES);
+}
+
+//Request가 Resource를 필요로하는 타입인지 확인
+bool ResponseHandler::CheckResourceType(void)
+{
+	int stat;	
+	if (this->request.getMethod() == "GET")
+	{
+		if ((stat = checkGetMethodIndex()) != CHECK_SUCCES)
+		{
+			updateErrorStatus(clientFd, stat);
+			return false;
+		}
+		if ((stat = tryToRead()) != CHECK_SUCCES)
+		{
+			updateErrorStatus(clientFd, stat);
+			return false;
+		}
+		setReadFlag();
+		return true;
+	}
+	else if (request.getMethod() == "POST" || request.getMethod() == "PUT")
+	{
+		if ((stat = tryToWrite()) != CHECK_SUCCES)
+		{
+			updateErrorStatus(clientFd, stat);
+			return false;
+		}
+		setWriteFlag();
+		return true;
+	}
+	return true;
 }

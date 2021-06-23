@@ -3,6 +3,7 @@
 #include "NormalResponse.hpp"
 #include "CgiResource.hpp"
 #include "ResponseHandler.hpp"
+#include "ResponseMaker.hpp"
 
 // 싱글톤 사용을 위한 변수 선언
 Socket *Socket::instance;
@@ -277,35 +278,19 @@ void Socket::runServer(struct timeval timeout)
 						if (isCgi(tmpClient->getRequest().getUri(), tmpClient->getRequest().getLocation()))
 						{
 							CgiResponse cgiResponse(tmpClient->getRequest(), tmpClient->getServer(), tmpClient->getRequest().getLocation());
-							cgiResponse.makeVariable(i);
-							cgiResponse.cgiResponse(i);
+							if (cgiResponse.makeVariable(i))
+								cgiResponse.cgiResponse(i);
 						}
 						else
 						{
-							ResponseHandler ResHan(tmpClient->getRequest(), tmpClient->getRequest().getLocation(), i);
-							int stat;
-							if ((stat = ResHan.checkAllowMethod()) != CHECK_SUCCES)
-								updateErrorStatus(i, stat);
-							//Request가 Resource를 필요로하는 타입인지 확인
-							if (tmpClient->getRequest().getMethod == "GET")
-							{
-								if ((stat = ResHan.checkGetMethodIndex()) != CHECK_SUCCES)
-									updateErrorStatus(i, stat);
-								else if ((stat = ResHan.tryToRead()) != CHECK_SUCCES)
-									updateErrorStatus(i, stat);
-								else
-									ResHan.setReadFlag();
-							}
-							else if (tmpClient->getRequest().getMethod == "POST" || tmpClient->getRequest().getMethod == "PUT")
-							{
-								if ((stat = ResHan.tryToWrite()) != CHECK_SUCCES)
-									updateErrorStatus(i, stat);
-								else
-									ResHan.setWriteFlag();
-							}
+							// TODO: NormalResponse 안에서 호출해야 함
+							ResourceHandler ResHan(tmpClient->getRequest(), tmpClient->getRequest().getLocation(), i);
+							if (ResHan.checkAllowMethod() == false)
+								continue ;
+							if (ResHan.CheckResourceType() == false)
+								continue ;
 						}
 					}
-
 					// chunked/content-length 처리해서 바디 파싱 가능한지 확인
 					if (tmpClient->getStatus() == REQUEST_RECEIVING_BODY)
 					{

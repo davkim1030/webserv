@@ -43,7 +43,7 @@ class ResponseMaker
 		std::string makeHTMLPage(std::string);
 		Response	makeErrorResponse(int, std::string);
 
-		int 		checkPath(std::string path);
+		bool 		checkPath(std::string path);
 		void		updateErrorStatus(int clientFd, int statusCode);
 };
 

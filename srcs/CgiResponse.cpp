@@ -25,7 +25,7 @@ CgiResponse::CgiResponse(const Request& request, const Server& server, const Loc
 CgiResponse::~CgiResponse()
 {}
 
-void	CgiResponse::makeVariable(int clientFd)
+bool	CgiResponse::makeVariable(int clientFd)
 {
 	std::string path = location.getPath();
 	if (*path.rbegin() == '/')
@@ -92,13 +92,10 @@ void	CgiResponse::makeVariable(int clientFd)
 
 	if (checkPath(filePath) == NOT_FOUND || checkPath(filePath) == ISDIR)
 	{
-		// error
+		updateErrorStatus(clientFd, 404);
+		return false;
 	}
-
-
-	// TODO : 파일 존재 유무 확인하기 -> 어떤 파일? cgi에 넣을 .bla 파일
-
-
+	return true;
 }
 
 char** CgiResponse::makeCgiEnvp()
@@ -129,34 +126,20 @@ void CgiResponse::cgiResponse(int clientFd)
 	fcntl(fd[1], F_SETFL, O_NONBLOCK);
 
 	int checkRes = checkPath("./cgi_files");
-	std::cout << checkRes << std::endl;
-	if (checkRes != ISFILE)
-	{
-		return updateErrorStatus(clientFd, 404);
-	}
-	else if (checkRes == NOT_FOUND)
-	{
-		if (mkdir(CGI_DIR, 0766) == -1)
-		{
-			Socket::getInstance()->getPool()[clientFd]->setStatus(PROCESSING_ERROR);
-			return ;
-		}
-	}
+	if (checkRes == ISFILE)
+		return updateErrorStatus(clientFd, 500);
+	else if (checkRes == NOT_FOUND && mkdir(CGI_DIR, 0766) == -1)
+		return updateErrorStatus(clientFd, 500);
+
 	char *num = ft_itoa(clientFd);
 	std::string tempFile = std::string(CGI_DIR) + std::string(CGI_PATH) + std::string(num);
 	free(num);
 	// TODO: 다 읽고 파일 지워야 함
 	int fd_temp = open(tempFile.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0666);
 	if (fd_temp == -1)
-	{
-		Socket::getInstance()->getPool()[clientFd]->setStatus(PROCESSING_ERROR);
-		return ;
-	}
+		return updateErrorStatus(clientFd, 500);
 	if ((pid = fork()) == -1)
-	{
-		Socket::getInstance()->getPool()[clientFd]->setStatus(PROCESSING_ERROR);
-		return ;
-	}
+		return updateErrorStatus(clientFd, 500);
 	else if (pid == 0)
 	{
 		int execveRet;

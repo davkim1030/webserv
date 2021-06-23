@@ -8,14 +8,6 @@
 #include "ResponseMaker.hpp"
 #include "Socket.hpp"
 
-#define NOT_FOUND 404
-#define SERVER_ERR 500
-#define FORBIDDEN 403
-#define METHOD_NOT_ALLOWED 405
-#define NOT_EXIST 0
-#define ISFILE 1
-#define ISDIR 2
-#define HEAD_METHOD 3
 #define CHECK_SUCCES -1
 
 /*
@@ -33,7 +25,7 @@
 3. NormalResponse를 받아서 해당 string을 '쓰기' fd set.
 4. fd 내용이 다 읽힌 게 확인되면, fd를 pool에서 삭제
 */
-class ResponseHandler 
+class ResponseHandler : public ResponseMaker
 {
 	private:
 		ResponseHandler();
@@ -44,8 +36,9 @@ class ResponseHandler
 		struct stat	sb;
 		int clientFd;
 
-		int tryToOpen(int);
+		bool tryToOpen(int);
 		std::string parseResourcePath(std::string); 
+		int checkGetMethodIndex(void);
 
 	public:
 		//tmpClient->getRequest().getUri()
@@ -59,8 +52,8 @@ class ResponseHandler
 		void setReadFlag();
 		void setWriteFlag();
 		int checkPath(std::string path);
-		int checkAllowMethod(void);
-		int checkGetMethodIndex(void);
+		bool checkAllowMethod(void);
+		bool CheckResourceType(void);
 };
 
 #endif
