@@ -41,9 +41,9 @@ class ResponseMaker
 		void		addContentLengthHeader(int);
 
 		std::string makeHTMLPage(std::string);
-		Response	makeErrorResponse(int, std::string);
+		Response	makeErrorResponse(int, std::string version = "HTTP/1.1");
 
-		bool 		checkPath(std::string path);
+		int 		checkPath(std::string path);
 		void		updateErrorStatus(int clientFd, int statusCode);
 };
 

@@ -1,36 +1,41 @@
-#include "ResponseHandler.hpp"
+#include "ResourceHandler.hpp"
 
 /* 노말리스폰스랑 합병 */
+// ResourceHandler::ResourceHandler(){}
 
-ResponseHandler::ResponseHandler(const Request& request, const Location& location, int clientFd):
-request(request), location(location), clientFd(clientFd){
+ResourceHandler::ResourceHandler(const Request& request, const Server& server, const Location& location, int clientFd)
+: ResponseMaker(request, server, location), clientFd(clientFd){
 	this->resourcePath = parseResourcePath(request.getUri());
-};
+}
 
-ResponseHandler::ResponseHandler(const ResponseHandler& other)
+ResourceHandler::ResourceHandler(const ResourceHandler& other)
+: ResponseMaker(other)
 {
+	if (this == &other)
+		return ;
+	this->resourcePath = other.resourcePath;
+	this->fd = other.fd;
+	this->sb = other.sb;
+	this->clientFd = other.clientFd;
+}
+
+ResourceHandler &ResourceHandler::operator=(const ResourceHandler& other)
+{
+	if (this == &other)
+		return *this;
 	this->resourcePath = other.resourcePath;
 	this->location = other.location;
 	this->request = other.request;
 	this->fd = other.fd;
 	this->sb = other.sb;
 	this->clientFd = other.clientFd;
+	return *this;
 }
 
-ResponseHandler &ResponseHandler::operator=(const ResponseHandler& other)
-{
-	this->resourcePath = other.resourcePath;
-	this->location = other.location;
-	this->request = other.request;
-	this->fd = other.fd;
-	this->sb = other.sb;
-	this->clientFd = other.clientFd;
-}
-
-ResponseHandler::~ResponseHandler()
+ResourceHandler::~ResourceHandler()
 {}
 
-bool ResponseHandler::checkAllowMethod(void)
+bool ResourceHandler::checkAllowMethod(void)
 {
 	if (!location.getOption("allow_method").empty() && request.getMethod() != "GET" && request.getMethod() != "HEAD")
 	{
@@ -49,7 +54,7 @@ bool ResponseHandler::checkAllowMethod(void)
 * @param Request URI
 * @return PATH가 ROOT로 치환된 URI
 */
-std::string ResponseHandler::parseResourcePath(std::string uri)
+std::string ResourceHandler::parseResourcePath(std::string uri)
 {
 	std::string path = this->location.getPath();
 	if (*path.rbegin() != '/')
@@ -60,27 +65,7 @@ std::string ResponseHandler::parseResourcePath(std::string uri)
 	return uri;
 }
 
-/*
- * 경로가 존재하는지 / 파일인지 / 경로인지 판별합니다.
- * @param 체크할 경로
- * @return 경로가 존재하지 않을 경우 0 반환, 파일일 경우 1 반환, 디렉토리일경우 2 반환
- */
-int ResponseMaker::checkPath(std::string path)
-{
-	struct stat buffer;
-
-	int exist = stat(path.c_str(), &buffer);
-	if (exist == 0)
-	{
-		if (S_ISREG(buffer.st_mode))
-			return (ISFILE);
-		else if (S_ISDIR(buffer.st_mode))
-			return (ISDIR);
-	}
-	return (NOT_FOUND);
-}
-
-bool ResponseHandler::tryToOpen(int openFlag)
+int ResourceHandler::tryToOpen(int openFlag)
 {
 	if (checkPath(this->resourcePath) == NOT_FOUND && request.getMethod() != "PUT" && request.getMethod() != "POST")
 		return (NOT_FOUND);
@@ -89,7 +74,7 @@ bool ResponseHandler::tryToOpen(int openFlag)
 	return (CHECK_SUCCES);
 }
 
-int ResponseHandler::tryToRead(void)
+int ResourceHandler::tryToRead(void)
 {
 	int status;
 
@@ -103,7 +88,7 @@ int ResponseHandler::tryToRead(void)
 	return CHECK_SUCCES;
 }
 
-int ResponseHandler::tryToWrite(void)
+int ResourceHandler::tryToWrite()
 {
 	int status;
 
@@ -114,23 +99,34 @@ int ResponseHandler::tryToWrite(void)
 		close(fd);
 		return (SERVER_ERR);
 	}
-	if (checkPath(this->resourcePath) == ISDIR)
+	int pathType = checkPath(this->resourcePath);
+	switch (pathType)
+	{
+		case NOT_FOUND :
+		{
+			return CHECK_SUCCES;
+		}
+		case ISFILE :
+		{
+			return CHECK_SUCCES;
+		}
+		default :
 		return FORBIDDEN;
-	return CHECK_SUCCES;
+	}
 }
 
 //fd를 fd풀에 등록 후 읽기 fdset flag 설정
-void ResponseHandler::setReadFlag()
+void ResourceHandler::setReadFlag()
 {
-	Socket::getInstance()->getPool[fd] = new Resource(fd, clientFd);
+	Socket::getInstance()->getPool()[fd] = new Resource(fd, clientFd);
 	Socket::getInstance()->updateFds(fd, FD_READ);
 }
 
 //fd를 쓰기 fdset flag 설정
 
-void ResponseHandler::setWriteFlag()
+void ResourceHandler::setWriteFlag()
 {
-	Socket::getInstance()->getPool[fd] = new Resource(fd, clientFd);
+	Socket::getInstance()->getPool()[fd] = new Resource(fd, clientFd);
 	Socket::getInstance()->updateFds(fd, FD_WRITE);
 }
 
@@ -144,7 +140,7 @@ void ResponseHandler::setWriteFlag()
 //fd 내용이 다 읽힌 게 확인되면, fd를 pool에서 삭제
 
 //GET의 리소스파일 유효성 검사
-int ResponseHandler::checkGetMethodIndex(void)
+int ResourceHandler::checkGetMethodIndex(void)
 {
 	if (checkPath(this->resourcePath) == ISDIR)
 	{
@@ -176,7 +172,7 @@ int ResponseHandler::checkGetMethodIndex(void)
 }
 
 //Request가 Resource를 필요로하는 타입인지 확인
-bool ResponseHandler::CheckResourceType(void)
+bool ResourceHandler::CheckResourceType(void)
 {
 	int stat;	
 	if (this->request.getMethod() == "GET")
@@ -194,7 +190,17 @@ bool ResponseHandler::CheckResourceType(void)
 		setReadFlag();
 		return true;
 	}
-	else if (request.getMethod() == "POST" || request.getMethod() == "PUT")
+	else if (request.getMethod() == "POST")
+	{
+		if ((stat = tryToWrite()) != CHECK_SUCCES)
+		{
+			updateErrorStatus(clientFd, stat);
+			return false;
+		}
+		setWriteFlag();
+		return true;
+	}
+	else if (request.getMethod() == "PUT")
 	{
 		if ((stat = tryToWrite()) != CHECK_SUCCES)
 		{

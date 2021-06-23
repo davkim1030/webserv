@@ -10,9 +10,9 @@ SRC		=	main.cpp \
 			Request.cpp \
 			Resource.cpp \
 			ResponseMaker.cpp \
-			ReourceHandler.cpp \
+			ResourceHandler.cpp \
+			ResponseHandler.cpp \
 			CgiResponse.cpp \
-			NormalResponse.cpp \
 			CgiWriter.cpp \
 			CgiResource.cpp
 

@@ -1,5 +1,5 @@
-#ifndef NORMALRESPONSE_HPP
-# define NORMALRESPONSE_HPP
+#ifndef RESPONSEHANDLER_HPP
+# define RESPONSEHANDLER_HPP
 
 # include "ResponseMaker.hpp"
 # include "Resource.hpp"
@@ -7,19 +7,20 @@
 /*
  * cgi가 아닌 일반적인 리스폰스를 담당하는 클래스
  */
-class NormalResponse : public ResponseMaker
+class ResponseHandler : public ResponseMaker
 {
 	private:
 		std::string resourcePath;	// TODO: 주석 달기
 		std::string resource;		// TODO: 주석 달기
+		int clientFd;
 
-		NormalResponse();
+		ResponseHandler();
 
 	public:
-		NormalResponse(const Request&, const Server&, const Location&);
-		NormalResponse(const NormalResponse&);
-		NormalResponse &operator=(const NormalResponse&);
-		~NormalResponse();
+		ResponseHandler(const Request&, const Server&, const Location&, const std::string &buffer);
+		ResponseHandler(const ResponseHandler&);
+		ResponseHandler &operator=(const ResponseHandler&);
+		~ResponseHandler();
 
 		void		addLastModifiedHeader(std::string);
 		void		addContentLanguageHeader(void);
@@ -27,7 +28,7 @@ class NormalResponse : public ResponseMaker
 		void		addAllowHeader(std::string);
 		void		addHostHeader(void);
 		
-		Response	makeResponse(const std::string &resource);
+		Response	makeResponse(void);
 		std::string	parseResourcePath(std::string);
 		void 		makeGetResponse(int);
 		void 		makeHeadResponse(void);

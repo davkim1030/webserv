@@ -41,8 +41,8 @@ class Request
 		static std::string parseChunkedBody(std::string body);
 		std::string parseBody(void);
 
-	private:
 		Request();
+	private:
 
 		std::string	rawRequest;
 

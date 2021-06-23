@@ -1,9 +1,10 @@
 #include "Socket.hpp"
 #include "CgiResponse.hpp"
-#include "NormalResponse.hpp"
-#include "CgiResource.hpp"
 #include "ResponseHandler.hpp"
+#include "CgiResource.hpp"
 #include "ResponseMaker.hpp"
+#include "ResourceHandler.hpp"
+
 
 // 싱글톤 사용을 위한 변수 선언
 Socket *Socket::instance;
@@ -212,7 +213,7 @@ void Socket::runServer(struct timeval timeout)
 		if (fdNum == 0) // 처리할 요구가 없으면 다시 위로
 			continue ;
 
-		printFdsStatus(rfds, wfds, efds, fdMax);
+		// printFdsStatus(rfds, wfds, efds, fdMax);
 		// fd를 0부터 fdMax까지 반복하며 set된 플래그 값이 있는지 확인하여 처리
 		for (int i = 0; i < fdMax + 1; i++)
 		{
@@ -284,7 +285,7 @@ void Socket::runServer(struct timeval timeout)
 						else
 						{
 							// TODO: NormalResponse 안에서 호출해야 함
-							ResourceHandler ResHan(tmpClient->getRequest(), tmpClient->getRequest().getLocation(), i);
+							ResourceHandler ResHan(tmpClient->getRequest(), tmpClient->getServer(), tmpClient->getRequest().getLocation(), i);
 							if (ResHan.checkAllowMethod() == false)
 								continue ;
 							if (ResHan.CheckResourceType() == false)
@@ -321,17 +322,8 @@ void Socket::runServer(struct timeval timeout)
 						}
 						// 리소스 타입판별 (normalResponse 반으로 쪼개기)'
 						// response ready function call
-
 					}
-
-					ftLog("REQUEST", tmpClient->getBuffer());
-					// !!! 여기서 ResponseHandler를 호출해야함, 클라이언트의 fd는 i임
-					// PUT, POST가 아닐 경우 여기서 아래 함수로 진입
-					// NormalResponse normalRes(tmpClient->getRequest(), tmpClient->getLocation(), *dynamic_cast<Server *>(pool[tmpClient->getServerSocketFd()]);
-					// 리스폰스핸들러에서 get_next_line, response 만드는 부분, write 삭제
-
-					// 정적 리소스 파일이 없는 경우 ->response_ready인데, response를 만들어서 줘야되네여
-					// 둘 다 아닌 경우
+					// ftLog("REQUEST", tmpClient->getBuffer());
 				}
 				// 리소스 읽기 동작
 				else if (pool[i]->getType() == RESOURCE)
@@ -344,9 +336,7 @@ void Socket::runServer(struct timeval timeout)
 					buf[readLen] = '\0';
 
 					if (readLen == -1)
-					{
-						// 500 서버 에러 띄워주기
-					}
+						handleError(tmpRsrc->getClientFd(), i, 500);
 					else if (readLen == 0)
 					{
 						pool[tmpRsrc->getClientFd()]->setBuffer(tmpRsrc->getBuffer());
@@ -373,8 +363,9 @@ void Socket::runServer(struct timeval timeout)
 						tmpCgi->setLseek();
 						struct stat sb;
 						char *num = ft_itoa(tmpCgi->getClientFd());
-						if (stat(std::string("./cgi_files/cgi_result" + std::string(num)).c_str() ,&sb) == -1)
-							std::cerr << "stat err!" << std::endl;
+						std::string filePath = std::string(CGI_DIR) + std::string(CGI_PATH) + "_" + std::string(num);
+						if (stat(filePath.c_str() ,&sb) == -1)
+							handleError(tmpCgi->getClientFd(), i, 404);
 						free(num);
 						tmpCgi->setFileSize(sb.st_size);
 					}
@@ -384,12 +375,12 @@ void Socket::runServer(struct timeval timeout)
 					int readLen = read(tmpCgi->getFd(), buf, IO_BUFFER_SIZE);
 					buf[readLen] = '\0';
 					if (readLen == -1)
-					{
-						// 500 서버 에러 띄워주기
-					}
+						handleError(tmpCgi->getClientFd(), i, 500);
 					else if (readLen == 0)
 					{
-						pool[tmpCgi->getClientFd()]->setBuffer(tmpCgi->getBuffer());
+						ftLog("GETBUFFER", tmpCgi->getBuffer());
+						std::string msg = CgiResponse::cgiResultPasring(tmpCgi->getBuffer()).getMessage();
+						pool[tmpCgi->getClientFd()]->setBuffer(msg);
 						FD_CLR(i, &rfds);
 						FD_SET(tmpCgi->getClientFd(), &wfds);
 						clearConnectedSocket(i);
@@ -408,18 +399,38 @@ void Socket::runServer(struct timeval timeout)
 					Client *tmpClnt = dynamic_cast<Client *>(pool[i]);
 					if (tmpClnt->getStatus() == PROCESSING_ERROR)
 					{
+						std::cout << "sdnftestsetsetsetsetset" << std::endl;
 						ResponseMaker resMaker(tmpClnt->getRequest(), tmpClnt->getServer(), tmpClnt->getRequest().getLocation());
 						Response r = resMaker.makeErrorResponse(tmpClnt->getResponse().getStatusCode(), tmpClnt->getRequest().getHttpVersion());
 						write(i, r.getMessage().c_str(), r.getMessage().length());
 					}
 					else if (isCgi(tmpClnt->getRequest().getUri(), tmpClnt->getRequest().getLocation()))
 					{
-						std::string msg = CgiResponse::cgiResultPasring(tmpClnt->getBuffer()).getMessage();
-						write(i, msg.c_str(), msg.length());
+						//길이 체크하면서 계속 돌도록 해줘야함
+						int writeLen = write(i, tmpClnt->getBuffer().c_str() + tmpClnt->getPos(), tmpClnt->getBuffer().length() - tmpClnt->getPos());
+
+						if (tmpClnt->getPos() + writeLen >= tmpClnt->getBuffer().length())
+						{
+							// 파일 지워주기
+							char *num = ft_itoa(i);
+							std::string filePath = std::string(CGI_DIR) + std::string(CGI_PATH) + "_" + std::string(num);
+							ftLog("file unlink", filePath);
+							unlink(filePath.c_str());
+							free(num);
+						}
+						else
+						{
+							tmpClnt->setPos(tmpClnt->getPos() + writeLen);
+							continue;
+						}
+						
 					}
 					else
 					{
-						//리스펀스만드는곳!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+						//노말 리스폰스 만들고 쓰는 부분
+						ResponseHandler responseHandler(tmpClnt->getRequest(), tmpClnt->getServer(), tmpClnt->getRequest().getLocation(), tmpClnt->getBuffer());
+						Response res = responseHandler.makeResponse();
+						write(i, res.getMessage().c_str(), res.getMessage().length());
 					}
 					clearConnectedSocket(i);
 				}
@@ -565,4 +576,13 @@ void Socket::updateFds(int fd, FdType fdType)
 	else
 		FD_SET(fd, &efds);
 	updateFdMax();
+}
+
+void	Socket::handleError(int clientFd, int selfFd, int statusCode)
+{
+	Client *clnt = dynamic_cast<Client *>(pool[clientFd]);
+	clnt->setStatus(PROCESSING_ERROR);
+	clnt->getResponse().setStatusCode(statusCode);
+	FD_SET(clnt->getFd(), &wfds);
+	clearConnectedSocket(selfFd);
 }

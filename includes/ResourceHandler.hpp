@@ -1,12 +1,15 @@
-#ifndef RESPONSEHANDLER_HPP
-#define RESPONSEHANDLER_HPP
+#ifndef RESOURCEHANDLER_HPP
+#define RESOURCEHANDLER_HPP
 
 #include "Resource.hpp"
 #include "webserv.h"
 #include "Location.hpp"
 #include "Request.hpp"
 #include "ResponseMaker.hpp"
+#include "ResponseHandler.hpp"
+#include "Request.hpp"
 #include "Socket.hpp"
+#include "Server.hpp"
 
 #define CHECK_SUCCES -1
 
@@ -25,33 +28,31 @@
 3. NormalResponse를 받아서 해당 string을 '쓰기' fd set.
 4. fd 내용이 다 읽힌 게 확인되면, fd를 pool에서 삭제
 */
-class ResponseHandler : public ResponseMaker
+class ResourceHandler : public ResponseMaker
 {
 	private:
-		ResponseHandler();
-		Request request;
-		Location location;
 		std::string resourcePath;
 		int fd;
 		struct stat	sb;
 		int clientFd;
 
-		bool tryToOpen(int);
+		int tryToOpen(int);
 		std::string parseResourcePath(std::string); 
 		int checkGetMethodIndex(void);
 
+		ResourceHandler();
+
 	public:
 		//tmpClient->getRequest().getUri()
-		ResponseHandler(const Request&, const Location&, int clientFd);
-		ResponseHandler(const ResponseHandler&);
-		ResponseHandler &operator=(const ResponseHandler&);
-		~ResponseHandler();
+		ResourceHandler(const Request&, const Server&, const Location&, int clientFd);
+		ResourceHandler(const ResourceHandler&);
+		ResourceHandler &operator=(const ResourceHandler&);
+		~ResourceHandler();
 
 		int tryToRead();
 		int tryToWrite();
 		void setReadFlag();
 		void setWriteFlag();
-		int checkPath(std::string path);
 		bool checkAllowMethod(void);
 		bool CheckResourceType(void);
 };

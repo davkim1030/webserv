@@ -90,6 +90,8 @@ bool	CgiResponse::makeVariable(int clientFd)
 	std::string filePath = location.getOption("root");
 	filePath = filePath.substr(0, filePath.length() - 1) + metaVariable["SCRIPT_NAME"];
 
+	// php돌려볼 것
+
 	if (checkPath(filePath) == NOT_FOUND || checkPath(filePath) == ISDIR)
 	{
 		updateErrorStatus(clientFd, 404);
@@ -132,9 +134,8 @@ void CgiResponse::cgiResponse(int clientFd)
 		return updateErrorStatus(clientFd, 500);
 
 	char *num = ft_itoa(clientFd);
-	std::string tempFile = std::string(CGI_DIR) + std::string(CGI_PATH) + std::string(num);
+	std::string tempFile = std::string(CGI_DIR) + std::string(CGI_PATH) + "_" + std::string(num);
 	free(num);
-	// TODO: 다 읽고 파일 지워야 함
 	int fd_temp = open(tempFile.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0666);
 	if (fd_temp == -1)
 		return updateErrorStatus(clientFd, 500);

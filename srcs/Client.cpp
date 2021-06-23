@@ -8,7 +8,7 @@
  * fd 값들을 -1로 지정하여 초기화 하지 않으면 사용 못 하게 함
  */
 Client::Client() : IoObject(CLIENT), serverSocketFd(-1),
-		request(""), response(200, std::map<std::string, std::string>(), "")
+		request(""), response(200, std::map<std::string, std::string>(), ""), pos(0)
 {
 	lastReqMs = ft_get_time();
 }
@@ -20,7 +20,7 @@ Client::Client() : IoObject(CLIENT), serverSocketFd(-1),
 Client::Client(const Client &other)
 	: IoObject(other.fd, other.buffer, other.status, CLIENT),
 	serverSocketFd(other.serverSocketFd), request(other.request),
-	response(other.response), remainBody(other.remainBody),
+	response(other.response), pos(other.pos),
 	lastReqMs(other.lastReqMs)
 {
 }
@@ -33,9 +33,8 @@ Client::Client(const Client &other)
 Client::Client(int serverSocketFd, int fd)
 	: IoObject(fd, "", REQUEST_RECEIVING_HEADER, CLIENT),
 	serverSocketFd(serverSocketFd),
-	request(""), response(200, std::map<std::string, std::string>(), "")
+	request(""), response(200, std::map<std::string, std::string>(), ""), pos(0)
 {
-	remainBody = 0;
 	lastReqMs = ft_get_time();
 }
 
@@ -57,7 +56,7 @@ Client &Client::operator=(const Client &other)
 		status = other.status;
 		request = other.request;
 		response = other.response;
-		remainBody = other.remainBody;
+		pos = other.pos;
 		lastReqMs = other.lastReqMs;
 	}
 	return *this;
@@ -73,9 +72,9 @@ void	Client::setStatus(Status status)
 	this->status = status;
 }
 
-void	Client::setRemainBody(long long remainBody)
+void	Client::setPos(size_t pos)
 {
-	this->remainBody = remainBody;
+	this->pos = pos;
 }
 
 void	Client::setLastReqMs(unsigned long lastReqMs)
@@ -108,9 +107,9 @@ Status	Client::getStatus()
 	return (status);
 }
 
-long long	Client::getRemainBody()
+size_t	Client::getPos()
 {
-	return (remainBody);
+	return (pos);
 }
 
 unsigned long	Client::getLastReqMs()

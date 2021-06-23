@@ -79,6 +79,7 @@ class Socket
 		void initServer(int argc, char *argv);
 		void updateFdMax();
 		void updateFds(int fd, FdType fdType);
+		void handleError(int clientFd, int selfFd,  int statusCode);
 
 		std::vector<IoObject *> &getPool();
 };

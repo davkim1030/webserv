@@ -15,7 +15,7 @@ class Client : public IoObject
 		int				serverSocketFd;	// 클라이언트가 연결될 서버 소켓의 fd
 		Request			request;		// 리퀘스트 데이터
 		Response		response;		// 돌려줄 리스폰스
-		long long		remainBody;		// 남은 바디 길이
+		size_t			pos;		// 남은 바디 길이
 		unsigned long	lastReqMs;		// 마지막으로 통신한 시간
 
 	public:
@@ -29,7 +29,7 @@ class Client : public IoObject
 		// setters
 		void		setServerSocketFd(int serverSocketFd);
 		void		setStatus(Status status);
-		void		setRemainBody(long long remainBody);
+		void		setPos(size_t pos);
 		void		setLastReqMs(unsigned long lastReqMs);
 		void		setResponse(const Response &response);
 
@@ -39,7 +39,7 @@ class Client : public IoObject
 		Request		&getRequest();
 		Response	&getResponse();
 		Status		getStatus();
-		long long	getRemainBody();
+		size_t		getPos();
 		unsigned long	getLastReqMs();
 
 		// Inherited Functions
