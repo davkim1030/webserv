@@ -85,8 +85,6 @@ std::string Request::parseMethod(void) {
 int ft_hex_atoi(const std::string &str)
 {
 	int result = 0;
-	std::cout << "-=-=-=-=-=-=-=-hex-=-=-=-=-=-=-=-" << std::endl;
-	std::cout << str << std::endl;
 	for (std::string::const_iterator iter = str.begin(); iter != str.end(); iter++)
 	{
 		if (*iter >= 'A' && *iter <= 'F')
@@ -97,9 +95,6 @@ int ft_hex_atoi(const std::string &str)
 			result = (*iter - '0') + result * 16;
 		else break ;
 	}
-	std::cout << result << std::endl;
-	std::cout << "-=-=-=-=-=-=-=-hex-=-=-=-=-=-=-=-" << std::endl;
-
 	return result;
 }
 

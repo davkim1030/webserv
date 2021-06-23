@@ -60,8 +60,7 @@ class ResponseHandler
 		void setWriteFlag();
 		int checkPath(std::string path);
 		int checkAllowMethod(void);
-		int checkRequestType(void);
-
+		int checkGetMethodIndex(void);
 };
 
 #endif

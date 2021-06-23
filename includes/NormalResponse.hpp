@@ -1,14 +1,17 @@
 #ifndef NORMALRESPONSE_HPP
-#define NORMALRESPONSE_HPP
+# define NORMALRESPONSE_HPP
 
-#include "ResponseMaker.hpp"
-#include "Resource.hpp"
+# include "ResponseMaker.hpp"
+# include "Resource.hpp"
 
+/*
+ * cgi가 아닌 일반적인 리스폰스를 담당하는 클래스
+ */
 class NormalResponse : public ResponseMaker
 {
 	private:
-		std::string resourcePath;
-		std::string resource;
+		std::string resourcePath;	// TODO: 주석 달기
+		std::string resource;		// TODO: 주석 달기
 
 		NormalResponse();
 
@@ -38,5 +41,4 @@ class NormalResponse : public ResponseMaker
 		std::string makeAutoIndexPage(std::string);
 
 };
-
 #endif

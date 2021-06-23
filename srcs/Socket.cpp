@@ -284,31 +284,26 @@ void Socket::runServer(struct timeval timeout)
 						{
 							ResponseHandler ResHan(tmpClient->getRequest(), tmpClient->getRequest().getLocation(), i);
 							int stat;
-							if (ResHan.checkAllowMethod() != CHECK_SUCCES)
+							if ((stat = ResHan.checkAllowMethod()) != CHECK_SUCCES)
+								updateErrorStatus(i, stat);
+							//Request가 Resource를 필요로하는 타입인지 확인
+							if (tmpClient->getRequest().getMethod == "GET")
 							{
-								//주킴님이 만들 함수 넣기
-							}
-							if ((stat = ResHan.checkRequestType()) != CHECK_SUCCES)
-							{
-								//주킴님이 만들 함수 넣기
-							}
-							else
-							{
-								if (tmpClient->getRequest().getMethod == "GET")
-								{
-									if ((stat = ResHan.tryToRead()) != CHECK_SUCCES)
-										//주킴님이 만들함수넣기
+								if ((stat = ResHan.checkGetMethodIndex()) != CHECK_SUCCES)
+									updateErrorStatus(i, stat);
+								else if ((stat = ResHan.tryToRead()) != CHECK_SUCCES)
+									updateErrorStatus(i, stat);
+								else
 									ResHan.setReadFlag();
-								}
-								else if (tmpClient->getRequest().getMethod == "POST" || tmpClient->getRequest().getMethod == "PUT")
-								{
-									if ((stat = ResHan.tryToWrite()) != CHECK_SUCCES)
-										//주킴님이 만들함수넣기
+							}
+							else if (tmpClient->getRequest().getMethod == "POST" || tmpClient->getRequest().getMethod == "PUT")
+							{
+								if ((stat = ResHan.tryToWrite()) != CHECK_SUCCES)
+									updateErrorStatus(i, stat);
+								else
 									ResHan.setWriteFlag();
-								}
 							}
 						}
-						
 					}
 
 					// chunked/content-length 처리해서 바디 파싱 가능한지 확인

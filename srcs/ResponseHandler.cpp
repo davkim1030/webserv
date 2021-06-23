@@ -1,7 +1,9 @@
 #include "ResponseHandler.hpp"
 
 ResponseHandler::ResponseHandler(const Request& request, const Location& location, int clientFd):
-request(request), location(location), clientFd(clientFd){};
+request(request), location(location), clientFd(clientFd){
+	this->resourcePath = parseResourcePath(request.getUri());
+};
 
 ResponseHandler::ResponseHandler(const ResponseHandler& other)
 {
@@ -69,10 +71,9 @@ int ResponseHandler::tryToOpen(int openFlag)
 {
 	if (checkAllowMethod() == METHOD_NOT_ALLOWED)
 		return (METHOD_NOT_ALLOWED);
-	this->resourcePath = parseResourcePath(request.getUri());
 	if (checkPath(this->resourcePath) == NOT_FOUND && request.getMethod() != "PUT" && request.getMethod() != "POST")
 		return (NOT_FOUND);
-	if ((fd = open(this->resourcePath.c_str(), openFlag)) < 0)
+	if ((this->fd = open(this->resourcePath.c_str(), openFlag)) < 0)
 		return (SERVER_ERR);
 	return (CHECK_SUCCES);
 }
@@ -102,6 +103,8 @@ int ResponseHandler::tryToWrite(void)
 		close(fd);
 		return (SERVER_ERR);
 	}
+	if (checkPath(this->resourcePath) == ISDIR)
+		return FORBIDDEN;
 	return CHECK_SUCCES;
 }
 
@@ -129,20 +132,34 @@ void ResponseHandler::setWriteFlag()
 
 //fd 내용이 다 읽힌 게 확인되면, fd를 pool에서 삭제
 
-//Request가 Resource를 필요로하는 타입인지 확인
-int ResponseHandler::checkRequestType(void)
+//GET의 리소스파일 유효성 검사
+int ResponseHandler::checkGetMethodIndex(void)
 {
-	if (request.getMethod() == "GET")
+	if (checkPath(this->resourcePath) == ISDIR)
 	{
+		if (this->resourcePath[this->resourcePath.length() - 1] != '/')
+			this->resourcePath += '/';
 
+		if (!location.getOption("index").empty())
+		{
+			bool indexFileFlag = false;
+			std::vector<std::string> indexFile = splitSpaces(location.getOption("index"));
+			for (std::vector<std::string>::iterator iter = indexFile.begin();
+					iter != indexFile.end(); iter++)
+			{
+				struct stat buffer;
+				if (stat((this->resourcePath + *iter).c_str(), &buffer) == 0)
+				{
+					this->resourcePath = this->resourcePath + *iter;
+					indexFileFlag = true;
+					break ;
+				}
+			}
+			if (indexFileFlag == false && location.getOption("autoindex") == "on")
+				return (CHECK_SUCCES);
+			if (checkPath(this->resourcePath) == NOT_FOUND || checkPath(this->resourcePath) == ISDIR)
+				return (NOT_FOUND);
+		}
 	}
-	else if (request.getMethod() == "POST")
-	{
-
-	}
-	else if (request.getMethod() == "PUT")
-	{
-
-	}
-	return (CHECK_SUCCESS);
+	return (CHECK_SUCCES);
 }
