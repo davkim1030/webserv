@@ -280,9 +280,10 @@ void Socket::runServer(struct timeval timeout)
 						if (isCgi(tmpClient->getRequest().getUri(), tmpClient->getRequest().getLocation()))
 						{
 							CgiResponse cgiResponse(tmpClient->getRequest(), tmpClient->getServer(), tmpClient->getRequest().getLocation());
-							cgiResponse.makeVariable(i);
-							cgiResponse.cgiResponse(i);
+							if (cgiResponse.makeVariable(i))
+								cgiResponse.cgiResponse(i);
 						}
+
 					}
 
 					// chunked/content-length 처리해서 바디 파싱 가능한지 확인
