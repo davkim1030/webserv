@@ -73,7 +73,7 @@ Response NormalResponse::makeResponse(const std::string &resource)
 			if (allow.find(request.getMethod()) == std::string::npos)
 			{
 				addAllowHeader(allow);
-				throwErrorResponse(METHOD_NOT_ALLOWED, request.getHttpVersion());
+				makeErrorResponse(METHOD_NOT_ALLOWED, request.getHttpVersion());
 			}
 		}
 		if (request.getMethod() == "TRACE")
@@ -85,7 +85,7 @@ Response NormalResponse::makeResponse(const std::string &resource)
 		this->resourcePath = parseResourcePath(request.getUri());
 
 		if (checkPath(this->resourcePath) == NOT_FOUND && request.getMethod() != "PUT" && request.getMethod() != "POST")
-			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
+			makeErrorResponse(NOT_FOUND, request.getHttpVersion());
 		if (request.getMethod() == "GET")
 			makeGetResponse(0);
 		if (request.getMethod() == "HEAD")
@@ -104,7 +104,7 @@ Response NormalResponse::makeResponse(const std::string &resource)
 
 	responseHeader.clear();
 	resourcePath.clear();
-	throwErrorResponse(500, request.getHttpVersion());
+	makeErrorResponse(500, request.getHttpVersion());
 	return Response(500, responseHeader, makeHTMLPage("500"), request.getHttpVersion());
 }
 
@@ -164,15 +164,15 @@ void NormalResponse::makeGetResponse(int httpStatus)
 				throw Response(200, this->responseHeader, request.getMethod() != "HEAD" ? makeAutoIndexPage(this->resourcePath) : "", request.getHttpVersion());
 			}
 			if (checkPath(this->resourcePath) == NOT_FOUND || checkPath(this->resourcePath) == ISDIR)
-				throwErrorResponse(NOT_FOUND, request.getHttpVersion());
+				makeErrorResponse(NOT_FOUND, request.getHttpVersion());
 		}
 	}
 	if ((fd = open(this->resourcePath.c_str(), O_RDONLY)) < 0)
-		throwErrorResponse(SERVER_ERR, request.getHttpVersion());
+		makeErrorResponse(SERVER_ERR, request.getHttpVersion());
 	if (fstat(fd, &sb) < 0)
 	{
 		close(fd);
-		throwErrorResponse(SERVER_ERR, request.getHttpVersion());
+		makeErrorResponse(SERVER_ERR, request.getHttpVersion());
 	}
 	int amsd; // TODO : ERROR케이스 아무거나 막 넣어둔거니 꼭 없애줘야함
 	Resource *resource = new Resource(fd, amsd);
@@ -181,7 +181,7 @@ void NormalResponse::makeGetResponse(int httpStatus)
 	Socket::getInstance()->updateFdMax();
 
 	if (this->resource.size() < 0 || this->resource.empty())
-		throwErrorResponse(SERVER_ERR, request.getHttpVersion());
+		makeErrorResponse(SERVER_ERR, request.getHttpVersion());
 	addContentTypeHeader(fileExtension(resourcePath.substr(1)));
 	addContentLanguageHeader();
 	addContentLocationHeader();
@@ -242,7 +242,7 @@ void NormalResponse::makePostResponse(void)
 		case NOT_FOUND :
 		{
 			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0)
-				throwErrorResponse(SERVER_ERR, request.getHttpVersion());
+				makeErrorResponse(SERVER_ERR, request.getHttpVersion());
 
 			if (request.getHeader()["Transfer-Encoding"] != "chunked")
 				write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
@@ -255,7 +255,7 @@ void NormalResponse::makePostResponse(void)
 		case ISFILE :
 		{
 			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_APPEND )) < 0)
-				throwErrorResponse(SERVER_ERR, request.getHttpVersion());
+				makeErrorResponse(SERVER_ERR, request.getHttpVersion());
 			if (request.getHeader()["Transfer-Encoding"] != "chunked")
 				write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
 			else
@@ -265,7 +265,7 @@ void NormalResponse::makePostResponse(void)
 			throw Response(200, responseHeader, "", request.getHttpVersion());
 		}
 		default :
-			throwErrorResponse(FORBIDDEN, request.getHttpVersion());
+			makeErrorResponse(FORBIDDEN, request.getHttpVersion());
 	}
 }*/
 
@@ -291,7 +291,7 @@ void NormalResponse::makePutResponse(void)
 		case NOT_FOUND :
 		{
 			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0)
-				throwErrorResponse(SERVER_ERR, request.getHttpVersion());
+				makeErrorResponse(SERVER_ERR, request.getHttpVersion());
 
 			if (request.getHeader()["Transfer-Encoding"] != "chunked")
 				write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
@@ -304,7 +304,7 @@ void NormalResponse::makePutResponse(void)
 		case ISFILE :
 		{
 			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_TRUNC)) < 0)
-				throwErrorResponse(SERVER_ERR, request.getHttpVersion());
+				makeErrorResponse(SERVER_ERR, request.getHttpVersion());
 			if (request.getHeader()["Transfer-Encoding"] != "chunked")
 				write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
 			else
@@ -314,7 +314,7 @@ void NormalResponse::makePutResponse(void)
 			throw Response(200, responseHeader, "", request.getHttpVersion());
 		}
 		default :
-			throwErrorResponse(FORBIDDEN, request.getHttpVersion());
+			makeErrorResponse(FORBIDDEN, request.getHttpVersion());
 	}
 }*/
 
@@ -343,7 +343,7 @@ void NormalResponse::makeDeleteResponse(void)
 		}
 		throw Response(200, responseHeader, makeHTMLPage("File deleted"), request.getHttpVersion());
 	}
-	throwErrorResponse(NOT_FOUND, request.getHttpVersion());
+	makeErrorResponse(NOT_FOUND, request.getHttpVersion());
 }
 
 /*
@@ -396,7 +396,7 @@ std::string NormalResponse::makeAutoIndexPage(std::string resourcePath)
 
 	DIR *dir = NULL;
 	if ((dir = opendir(resourcePath.c_str())) == NULL)
-		throwErrorResponse(500, request.getHttpVersion());
+		makeErrorResponse(500, request.getHttpVersion());
 
 	struct dirent *file = NULL;
 	while ((file = readdir(dir)) != NULL)

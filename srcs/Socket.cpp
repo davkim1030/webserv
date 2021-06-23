@@ -382,9 +382,9 @@ void Socket::runServer(struct timeval timeout)
 					Client *tmpClnt = dynamic_cast<Client *>(pool[i]);
 					if (tmpClnt->getStatus() == PROCESSING_ERROR)
 					{
-						std::cout << "ERROR : " << tmpClnt->getResponse().getStatusCode() << std::endl;
-						std::string res = tmpClnt->getResponse().getMessage();
-						ftLog("error log", res);
+						ResponseMaker resMaker(tmpClnt->getRequest(), tmpClnt->getServer(), tmpClnt->getRequest().getLocation());
+						Response r = resMaker.makeErrorResponse(tmpClnt->getResponse().getStatusCode(), tmpClnt->getRequest().getHttpVersion());
+						write(i, r.getMessage().c_str(), r.getMessage().length());
 					}
 					else if (isCgi(tmpClnt->getRequest().getUri(), tmpClnt->getRequest().getLocation()))
 					{
