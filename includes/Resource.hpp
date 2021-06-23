@@ -20,6 +20,7 @@ class Resource : public IoObject
 		Resource();
 		IoStatus	ioStatus;
 		int			clientFd;
+		int			pos;
 	public:
 		Resource(const Resource &other);
 		Resource(int fd, int clientFd);
@@ -28,9 +29,11 @@ class Resource : public IoObject
 		Resource &operator=(const Resource &other);
 		
 		void	setIoStatus(IoStatus ioStatus);
+		void	setPos(int pos);
 
 		IoStatus	getIoStatus();
 		int			getClientFd();
+		int			getPos();
 		
 		IoObject *clone();
 };

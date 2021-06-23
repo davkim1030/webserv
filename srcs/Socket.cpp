@@ -2,6 +2,7 @@
 #include "CgiResponse.hpp"
 #include "NormalResponse.hpp"
 #include "CgiResource.hpp"
+#include "ResponseHandler.hpp"
 
 // 싱글톤 사용을 위한 변수 선언
 Socket *Socket::instance;
@@ -256,13 +257,9 @@ void Socket::runServer(struct timeval timeout)
 						buf[readLen] = '\0';
 						tmpClient->setBuffer(tmpClient->getBuffer() + buf);
 					}
-					else if (readLen == 0)		// 다 읽은 경우
-					{
-
-					}
 					else	// error case
 					{
-
+						clearConnectedSocket(i);
 					}
 
 					// 헤더 파싱 가능한지 확인
@@ -283,6 +280,35 @@ void Socket::runServer(struct timeval timeout)
 							cgiResponse.makeVariable();
 							cgiResponse.cgiResponse(i);
 						}
+						else
+						{
+							ResponseHandler ResHan(tmpClient->getRequest(), tmpClient->getRequest().getLocation(), i);
+							int stat;
+							if (ResHan.checkAllowMethod() != CHECK_SUCCES)
+							{
+								//주킴님이 만들 함수 넣기
+							}
+							if ((stat = ResHan.checkRequestType()) != CHECK_SUCCES)
+							{
+								//주킴님이 만들 함수 넣기
+							}
+							else
+							{
+								if (tmpClient->getRequest().getMethod == "GET")
+								{
+									if ((stat = ResHan.tryToRead()) != CHECK_SUCCES)
+										//주킴님이 만들함수넣기
+									ResHan.setReadFlag();
+								}
+								else if (tmpClient->getRequest().getMethod == "POST" || tmpClient->getRequest().getMethod == "PUT")
+								{
+									if ((stat = ResHan.tryToWrite()) != CHECK_SUCCES)
+										//주킴님이 만들함수넣기
+									ResHan.setWriteFlag();
+								}
+							}
+						}
+						
 					}
 
 					// chunked/content-length 처리해서 바디 파싱 가능한지 확인
@@ -317,6 +343,9 @@ void Socket::runServer(struct timeval timeout)
 						// response ready function call
 
 					}
+
+					ftLog("REQUEST", tmpClient->getBuffer());
+					// !!! 여기서 ResponseHandler를 호출해야함, 클라이언트의 fd는 i임
 					// PUT, POST가 아닐 경우 여기서 아래 함수로 진입
 					// NormalResponse normalRes(tmpClient->getRequest(), tmpClient->getLocation(), *dynamic_cast<Server *>(pool[tmpClient->getServerSocketFd()]);
 					// 리스폰스핸들러에서 get_next_line, response 만드는 부분, write 삭제
@@ -327,8 +356,30 @@ void Socket::runServer(struct timeval timeout)
 				// 리소스 읽기 동작
 				else if (pool[i]->getType() == RESOURCE)
 				{
-					std::cout << "RESOURCE FD: " << pool[i]->getFd() << std::endl;
+					Resource *tmpRsrc = dynamic_cast<Resource *>(pool[i]);
+
+					char	buf[IO_BUFFER_SIZE + 1];
+					ft_memset(buf, '\0', IO_BUFFER_SIZE + 1);
+					size_t	readLen = read(tmpRsrc->getFd(), buf, IO_BUFFER_SIZE);
+					buf[readLen] = '\0';
+
+					if (readLen == -1)
+					{
+						// 500 서버 에러 띄워주기
+					}
+					else if (readLen == 0)
+					{
+						pool[tmpRsrc->getClientFd()]->setBuffer(tmpRsrc->getBuffer());
+						FD_CLR(i, &rfds);
+						FD_SET(tmpRsrc->getClientFd(), &wfds);
+						clearConnectedSocket(i);
+					}
+					else
+					{
+						tmpRsrc->setBuffer(tmpRsrc->getBuffer() + buf);
+					}
 				}
+				// CGI 리소스 읽기
 				else if (pool[i]->getType() == CGI_RESOURCE)
 				{
 					CgiResource *tmpCgi = dynamic_cast<CgiResource *>(pool[i]);
@@ -356,22 +407,17 @@ void Socket::runServer(struct timeval timeout)
 					{
 						// 500 서버 에러 띄워주기
 					}
+					else if (readLen == 0)
+					{
+						pool[tmpCgi->getClientFd()]->setBuffer(tmpCgi->getBuffer());
+						FD_CLR(i, &rfds);
+						FD_SET(tmpCgi->getClientFd(), &wfds);
+						clearConnectedSocket(i);
+					}
 					else
 					{
-						if (readLen == 0)
-						{
-							pool[tmpCgi->getClientFd()]->setBuffer(tmpCgi->getBuffer());
-							FD_CLR(i, &rfds);
-							FD_SET(tmpCgi->getClientFd(), &wfds);
-							clearConnectedSocket(i);
-						}
-						// if (readLen + tmpCgi->getBuffer().length() <= tmpCgi->getFileSize())
-						else
-						{
-							tmpCgi->setBuffer(tmpCgi->getBuffer() + buf);
-						}
+						tmpCgi->setBuffer(tmpCgi->getBuffer() + buf);
 					}
-
 				}
 			}
 			else if (FD_ISSET(i, &cpyWfds))	// write 요청이 온 경우
@@ -387,15 +433,27 @@ void Socket::runServer(struct timeval timeout)
 					}
 					else
 					{
-						
+						//리스펀스만드는곳!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 					}
 					clearConnectedSocket(i);
 				}
 				// 리소스 쓰기 (PUT, POST 등)
 				else if (pool[i]->getType() == RESOURCE)
 				{
+					Resource *tmpRsrc = dynamic_cast<Resource *>(pool[i]);
 					
+					int writeLen = write(tmpRsrc->getFd(), tmpRsrc->getBuffer().c_str() + tmpRsrc->getPos(), tmpRsrc->getBuffer().length() - tmpRsrc->getPos());
+					if (writeLen == -1)
+						clearConnectedSocket(i);
+					else
+					{
+						if (tmpRsrc->getPos() + writeLen < tmpRsrc->getBuffer().length())
+							tmpRsrc->setPos(tmpRsrc->getPos() + writeLen);
+						else
+							clearConnectedSocket(i);
+					}
 				}
+				// CGI에 Request body를 파이프로 넘겨주는 곳
 				else if (pool[i]->getType() == CGI)
 				{
 					CgiWriter *tmpCgi = dynamic_cast<CgiWriter *>(pool[i]);
@@ -520,4 +578,5 @@ void Socket::updateFds(int fd, FdType fdType)
 		FD_SET(fd, &wfds);
 	else
 		FD_SET(fd, &efds);
+	updateFdMax();
 }

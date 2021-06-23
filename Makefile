@@ -8,8 +8,6 @@ SRC		=	main.cpp \
 			Exception.cpp \
 			Response.cpp \
 			Request.cpp \
-			ResponseHandler.cpp \
-			ResponseHeader.cpp \
 			Resource.cpp \
 			ResponseMaker.cpp \
 			CgiResponse.cpp \

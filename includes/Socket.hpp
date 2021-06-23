@@ -7,7 +7,6 @@
 # include "Resource.hpp"
 # include "ServerConfig.hpp"
 # include "Location.hpp"
-# include "ResponseHandler.hpp"
 # include "Exception.hpp"
 # include <climits>
 

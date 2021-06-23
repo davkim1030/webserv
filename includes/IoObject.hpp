@@ -19,8 +19,8 @@ enum Type
 	SERVER,				// 서버 타입
 	CLIENT,				// 클라이언트 타입
 	RESOURCE,			// 리소스 타입
-	CGI,
-	CGI_RESOURCE
+	CGI,				// CGI 타입
+	CGI_RESOURCE		// CGI 리소스
 };
 
 /*

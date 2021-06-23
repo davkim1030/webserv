@@ -1,106 +1,67 @@
 #ifndef RESPONSEHANDLER_HPP
-# define RESPONSEHANDLER_HPP
+#define RESPONSEHANDLER_HPP
 
-# include "webserv.h"
-# include "Response.hpp"
-# include "Request.hpp"
-# include "Location.hpp"
-# include "Server.hpp"
-# include "Resource.hpp"
-
-class Response;
-class Server;
-class Location;
+#include "Resource.hpp"
+#include "webserv.h"
+#include "Location.hpp"
+#include "Request.hpp"
+#include "ResponseMaker.hpp"
+#include "Socket.hpp"
 
 #define NOT_FOUND 404
 #define SERVER_ERR 500
 #define FORBIDDEN 403
 #define METHOD_NOT_ALLOWED 405
+#define NOT_EXIST 0
 #define ISFILE 1
 #define ISDIR 2
 #define HEAD_METHOD 3
+#define CHECK_SUCCES -1
 
-/* 파싱된 HTTP Request를 받아 데이터를 Response 형식에 맞게 처리해주는 클래스 */
-class ResponseHandler
+/*
+이 객체의 역할
+---클라이언트 READ---
+0. allow-method check
+1. resource-path 생성
+2. resource를 open
+3. resource를 읽고/쓸 수 있는지 유효성 검사
+---리소스 READ---
+1. fd를 fd풀에 등록 후 '읽기' fd set 플래그 설정
+2. fd를 fd풀에 등록 후 '쓰기' fd set.
+	- 유효성 검사 결과가 엉망일 경우 resource->status에 에러. resource->type에 상태코드를 넘겨준다.
+	- 이후 바깥에서는 NormalResponse를 만들어서 읽기/쓰기 된 resource에 대해서 처리한다.
+3. NormalResponse를 받아서 해당 string을 '쓰기' fd set.
+4. fd 내용이 다 읽힌 게 확인되면, fd를 pool에서 삭제
+*/
+class ResponseHandler 
 {
-	public:
-		// 생성자 & 소멸자 & 대입연산자 오버로딩
-		ResponseHandler(const Request &request, const Server &server);
-		~ResponseHandler(void);
-		ResponseHandler & operator=( ResponseHandler const & rhs );
-
-		// 데이터를 실질적으로 처리하고 Response를 생성하는 함수
-		Response makeResponse(void);
-
-
-		/*----------ResponseHeader.cpp------------*/
-
-		// 헤더 추가 함수
-		void addResponseHeader(std::string, std::string);
-		// tm 구조체를 규격에 맞는 string으로 반환해주는 함수
-		std::string getFormatTime(const struct tm*);
-
-		// 특정 헤더 추가 함수
-		void addDateHeader(void);
-		void addServerHeader(void);
-		void addAllowHeader(void);
-		void addContentLanguageHeader(void);
-		void addContentLengthHeader(int);
-		void addContentLocationHeader(void);
-		void addContentTypeHeader(std::string);
-		void addLastModifiedHeader(std::string);
-		void addAllowHeader(std::string);
-		void addHostHeader(void);
-
-
-		/*---------------------------------------*/
-
-
 	private:
-		//기본 생성자 및 복사생성자
-		ResponseHandler(void);
-		ResponseHandler(const ResponseHandler & src);
-
+		ResponseHandler();
 		Request request;
-		Server server;
 		Location location;
 		std::string resourcePath;
-		std::map<std::string, std::string> responseHeader;
-		std::map<std::string, std::string> mimeType;
-		std::map<std::string, std::string> metaVariable;
+		int fd;
+		struct stat	sb;
+		int clientFd;
 
+		int tryToOpen(int);
+		std::string parseResourcePath(std::string); 
 
-		//각 메소드별 Response 생성함수
-		void makeTraceResponse(void);
-		void makeOptionResponse(void);
-		void makeGetResponse(int);
-		void makeHeadResponse(void);
-		void makeConnectResponse(void);
-		void makePutResponse(void);
-		void makePostResponse(void);
-		void makeDeleteResponse(void);
+	public:
+		//tmpClient->getRequest().getUri()
+		ResponseHandler(const Request&, const Location&, int clientFd);
+		ResponseHandler(const ResponseHandler&);
+		ResponseHandler &operator=(const ResponseHandler&);
+		~ResponseHandler();
 
-		//경로에서 확장자를 추출하는 함수
-		std::string fileExtension(std::string);
-		//URI에서 root 문자열을 삭제하는 함수
-		std::string parseResourcePath(std::string);
+		int tryToRead();
+		int tryToWrite();
+		void setReadFlag();
+		void setWriteFlag();
+		int checkPath(std::string path);
+		int checkAllowMethod(void);
+		int checkRequestType(void);
 
-		//에러 Response를 던지는 함수
-		void throwErrorResponse(int, std::string) throw(Response);
-
-		//HTML페이지를 만드는 함수
-		std::string makeHTMLPage(std::string);
-		std::string makeAutoIndexPage(std::string);
-
-		//경로를 확인하는 함수
-		int checkPath(std::string);
-
-
-		//joockim
-		bool isCgi();
-		char** makeCgiEnvp();
-		void cgiResponse();
-		Location findLocation(std::string uri);
 };
 
 #endif

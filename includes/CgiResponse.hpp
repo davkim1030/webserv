@@ -1,14 +1,17 @@
 #ifndef CGIRESPONSE_HPP
-#define CGIRESPONSE_HPP
+# define CGIRESPONSE_HPP
 
-#include "ResponseMaker.hpp"
-#include "CgiWriter.hpp"
-#include "Resource.hpp"
+# include "ResponseMaker.hpp"
+# include "CgiWriter.hpp"
+# include "Resource.hpp"
 
+/*
+ * cgi를 통해 만들 response를 생성, 처리하는 클래스
+ */
 class CgiResponse : public ResponseMaker
 {
 	private:
-		std::map<std::string, std::string> metaVariable;
+		std::map<std::string, std::string> metaVariable;	// cgi의 메타 변수 map
 
 		CgiResponse();
 
@@ -23,8 +26,5 @@ class CgiResponse : public ResponseMaker
 		void	cgiResponse(int clientFd);
 
 		static	Response	cgiResultPasring(std::string cgiResult);
-
 };
-
-
 #endif

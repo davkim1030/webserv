@@ -1,16 +1,14 @@
 #ifndef CGIRESOURCE_HPP
-#define CGIRESOURCE_HPP
+# define CGIRESOURCE_HPP
 
-#include "webserv.h"
-#include "IoObject.hpp"
+# include "webserv.h"
+# include "IoObject.hpp"
 
+/*
+ * cgi에서 만든 결과를 저장한 임시 리소스 파일 객체
+ */
 class CgiResource : public IoObject
 {
-
-		// int				fd;		// 파일 또는 소켓 fd
-		// std::string		buffer;	// 다 못 읽었을 경우 데이터를 들고 있을 버퍼
-		// Status			status;	// 현재 리스폰스를 줄 수 있는지 상태를 저장
-		// Type			type;	// server, client, resource 중에 어떤 객체인지 지정
 	private:
 		pid_t	pid;
 		bool	lseekFlag;
@@ -30,10 +28,10 @@ class CgiResource : public IoObject
 		int			getClientFd();
 		int			getFileSize();
 
-		bool		isLseek();
-
 		void		setLseek();
 		void		setFileSize(int fileSize);
+
+		bool		isLseek();
 };
 
 #endif

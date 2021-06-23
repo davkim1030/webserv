@@ -88,12 +88,12 @@ Response NormalResponse::makeResponse(const std::string &resource)
 			throwErrorResponse(NOT_FOUND, request.getHttpVersion());
 		if (request.getMethod() == "GET")
 			makeGetResponse(0);
-		if (request.getMethod() == "HEAD")
-			makeHeadResponse();
-		/*if (request.getMethod() == "POST")
+		// if (request.getMethod() == "HEAD")
+		// 	makeHeadResponse();
+		if (request.getMethod() == "POST")
 			makePostResponse();
 		if (request.getMethod() == "PUT")
-			makePutResponse();*/
+			makePutResponse();
 		if (request.getMethod() == "DELETE")
 			makeDeleteResponse();
 	}

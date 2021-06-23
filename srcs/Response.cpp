@@ -207,17 +207,12 @@ std::string Response::getMessage()
     std::string result;
     char *strTmp = ft_itoa(statusCode);
 
-    ftLog("version", version);
-    ftLog("statusCode", strTmp);
-    ftLog("statusMessage", statusMessage);
-
     result = version + " " + strTmp + " " + statusMessage + "\r\n";
     for (std::map<std::string, std::string>::iterator iter = header.begin();
         iter != header.end(); iter++)
     result += iter->first + ": " + iter->second + "\r\n";
     result += "\r\n" + body;
     free(strTmp);
-	std::cout << "~~~~~~~~~~~"  << std::endl << result << std::endl;
     return (result);
 }
 
