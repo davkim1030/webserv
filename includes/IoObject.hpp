@@ -31,9 +31,9 @@ class IoObject
 {
 	protected:
 		int				fd;		// 파일 또는 소켓 fd
-		std::string		buffer;	// 다 못 읽었을 경우 데이터를 들고 있을 버퍼
+		std::string		buffer;	// 읽거나 쓸 데이터를 담아둔 버퍼
 		Status			status;	// 현재 리스폰스를 줄 수 있는지 상태를 저장
-		Type			type;	// server, client, resource 중에 어떤 객체인지 지정
+		Type			type;	// 객체의 타입을 지정
 	public:
 		IoObject();
 		IoObject(Type type);

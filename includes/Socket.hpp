@@ -10,6 +10,7 @@
 # include "Exception.hpp"
 # include <climits>
 
+// fd_set에 플래그를 세울 때 쓰는 타입
 enum FdType
 {
 	FD_READ,

@@ -1,5 +1,5 @@
 #ifndef SERVERCONFIG_HPP
-#define SERVERCONFIG_HPP
+# define SERVERCONFIG_HPP
 
 # include <vector>
 # include <map>
@@ -8,15 +8,13 @@
 class Server;
 
 /*
-	config 파일의 정보를 저장하고 가지고 다닐 클래스
-	@member variable -> option : 기본 config 저장
-	@member variable -> server : server 블럭이 저장된 vector 컨테이너
-*/
+ * config 파일의 정보를 저장하고 가지고 다닐 클래스
+ */
 class 	ServerConfig
 {
 	private:
-		std::map<std::string, std::string> option;
-		std::vector<Server> server;
+		std::map<std::string, std::string> option;	// 기본 config 저장
+		std::vector<Server> server;					// server 블럭이 저장된 vector 컨테이너
 
 	public:
 		ServerConfig();

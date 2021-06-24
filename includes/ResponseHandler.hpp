@@ -33,8 +33,8 @@ class ResponseHandler : public ResponseMaker
 		void 		makeGetResponse(int);
 		void 		makeHeadResponse(void);
 		std::string	fileExtension(std::string);
-		/*void 		makePostResponse(void);
-		void 		makePutResponse(void);*/
+		void 		makePostResponse(void);
+		void 		makePutResponse(void);
 		void 		makeDeleteResponse(void);
 		void 		makeTraceResponse(void);
 		void 		makeOptionResponse(void);

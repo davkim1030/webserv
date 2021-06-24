@@ -4,11 +4,12 @@
 # include "webserv.h"
 # include "IoObject.hpp"
 
+// 리소스 파일의 읽기 쓰기 상태
 enum IoStatus
 {
-	PROCESSING,
-	DONE,
-	ERROR
+	PROCESSING,	// 읽기 / 쓰기 동작중
+	DONE,		// 동작 완료
+	ERROR		// 에러 발생
 };
 
 /*
@@ -18,9 +19,10 @@ class Resource : public IoObject
 {
 	private:
 		Resource();
-		IoStatus	ioStatus;
-		int			clientFd;
-		int			pos;
+		IoStatus	ioStatus;	// 읽기 쓰기 상태
+		int			clientFd;	// 리소스를 호출한 클라이언트의 fd
+		int			pos;		// 읽기 쓰기 중인 커서 위치
+
 	public:
 		Resource(const Resource &other);
 		Resource(int fd, int clientFd);

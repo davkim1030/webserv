@@ -31,14 +31,17 @@
 class ResourceHandler : public ResponseMaker
 {
 	private:
-		std::string resourcePath;
-		int fd;
-		struct stat	sb;
-		int clientFd;
+		std::string resourcePath;	// 처리할 리소스의 위치
+		int fd;						// 리소스의 fd
+		struct stat	sb;				// TODO: 서희님이 어떤 건지 적어주세요
+		int clientFd;				// 리소스를 호출한 크라이언트의 fd
 
 		int tryToOpen(int);
 		std::string parseResourcePath(std::string); 
 		int checkGetMethodIndex(void);
+		int tryToRead();
+		int tryToPost();
+		int tryToPut();
 
 		ResourceHandler();
 
@@ -49,8 +52,6 @@ class ResourceHandler : public ResponseMaker
 		ResourceHandler &operator=(const ResourceHandler&);
 		~ResourceHandler();
 
-		int tryToRead();
-		int tryToWrite();
 		void setReadFlag();
 		void setWriteFlag();
 		bool checkAllowMethod(void);
