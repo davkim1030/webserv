@@ -4,7 +4,7 @@
 // ResourceHandler::ResourceHandler(){}
 
 ResourceHandler::ResourceHandler(const Request& request, const Server& server, const Location& location, int clientFd)
-: ResponseMaker(request, server, location), clientFd(clientFd){
+: ResponseMaker(request, server, location), clientFd(clientFd), exist(-1){
 	this->resourcePath = parseResourcePath(request.getUri());
 }
 
@@ -88,32 +88,75 @@ int ResourceHandler::tryToRead(void)
 	return CHECK_SUCCES;
 }
 
-int ResourceHandler::tryToWrite()
+int ResourceHandler::tryToPost()
 {
-	int status;
-
-	if ((status = tryToOpen(O_WRONLY)) != CHECK_SUCCES)
-		return (status);
-	if (fstat(this->fd, &this->sb) < 0)
-	{
-		close(fd);
-		return (SERVER_ERR);
-	}
-	int pathType = checkPath(this->resourcePath);
-	switch (pathType)
+	this->exist = checkPath(this->resourcePath);
+	switch (this->exist)
 	{
 		case NOT_FOUND :
 		{
+			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0)
+				return (SERVER_ERR);
+			if (fstat(this->fd, &this->sb) < 0)
+			{
+				close(fd);
+				return (SERVER_ERR);
+			}
 			return CHECK_SUCCES;
 		}
 		case ISFILE :
 		{
+			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_APPEND)) < 0)
+				return (SERVER_ERR);
+			if (fstat(this->fd, &this->sb) < 0)
+			{
+				close(fd);
+				return (SERVER_ERR);
+			}
 			return CHECK_SUCCES;
 		}
 		default :
-		return FORBIDDEN;
+			return FORBIDDEN;
 	}
 }
+
+int ResourceHandler::tryToPut()
+{
+	this->exist = checkPath(this->resourcePath);
+	switch (this->exist)
+	{
+		case NOT_FOUND :
+		{
+			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0)
+				return (SERVER_ERR);
+			if (fstat(this->fd, &this->sb) < 0)
+			{
+				close(fd);
+				return (SERVER_ERR);
+			}
+			return CHECK_SUCCES;
+		}
+		case ISFILE :
+		{
+			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_TRUNC)) < 0)
+				return (SERVER_ERR);
+			if (fstat(this->fd, &this->sb) < 0)
+			{
+				close(fd);
+				return (SERVER_ERR);
+			}
+			return CHECK_SUCCES;
+		}
+		default :
+			return FORBIDDEN;
+	}
+}
+
+int ResourceHandler::wasExist(void)
+{
+	return (this->exist);
+};
+
 
 //fd를 fd풀에 등록 후 읽기 fdset flag 설정
 void ResourceHandler::setReadFlag()
@@ -175,7 +218,7 @@ int ResourceHandler::checkGetMethodIndex(void)
 bool ResourceHandler::CheckResourceType(void)
 {
 	int stat;	
-	if (this->request.getMethod() == "GET")
+	if (this->request.getMethod() == "GET" || this->request.getMethod() == "HEAD")
 	{
 		if ((stat = checkGetMethodIndex()) != CHECK_SUCCES)
 		{
@@ -192,7 +235,7 @@ bool ResourceHandler::CheckResourceType(void)
 	}
 	else if (request.getMethod() == "POST")
 	{
-		if ((stat = tryToWrite()) != CHECK_SUCCES)
+		if ((stat = tryToPost()) != CHECK_SUCCES)
 		{
 			updateErrorStatus(clientFd, stat);
 			return false;
@@ -202,7 +245,7 @@ bool ResourceHandler::CheckResourceType(void)
 	}
 	else if (request.getMethod() == "PUT")
 	{
-		if ((stat = tryToWrite()) != CHECK_SUCCES)
+		if ((stat = tryToPut()) != CHECK_SUCCES)
 		{
 			updateErrorStatus(clientFd, stat);
 			return false;

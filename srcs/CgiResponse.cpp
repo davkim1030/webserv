@@ -25,6 +25,12 @@ CgiResponse::CgiResponse(const Request& request, const Server& server, const Loc
 CgiResponse::~CgiResponse()
 {}
 
+/*
+	cgi 실행 파일에 필요한 변수들을(meta variable) 만들어주는 함수
+	인자로 들어갈 파일의 유효성을 검사하고 유효하지 않을 경우 에러를 띄워줌
+	@param int clientFd : 상태 변환을 줘야 할 client의 fd
+	@return 인자로 들어가야 할 파일이 있는지 확인 후 없으면 false줌
+*/
 bool	CgiResponse::makeVariable(int clientFd)
 {
 	std::string path = location.getPath();
@@ -54,6 +60,9 @@ bool	CgiResponse::makeVariable(int clientFd)
 		}
 	}
 
+	// if (metaVariable["PATH_INFO"].back() != '/')
+	// 	metaVariable["PATH_INFO"] = metaVariable["PATH_INFO"] + "/";
+
 	if (metaVariable["PATH_INFO"].empty())
 		metaVariable["PATH_INFO"] = request.getUri();
 
@@ -70,15 +79,19 @@ bool	CgiResponse::makeVariable(int clientFd)
 		metaVariable["CONTENT_TYPE"] = "null";
 	metaVariable["GATEWAY_INTERFACE"] = "Cgi/1.1";
 
-	metaVariable["REQUEST_URI"] = request.getUri();
+	// metaVariable["REQUEST_URI"] = request.getUri();
+	metaVariable["REQUEST_URI"] = metaVariable["PATH_INFO"];
 	if (metaVariable.count("PATH_INFO") == 1)
 		metaVariable["REQUEST_URI"] = metaVariable["PATH_INFO"];
+
+	std::cout << "PATH INFO : " << metaVariable["REQUEST_URI"] << std::endl;
+
 
 	metaVariable["PATH_TRANSLATED"] = location.getOption("root") + metaVariable["PATH_INFO"].substr(1);
 	metaVariable["REMOTE_ADDR"] = server.getIp();
 
 	metaVariable["REQUEST_METHOD"] = "GET";
-	metaVariable["SERVER_NAME"] = "BSJ_we are never die";
+	metaVariable["SERVER_NAME"] = "BSJ";
 
 	char *port = ft_itoa(server.getPort());
 	metaVariable["SERVER_PORT"] = std::string(port);
@@ -90,8 +103,6 @@ bool	CgiResponse::makeVariable(int clientFd)
 	std::string filePath = location.getOption("root");
 	filePath = filePath.substr(0, filePath.length() - 1) + metaVariable["SCRIPT_NAME"];
 
-	// php돌려볼 것
-
 	if (checkPath(filePath) == NOT_FOUND || checkPath(filePath) == ISDIR)
 	{
 		updateErrorStatus(clientFd, 404);
@@ -100,6 +111,10 @@ bool	CgiResponse::makeVariable(int clientFd)
 	return true;
 }
 
+/*
+	저장된 meta variable 들을 envp 형태로 가공해주는 함수
+	@return 만들어진 envp 포인터
+*/
 char** CgiResponse::makeCgiEnvp()
 {
 	char **res = (char **)malloc(sizeof(char *) * metaVariable.size() + 1);
@@ -115,6 +130,11 @@ char** CgiResponse::makeCgiEnvp()
 	return res;
 }
 
+/*
+	cgi 프로그램을 실행 해주는 함수
+	fork()를 이용해 프로세스를 나눈 후 자식 프로세스에서 execve()를 통해 실행시켜 줌
+	@param int clientFd : 상태 변환을 줘야 할 client의 fd
+*/
 void CgiResponse::cgiResponse(int clientFd)
 {
 	pid_t pid;
@@ -127,7 +147,7 @@ void CgiResponse::cgiResponse(int clientFd)
 
 	fcntl(fd[1], F_SETFL, O_NONBLOCK);
 
-	int checkRes = checkPath("./cgi_files");
+	int checkRes = checkPath("./cgifiles");
 	if (checkRes == ISFILE)
 		return updateErrorStatus(clientFd, 500);
 	else if (checkRes == NOT_FOUND && mkdir(CGI_DIR, 0766) == -1)
@@ -174,6 +194,11 @@ void CgiResponse::cgiResponse(int clientFd)
 
 }
 
+/*
+	cgi 실행파일에서 나온 결과물을 response message로 만들어주는 함수
+	@param std::string cgiResult : cgi 실행파일이 내뱉은 결과물을 저장 한 문자열
+	@return 완성된 response 메시지를 담은 Response 객체
+*/
 Response	CgiResponse::cgiResultPasring(std::string cgiResult)
 {
 	int statusCode;

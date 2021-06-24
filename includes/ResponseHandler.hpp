@@ -5,13 +5,13 @@
 # include "Resource.hpp"
 
 /*
- * cgi가 아닌 일반적인 리스폰스를 담당하는 클래스
+ * cgi가 아닌 일반적인 요청의 리스폰스를 처리하는 클래스
  */
 class ResponseHandler : public ResponseMaker
 {
 	private:
-		std::string resourcePath;	// TODO: 주석 달기
-		std::string resource;		// TODO: 주석 달기
+		std::string resourcePath;	// resource의 경로
+		std::string resource;		// resource의 내용
 		int clientFd;
 
 		ResponseHandler();

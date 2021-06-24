@@ -142,6 +142,10 @@ void ResponseMaker::addContentTypeHeader(std::string extension)
 		addResponseHeader("Content-Type", mimeType[extension]);
 }
 
+/*
+* contentLength 헤더를 추가해줍니다.
+* @param 헤더 value가 될 수
+*/
 void ResponseMaker::addContentLengthHeader(int length)
 {
 	char *lenStr = ft_itoa(length);
@@ -171,6 +175,12 @@ std::string ResponseMaker::makeHTMLPage(std::string str)
 	return (body);
 }
 
+/*
+* 에러 Response를 생성해 반환합니다.
+* @param http 상태코드
+* @param http 버전 (default HTTP 1.1)
+* @return 에러 Response 메소드
+*/
 Response ResponseMaker::makeErrorResponse(int httpStatus, std::string version)
 {
 	char	*strTmp = ft_itoa(httpStatus);

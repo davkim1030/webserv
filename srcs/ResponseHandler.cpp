@@ -67,7 +67,7 @@ Response ResponseHandler::makeResponse(void)
 {
 	try{
 		//location에서 uri를 찾지말고 uri에서 location을 찾아야합니다.
-		if (!location.getOption("allow_method").empty() && request.getMethod() != "GET" && request.getMethod() != "HEAD")
+		if (!location.getOption("allow_method").empty() && request.getMethod() != "GET" && request.getMethod() != "GET")
 		{
 			std::string allow = location.getOption("allow_method");
 			if (allow.find(request.getMethod()) == std::string::npos)
@@ -90,10 +90,10 @@ Response ResponseHandler::makeResponse(void)
 			makeGetResponse(0);
 		if (request.getMethod() == "HEAD")
 			makeHeadResponse();
-		/*if (request.getMethod() == "POST")
+		if (request.getMethod() == "POST")
 			makePostResponse();
 		if (request.getMethod() == "PUT")
-			makePutResponse();*/
+			makePutResponse();
 		if (request.getMethod() == "DELETE")
 			makeDeleteResponse();
 	}
@@ -153,13 +153,13 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 */
 void ResponseHandler::makeHeadResponse(void)
 {
-	if (server.getOption("allowed_method").find("HEAD") == std::string::npos)
+	if (location.getOption("allow_method").find("HEAD") == std::string::npos)
 	{
 		addContentTypeHeader(".html");
 		addDateHeader();
 		addServerHeader();
 		Response tmp(405, responseHeader, "", request.getHttpVersion());
-		std::cout << "HEAD test\n" << tmp.getMessage() << std::endl;
+		std::cout << "~HEAD test\n" << tmp.getMessage() << std::endl;
 		throw Response(405, responseHeader, "", request.getHttpVersion());
 	}
 	makeGetResponse(HEAD_METHOD);
@@ -186,43 +186,11 @@ std::string ResponseHandler::fileExtension(std::string resourcePath)
 * 기존에 있는 것을 성공적으로 수정 - 200 (OK) 또는 204 (No Content) 응답
 * 실패 : 500(SERVER ERR)
 * 권한없음 : 403(forbidden)
-*//*
-void NormalResponse::makePostResponse(void)
+*/
+void ResponseHandler::makePostResponse(void)
 {
-	int fd;
-	int pathType = checkPath(this->resourcePath);
-
-	switch (pathType)
-	{
-		case NOT_FOUND :
-		{
-			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0)
-				makeErrorResponse(SERVER_ERR, request.getHttpVersion());
-
-			if (request.getHeader()["Transfer-Encoding"] != "chunked")
-				write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
-			else
-				write(fd, request.getRawBody().c_str(), request.getRawBody().length());
-			close(fd);
-			addContentLocationHeader();
-			throw Response(201, responseHeader, "", request.getHttpVersion());
-		}
-		case ISFILE :
-		{
-			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_APPEND )) < 0)
-				makeErrorResponse(SERVER_ERR, request.getHttpVersion());
-			if (request.getHeader()["Transfer-Encoding"] != "chunked")
-				write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
-			else
-				write(fd, request.getRawBody().c_str(), request.getRawBody().length());
-			close(fd);
-			addContentLocationHeader();
-			throw Response(200, responseHeader, "", request.getHttpVersion());
-		}
-		default :
-			makeErrorResponse(FORBIDDEN, request.getHttpVersion());
-	}
-}*/
+	throw Response(201, responseHeader, "", request.getHttpVersion());
+}
 
 /*
 * 클라이언트가 서버에게 지정한 URL에 지정한 데이터를 저장하거나 대체할 것을 요청한다.
@@ -235,43 +203,11 @@ void NormalResponse::makePostResponse(void)
 * 기존에 있는 것을 성공적으로 수정 - 200 (OK) 또는 204 (No Content) 응답
 * 실패 : 500(SERVER ERR)
 * 권한없음 : 403(forbidden)
-*//*
-void NormalResponse::makePutResponse(void)
+*/
+void ResponseHandler::makePutResponse(void)
 {
-	int fd;
-	int pathType = checkPath(this->resourcePath);
-
-	switch (pathType)
-	{
-		case NOT_FOUND :
-		{
-			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0)
-				makeErrorResponse(SERVER_ERR, request.getHttpVersion());
-
-			if (request.getHeader()["Transfer-Encoding"] != "chunked")
-				write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
-			else
-				write(fd, request.getRawBody().c_str(), request.getRawBody().length());
-			close(fd);
-			addContentLocationHeader();
-			throw Response(201, responseHeader, "", request.getHttpVersion());
-		}
-		case ISFILE :
-		{
-			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_TRUNC)) < 0)
-				makeErrorResponse(SERVER_ERR, request.getHttpVersion());
-			if (request.getHeader()["Transfer-Encoding"] != "chunked")
-				write(fd, request.getRawBody().c_str(), ft_atoi(request.getHeader()["Content-Length"].c_str()));
-			else
-				write(fd, request.getRawBody().c_str(), request.getRawBody().length());
-			close(fd);
-			addContentLocationHeader();
-			throw Response(200, responseHeader, "", request.getHttpVersion());
-		}
-		default :
-			makeErrorResponse(FORBIDDEN, request.getHttpVersion());
-	}
-}*/
+	throw Response(201, responseHeader, "", request.getHttpVersion());
+}
 
 /*
 * DELETE 메소드의 작업을 수행한다.
