@@ -230,6 +230,7 @@ void Socket::runServer(struct timeval timeout)
 
 					ft_memset(&clientAddr, '\0', addrSize);
 					clientSocket = accept(i, (struct sockaddr *)&clientAddr, &addrSize);
+					std::cout << ">> Connection open fd: " << i << std::endl;
 					if (clientSocket == -1)
 						throw AcceptException();
 					fcntl(clientSocket, F_SETFL, O_NONBLOCK);	// 해당 클라이언트 fd를 논블록으로 변경
@@ -268,6 +269,7 @@ void Socket::runServer(struct timeval timeout)
 					// 헤더 파싱 가능한지 확인
 					if (tmpClient->getStatus() == REQUEST_RECEIVING_HEADER && tmpClient->headerParsable())
 					{
+						std::cout << buf << std::endl;
 						tmpClient->setBuffer(tmpClient->getRequest().parseFirstLine(tmpClient->getBuffer()));	// 첫 줄 파싱
 						std::map<std::string, std::string> header = Request::parseHeader(tmpClient->getBuffer());
 						tmpClient->getRequest().setHeader(header);
@@ -404,7 +406,7 @@ void Socket::runServer(struct timeval timeout)
 					Client *tmpClnt = dynamic_cast<Client *>(pool[i]);
 					if (tmpClnt->getStatus() == PROCESSING_ERROR)
 					{
-						std::cout << "sdnftestsetsetsetsetset" << std::endl;
+						std::cout << "ERROR RESPONSE OCCURED" << std::endl;
 						ResponseMaker resMaker(tmpClnt->getRequest(), tmpClnt->getServer(), tmpClnt->getRequest().getLocation());
 						Response r = resMaker.makeErrorResponse(tmpClnt->getResponse().getStatusCode(), tmpClnt->getRequest().getHttpVersion());
 						write(i, r.getMessage().c_str(), r.getMessage().length());
@@ -509,7 +511,7 @@ void	Socket::clearConnectedSocket(int fd)
 		pool[fd] = NULL;
 	}
 	updateFdMax();
-	std::cout << "Connection close fd: " << fd << std::endl;
+	std::cout << "<<Connection close fd: " << fd << std::endl;
 }
 
 /*

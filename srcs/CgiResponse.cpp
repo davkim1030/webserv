@@ -59,6 +59,13 @@ bool	CgiResponse::makeVariable(int clientFd)
 			}
 		}
 	}
+	std::map<std::string, std::string> header = request.getHeader();
+	for (std::map<std::string, std::string>::iterator iter = header.begin();
+			iter != header.end(); iter++)
+	{
+		if (iter->first != "Authorization" && iter->first != "Content-Length" && iter->first != "Content-Type")
+			metaVariable[ftToupperStr(iter->first)] = iter->second;
+	}
 
 	// if (metaVariable["PATH_INFO"].back() != '/')
 	// 	metaVariable["PATH_INFO"] = metaVariable["PATH_INFO"] + "/";
@@ -83,9 +90,6 @@ bool	CgiResponse::makeVariable(int clientFd)
 	metaVariable["REQUEST_URI"] = metaVariable["PATH_INFO"];
 	if (metaVariable.count("PATH_INFO") == 1)
 		metaVariable["REQUEST_URI"] = metaVariable["PATH_INFO"];
-
-	std::cout << "PATH INFO : " << metaVariable["REQUEST_URI"] << std::endl;
-
 
 	metaVariable["PATH_TRANSLATED"] = location.getOption("root") + metaVariable["PATH_INFO"].substr(1);
 	metaVariable["REMOTE_ADDR"] = server.getIp();
