@@ -269,7 +269,6 @@ void Socket::runServer(struct timeval timeout)
 					// 헤더 파싱 가능한지 확인
 					if (tmpClient->getStatus() == REQUEST_RECEIVING_HEADER && tmpClient->headerParsable())
 					{
-						std::cout << buf << std::endl;
 						tmpClient->setBuffer(tmpClient->getRequest().parseFirstLine(tmpClient->getBuffer()));	// 첫 줄 파싱
 						std::map<std::string, std::string> header = Request::parseHeader(tmpClient->getBuffer());
 						tmpClient->getRequest().setHeader(header);
@@ -314,8 +313,9 @@ void Socket::runServer(struct timeval timeout)
 						{
 							if (tmpClient->getBuffer().find("0\r\n\r\n") != std::string::npos)
 							{
-								tmpClient->getRequest().setRawBody(Request::parseChunkedBody(tmpClient->getBuffer()));
-								pool[i]->setBuffer(tmpClient->getRequest().getRawBody());
+								// tmpClient->getRequest().setRawBody(Request::parseChunkedBody(tmpClient->getBuffer()));
+								// pool[i]->setBuffer(tmpClient->getRequest().getRawBody());
+								pool[i]->setBuffer(Request::parseChunkedBody(tmpClient->getBuffer()));
 								tmpClient->setStatus(RESPONSE_READY);
 							}
 						}
@@ -392,7 +392,7 @@ void Socket::runServer(struct timeval timeout)
 						handleError(tmpCgi->getClientFd(), i, 500);
 					else if (readLen == 0)
 					{
-						std::string msg = CgiResponse::cgiResultPasring(tmpCgi->getBuffer()).getMessage();
+						std::string msg = CgiResponse::cgiResultParsing(tmpCgi->getBuffer()).getMessage();
 						pool[tmpCgi->getClientFd()]->setBuffer(msg);
 						FD_CLR(i, &rfds);
 						FD_SET(tmpCgi->getClientFd(), &wfds);

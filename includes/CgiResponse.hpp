@@ -28,6 +28,6 @@ class CgiResponse : public ResponseMaker
 		char**	makeCgiEnvp();
 		void	cgiResponse(int clientFd);
 
-		static	Response	cgiResultPasring(std::string cgiResult);
+		static	Response	cgiResultParsing(std::string cgiResult);
 };
 #endif

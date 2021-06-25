@@ -203,14 +203,13 @@ void CgiResponse::cgiResponse(int clientFd)
 	@param std::string cgiResult : cgi 실행파일이 내뱉은 결과물을 저장 한 문자열
 	@return 완성된 response 메시지를 담은 Response 객체
 */
-Response	CgiResponse::cgiResultPasring(std::string cgiResult)
+Response	CgiResponse::cgiResultParsing(std::string cgiResult)
 {
 	int statusCode;
 	std::map<std::string, std::string> header;
 	std::string body;
 	std::string tmp;
 
-	std::cout << "============result parsing start============" << std::endl;
 	tmp = cgiResult.substr(cgiResult.find("Status: ") + 8, 3);
 	statusCode = ft_atoi(tmp.c_str());
 	tmp = cgiResult.substr(cgiResult.find("\r\n") + 2);
