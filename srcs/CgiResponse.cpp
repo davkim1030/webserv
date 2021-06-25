@@ -33,6 +33,11 @@ CgiResponse::~CgiResponse()
 */
 bool	CgiResponse::makeVariable(int clientFd)
 {
+	std::map<std::string, std::string> reqHead = request.getHeader();
+
+	for (std::map<std::string, std::string>::iterator it = reqHead.begin(); it != reqHead.end(); it++)
+		metaVariable["HTTP_" + ftToupperStr(it->first)] = it->second;
+
 	std::string path = location.getPath();
 	if (*path.rbegin() == '/')
 		path = path.substr(0, path.length() - 1);
@@ -59,16 +64,6 @@ bool	CgiResponse::makeVariable(int clientFd)
 			}
 		}
 	}
-	std::map<std::string, std::string> header = request.getHeader();
-	for (std::map<std::string, std::string>::iterator iter = header.begin();
-			iter != header.end(); iter++)
-	{
-		if (iter->first != "Authorization" && iter->first != "Content-Length" && iter->first != "Content-Type")
-			metaVariable[ftToupperStr(iter->first)] = iter->second;
-	}
-
-	// if (metaVariable["PATH_INFO"].back() != '/')
-	// 	metaVariable["PATH_INFO"] = metaVariable["PATH_INFO"] + "/";
 
 	if (metaVariable["PATH_INFO"].empty())
 		metaVariable["PATH_INFO"] = request.getUri();
@@ -177,7 +172,12 @@ void CgiResponse::cgiResponse(int clientFd)
 		root = root.substr(0, root.length() - 1);
 		argv[1] = strdup((root + metaVariable["SCRIPT_NAME"]).c_str());
 		argv[2] = NULL;
-		execveRet = execve(argv[0], argv, makeCgiEnvp());
+		char **envp = makeCgiEnvp();
+		execveRet = execve(argv[0], argv, envp);
+		char **temp = envp;
+		while (*envp)
+			free(*envp++);
+		free(temp);
 		exit(execveRet);
 	}
 	else
@@ -210,6 +210,7 @@ Response	CgiResponse::cgiResultPasring(std::string cgiResult)
 	std::string body;
 	std::string tmp;
 
+	std::cout << "============result parsing start============" << std::endl;
 	tmp = cgiResult.substr(cgiResult.find("Status: ") + 8, 3);
 	statusCode = ft_atoi(tmp.c_str());
 	tmp = cgiResult.substr(cgiResult.find("\r\n") + 2);
