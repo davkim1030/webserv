@@ -4,7 +4,7 @@
 // ResourceHandler::ResourceHandler(){}
 
 ResourceHandler::ResourceHandler(const Request& request, const Server& server, const Location& location, int clientFd)
-: ResponseMaker(request, server, location), clientFd(clientFd), exist(-1){
+: ResponseMaker(request, server, location), clientFd(clientFd), exist(-1), autoIndex(false){
 	this->resourcePath = parseResourcePath(request.getUri());
 }
 
@@ -17,6 +17,8 @@ ResourceHandler::ResourceHandler(const ResourceHandler& other)
 	this->fd = other.fd;
 	this->sb = other.sb;
 	this->clientFd = other.clientFd;
+	this->exist = other.exist;
+	this->autoIndex = other.autoIndex;
 }
 
 ResourceHandler &ResourceHandler::operator=(const ResourceHandler& other)
@@ -29,6 +31,8 @@ ResourceHandler &ResourceHandler::operator=(const ResourceHandler& other)
 	this->fd = other.fd;
 	this->sb = other.sb;
 	this->clientFd = other.clientFd;
+	this->exist = other.exist;
+	this->autoIndex = other.autoIndex;
 	return *this;
 }
 
@@ -190,9 +194,9 @@ int ResourceHandler::checkGetMethodIndex(void)
 		if (this->resourcePath[this->resourcePath.length() - 1] != '/')
 			this->resourcePath += '/';
 
+		bool indexFileFlag = false;
 		if (!location.getOption("index").empty())
 		{
-			bool indexFileFlag = false;
 			std::vector<std::string> indexFile = splitSpaces(location.getOption("index"));
 			for (std::vector<std::string>::iterator iter = indexFile.begin();
 					iter != indexFile.end(); iter++)
@@ -205,11 +209,14 @@ int ResourceHandler::checkGetMethodIndex(void)
 					break ;
 				}
 			}
-			if (indexFileFlag == false && location.getOption("autoindex") == "on")
-				return (CHECK_SUCCES);
-			if (checkPath(this->resourcePath) == NOT_FOUND || checkPath(this->resourcePath) == ISDIR)
-				return (NOT_FOUND);
 		}
+		if (indexFileFlag == false && location.getOption("autoindex") == "on")
+		{	
+			autoIndex = true;
+			return (CHECK_SUCCES);
+		}
+		if (checkPath(this->resourcePath) == NOT_FOUND || checkPath(this->resourcePath) == ISDIR)
+			return (NOT_FOUND);
 	}
 	return (CHECK_SUCCES);
 }
@@ -225,12 +232,15 @@ bool ResourceHandler::CheckResourceType(void)
 			updateErrorStatus(clientFd, stat);
 			return false;
 		}
-		if ((stat = tryToRead()) != CHECK_SUCCES)
+		if (this->autoIndex == false)
 		{
-			updateErrorStatus(clientFd, stat);
-			return false;
+			if ((stat = tryToRead()) != CHECK_SUCCES)
+			{
+				updateErrorStatus(clientFd, stat);
+				return false;
+			}
+			setReadFlag();
 		}
-		setReadFlag();
 		return true;
 	}
 	else if (request.getMethod() == "POST")
@@ -254,4 +264,9 @@ bool ResourceHandler::CheckResourceType(void)
 		return true;
 	}
 	return true;
+}
+
+bool ResourceHandler::isAutoIndex(void)
+{
+	return this->autoIndex;
 }

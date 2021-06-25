@@ -12,7 +12,6 @@
 #include "Server.hpp"
 
 #define CHECK_SUCCES -1
-
 /*
 
 */
@@ -24,6 +23,7 @@ class ResourceHandler : public ResponseMaker
 		struct stat	sb;				// fstat으로 fd를 판단할 때 매개변수로 필요한 buffer
 		int clientFd;				// 리소스를 호출한 크라이언트의 fd
 		int exist;					//resourcePath의 존재여부를 기록하는 int
+		bool autoIndex;			//GET method로 directory가 들어온경우 autoindex 여부 기록
 
 		int tryToOpen(int);
 		std::string parseResourcePath(std::string); 
@@ -46,6 +46,7 @@ class ResourceHandler : public ResponseMaker
 		bool checkAllowMethod(void);
 		bool CheckResourceType(void);
 		int wasExist(void);
+		bool isAutoIndex(void);
 };
 
 #endif

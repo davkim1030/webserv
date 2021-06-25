@@ -293,6 +293,12 @@ void Socket::runServer(struct timeval timeout)
 								continue ;
 							if (resHan.CheckResourceType() == false)
 								continue ;
+							if (resHan.isAutoIndex() == true)
+							{
+								Client *clnt = dynamic_cast<Client *>(pool[i]);
+								FD_SET(clnt->getFd(), &wfds);
+								continue ;
+							}
 							wasExist = resHan.wasExist();
 							if (tmpClient->getRequest().getMethod() == "POST" || tmpClient->getRequest().getMethod() == "PUT")
 								if (wasExist == ISFILE)
@@ -302,7 +308,6 @@ void Socket::runServer(struct timeval timeout)
 					// chunked/content-length 처리해서 바디 파싱 가능한지 확인
 					if (tmpClient->getStatus() == REQUEST_RECEIVING_BODY)
 					{
-						std::string tmp = tmpClient->getRequest().getHeader()["Transfer-Encoding"];
 						// Chunked일 경우  -> 모두 붙여서 전달
 						if (tmpClient->getRequest().getHeader().count("Transfer-Encoding") == 1 &&
 								tmpClient->getRequest().getHeader()["Transfer-Encoding"] == "chunked")
@@ -329,6 +334,7 @@ void Socket::runServer(struct timeval timeout)
 							tmpClient->getRequest().setRawBody("");
 							tmpClient->setStatus(RESPONSE_READY);
 						}
+
 						// 리소스 타입판별 (normalResponse 반으로 쪼개기)'
 						// response ready function call
 					}

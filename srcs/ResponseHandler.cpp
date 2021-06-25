@@ -104,8 +104,8 @@ Response ResponseHandler::makeResponse(void)
 
 	responseHeader.clear();
 	resourcePath.clear();
-	makeErrorResponse(500, request.getHttpVersion());
-	return Response(500, responseHeader, makeHTMLPage("500"), request.getHttpVersion());
+	return makeErrorResponse(500, request.getHttpVersion());
+	// return Response(500, responseHeader, makeHTMLPage("500"), request.getHttpVersion());
 }
 
 /*
@@ -135,6 +135,36 @@ void ResponseHandler::makeGetResponse(int httpStatus)
 {
 	addDateHeader();
 	addServerHeader();
+	
+	if (checkPath(this->resourcePath) == ISDIR)
+	{
+		if (this->resourcePath[this->resourcePath.length() - 1] != '/')
+			this->resourcePath += '/';
+
+		bool indexFileFlag = false;
+		if (!location.getOption("index").empty())
+		{
+			std::vector<std::string> indexFile = splitSpaces(location.getOption("index"));
+			for (std::vector<std::string>::iterator iter = indexFile.begin();
+					iter != indexFile.end(); iter++)
+			{
+				struct stat buffer;
+				if (stat((this->resourcePath + *iter).c_str(), &buffer) == 0)
+				{
+					this->resourcePath = this->resourcePath + *iter;
+					indexFileFlag = true;
+					break ;
+				}
+			}
+		}
+		if (indexFileFlag == false && location.getOption("autoindex") == "on")
+		{
+			addContentTypeHeader(".html");
+			throw Response(200, this->responseHeader, request.getMethod() != "HEAD" ? makeAutoIndexPage(this->resourcePath) : "", request.getHttpVersion());
+		}
+		if (checkPath(this->resourcePath) == NOT_FOUND || checkPath(this->resourcePath) == ISDIR)
+			throw makeErrorResponse(NOT_FOUND, request.getHttpVersion());
+	}
 	if (this->resource.size() < 0 || this->resource.empty())
 		makeErrorResponse(SERVER_ERR, request.getHttpVersion());
 	addContentTypeHeader(fileExtension(resourcePath.substr(1)));
@@ -159,7 +189,6 @@ void ResponseHandler::makeHeadResponse(void)
 		addDateHeader();
 		addServerHeader();
 		Response tmp(405, responseHeader, "", request.getHttpVersion());
-		std::cout << "~HEAD test\n" << tmp.getMessage() << std::endl;
 		throw Response(405, responseHeader, "", request.getHttpVersion());
 	}
 	makeGetResponse(HEAD_METHOD);
