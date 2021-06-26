@@ -186,6 +186,22 @@ void Socket::initServer(int argc, char *argv)
 	}
 }
 
+int ft_hex_atoi(const std::string &str)
+{
+	int result = 0;
+	for (std::string::const_iterator iter = str.begin(); iter != str.end(); iter++)
+	{
+		if (*iter >= 'A' && *iter <= 'F')
+			result = (*iter - 'A' + 10) + result * 16;
+		else if (*iter >= 'a' && *iter <= 'f')
+			result = (*iter - 'a' + 10) + result * 16;
+		else if (*iter >= '0' && *iter <= '9')
+			result = (*iter - '0') + result * 16;
+		else break ;
+	}
+	return result;
+}
+
 /*
  * 실제 서버를 동작시키는 메인 로직
  * 꼭 initServer를 호출하여 서버 정보들 등록 후 동작 시켜야 함.
@@ -292,7 +308,7 @@ void Socket::runServer(struct timeval timeout)
 								continue ;
 							if (resHan.CheckResourceType() == false)
 								continue ;
-							if (resHan.isAutoIndex() == true)
+							if (resHan.isAutoIndex() == true || resHan.resourceFreeMethods() == true)
 							{
 								Client *clnt = dynamic_cast<Client *>(pool[i]);
 								FD_SET(clnt->getFd(), &wfds);
@@ -311,13 +327,36 @@ void Socket::runServer(struct timeval timeout)
 						if (tmpClient->getRequest().getHeader().count("Transfer-Encoding") == 1 &&
 								tmpClient->getRequest().getHeader()["Transfer-Encoding"] == "chunked")
 						{
-							if (tmpClient->getBuffer().find("0\r\n\r\n") != std::string::npos)
+							/*if (tmpClient->getBuffer().find("0\r\n\r\n") != std::string::npos)
 							{
 								// tmpClient->getRequest().setRawBody(Request::parseChunkedBody(tmpClient->getBuffer()));
 								// pool[i]->setBuffer(tmpClient->getRequest().getRawBody());
 								pool[i]->setBuffer(Request::parseChunkedBody(tmpClient->getBuffer()));
 								tmpClient->setStatus(RESPONSE_READY);
-							}
+							}*/
+
+							//temp_buffer는 이어붙이기만 하기
+							pool[i]->setTempBuffer(pool[i]->getTempBuffer() + tmpClient->getBuffer());
+							
+							//TODO : chunkedIndex : 현재 찾아야하는 위치 Index(미추가) 추가하기
+							// 입력받은 숫자 줄의 위치
+							size_t dataSizePos = pool[i]->getTempBuffer().find("\r\n", chunkedIndex);
+							// 입력받은 숫자
+							size_t dataSize = ft_hex_atoi(pool[i]->getTempBuffer().substr(chunkedIndex, dataSizePos - chunkedIndex).c_str());
+							// 데이터의 실제 길이
+							size_t dataLength = pool[i]->getTempBuffer().find("\r\n", dataSizePos + 2) - (dataSizePos + 2);
+							
+							//데이터 실제길이가 입력 받은 숫자보다 작으면 continue
+							if (dataLength < dataSize)
+								continue ;
+							//dataSize가 0이면 loop 끝
+							else if (dataSize == 0)
+								tmpClient->setStatus(RESPONSE_READY);
+							//그게 아니라면 숫자\r\n 다음줄을 dataSize만큼 buffer에 백업
+							else
+								pool[i]->setBuffer(pool[i]->getTempBuffer().substr(dataSizePos + 2, dataSize));
+							//chunkedIndex에 숫자줄의 위치 + 입력받은 숫자만큼 추가해주기
+							chunkedIndex += dataSizePos + 2 + dataSize;
 						}
 						// Content-Length인 경우 -> 들어온 애들을 모두 붙인 후에 substr(Content-Length) 후 전달
 						else if (tmpClient->getRequest().getHeader().count("Content-Length") == 1)

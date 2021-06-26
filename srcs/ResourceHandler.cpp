@@ -266,7 +266,17 @@ bool ResourceHandler::CheckResourceType(void)
 	return true;
 }
 
+//autoindex가 켜져있는지 확인
 bool ResourceHandler::isAutoIndex(void)
 {
 	return this->autoIndex;
+}
+
+//method가 resource 읽기/쓰기 필요로 하지 않는 타입인지 확인
+bool ResourceHandler::resourceFreeMethods(void)
+{
+	if (request.getMethod() == "OPTIONS" || request.getMethod() == "DELETE" \
+	|| request.getMethod() == "CONNECT" || request.getMethod() == "TRACE")
+		return true;
+	else return false;
 }

@@ -39,8 +39,7 @@ class Request
 
 		static std::map<std::string, std::string> parseHeader(std::string);
 		static std::string parseChunkedBody(std::string body);
-		std::string parseBody(void);
-
+		
 		Request();
 	private:
 

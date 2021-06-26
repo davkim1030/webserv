@@ -82,42 +82,6 @@ std::string Request::parseMethod(void) {
 	return (this->rawRequest.substr(0, rawRequest.find(' ')));
 }
 
-int ft_hex_atoi(const std::string &str)
-{
-	int result = 0;
-	for (std::string::const_iterator iter = str.begin(); iter != str.end(); iter++)
-	{
-		if (*iter >= 'A' && *iter <= 'F')
-			result = (*iter - 'A' + 10) + result * 16;
-		else if (*iter >= 'a' && *iter <= 'f')
-			result = (*iter - 'a' + 10) + result * 16;
-		else if (*iter >= '0' && *iter <= '9')
-			result = (*iter - '0') + result * 16;
-		else break ;
-	}
-	return result;
-}
-
-// /*
-// *  Transfer-Encoding 헤더가 chunked 옵션으로 들어온 경우 body를 파싱합니다.
-// */
-// static std::string parseBody(std::string buffer) {
-// 	size_t dataSize;
-// 	std::string data;
-
-// 	/* 현재 주석 따라 작성중 */
-// 	//response를 보내주기 전에, 읽어온 body를 계속해서 write하며, statuscode를 갱신 해주어야합니다.
-// 	while ((dataSize = ft_hex_atoi(rawBody.substr(0, rawBody.find("\r\n")).c_str())) != 0)
-// 	{
-// 		rawBody = rawBody.substr(rawBody.find("\r\n") + 2);
-// 		data += rawBody.substr(0, dataSize);
-// 		rawBody = rawBody.substr(rawBody.find("\r\n") + 2);
-// 	}
-// 	//read가 안되는 상황이 오면 write를 해줍니다.
-// 	//statuscode가 EOF가 아니면 다시 이 함수로 돌아옵니다.
-// 	return data;
-// }
-
 /*
 * 가공되지 않은 HTTP 요청 문자열에서 uri를 파싱합니다.
 */
@@ -252,18 +216,18 @@ void	Request::setRawBody(const std::string &rawBody)
 	this->rawBody = rawBody;
 }
 
-std::string Request::parseChunkedBody(std::string body)
-{
-	std::string res;
-	int num;
+// std::string Request::parseChunkedBody(std::string body)
+// {
+// 	std::string res;
+// 	int num;
 
-	while(body.compare("0\r\n\r\n") != 0)
-	{
-		size_t i = body.find("\r\n");
-		num = ft_hex_atoi(body.substr(0, i));
-		body = body.substr(i + 2);
-		res += body.substr(0, num);
-		body = body.substr(num + 2);
-	}
-	return res;
-}
+// 	while(body.compare("0\r\n\r\n") != 0)
+// 	{
+// 		size_t i = body.find("\r\n");
+// 		num = ft_hex_atoi(body.substr(0, i));
+// 		body = body.substr(i + 2);
+// 		res += body.substr(0, num);
+// 		body = body.substr(num + 2);
+// 	}
+// 	return res;
+// }

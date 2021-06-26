@@ -47,6 +47,7 @@ class ResourceHandler : public ResponseMaker
 		bool CheckResourceType(void);
 		int wasExist(void);
 		bool isAutoIndex(void);
+		bool resourceFreeMethods(void);
 };
 
 #endif

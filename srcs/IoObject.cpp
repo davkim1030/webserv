@@ -58,6 +58,11 @@ Type  IoObject::getType()
     return (type);
 }
 
+std::string &IoObject::getTempBuffer()
+{
+    return (tempBuffer);
+}
+
 // setters
 
 void IoObject::setFd(int fd)
@@ -73,4 +78,9 @@ void IoObject::setBuffer(std::string buffer)
 void IoObject::setStatus(Status status)
 {
     this->status = status;
+}
+
+void IoObject::setTempBuffer(std::string buffer)
+{
+    this->tempBuffer = buffer;
 }
