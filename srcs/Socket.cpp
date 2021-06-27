@@ -1,3 +1,4 @@
+
 #include "Socket.hpp"
 #include "CgiResponse.hpp"
 #include "ResponseHandler.hpp"
@@ -327,36 +328,79 @@ void Socket::runServer(struct timeval timeout)
 						if (tmpClient->getRequest().getHeader().count("Transfer-Encoding") == 1 &&
 								tmpClient->getRequest().getHeader()["Transfer-Encoding"] == "chunked")
 						{
-							/*if (tmpClient->getBuffer().find("0\r\n\r\n") != std::string::npos)
+							size_t	carrageIdx;
+							carrageIdx = tmpClient->getBuffer().find("\r\n");
+							while (true)
 							{
-								// tmpClient->getRequest().setRawBody(Request::parseChunkedBody(tmpClient->getBuffer()));
-								// pool[i]->setBuffer(tmpClient->getRequest().getRawBody());
-								pool[i]->setBuffer(Request::parseChunkedBody(tmpClient->getBuffer()));
-								tmpClient->setStatus(RESPONSE_READY);
-							}*/
+								if (carrageIdx == std::string::npos)
+									break ;
+								if (tmpClient->getChunkedFlag() == LEN)
+								{
+									int len = ft_hex_atoi(tmpClient->getBuffer().substr(0, carrageIdx));
+									tmpClient->setBodyLen(len);
+									if (len == 0)
+									{
+										tmpClient->setBuffer(tmpClient->getTempBuffer());
+										ftLog("BUFFERLEN", tmpClient->getBuffer().length());
+										tmpClient->setStatus(RESPONSE_READY);
+										break ;
+									}
+									if (tmpClient->getBuffer().length() >= carrageIdx + 2)
+									{
+										tmpClient->setBuffer(tmpClient->getBuffer().substr(carrageIdx + 2));
+										tmpClient->setChunkedFlag(BODY);
+									}
+									else
+										break ;
+								}
+								else
+								{
+									if (tmpClient->getBuffer().length() >= tmpClient->getBodyLen() + 2)
+									{
+										tmpClient->setTempBuffer(tmpClient->getTempBuffer() + tmpClient->getBuffer().substr(0, tmpClient->getBodyLen()));
+										tmpClient->setChunkedFlag(LEN);
+										tmpClient->setBuffer(tmpClient->getBuffer().substr(tmpClient->getBodyLen() + 2));
+									}
+									else
+										break ;
+								}
+								carrageIdx = tmpClient->getBuffer().find("\r\n");
+							}
 
-							//temp_buffer는 이어붙이기만 하기
-							pool[i]->setTempBuffer(pool[i]->getTempBuffer() + tmpClient->getBuffer());
-							
-							//TODO : chunkedIndex : 현재 찾아야하는 위치 Index(미추가) 추가하기
-							// 입력받은 숫자 줄의 위치
-							size_t dataSizePos = pool[i]->getTempBuffer().find("\r\n", chunkedIndex);
-							// 입력받은 숫자
-							size_t dataSize = ft_hex_atoi(pool[i]->getTempBuffer().substr(chunkedIndex, dataSizePos - chunkedIndex).c_str());
-							// 데이터의 실제 길이
-							size_t dataLength = pool[i]->getTempBuffer().find("\r\n", dataSizePos + 2) - (dataSizePos + 2);
-							
-							//데이터 실제길이가 입력 받은 숫자보다 작으면 continue
-							if (dataLength < dataSize)
-								continue ;
-							//dataSize가 0이면 loop 끝
-							else if (dataSize == 0)
-								tmpClient->setStatus(RESPONSE_READY);
-							//그게 아니라면 숫자\r\n 다음줄을 dataSize만큼 buffer에 백업
-							else
-								pool[i]->setBuffer(pool[i]->getTempBuffer().substr(dataSizePos + 2, dataSize));
-							//chunkedIndex에 숫자줄의 위치 + 입력받은 숫자만큼 추가해주기
-							chunkedIndex += dataSizePos + 2 + dataSize;
+							// size_t carrageIdx;
+							// while (tmpClient->getChunkedFlag() == BODY && tmpClient->getBodyLen() <= tmpClient->getBuffer().length())
+							// {
+							// 	if (tmpClient->getChunkedFlag() == LEN)
+							// 	{
+							// 		if ((carrageIdx = tmpClient->getBuffer().find("\r\n")) == std::string::npos)
+							// 			break ;
+							// 		std::string hex = tmpClient->getBuffer().substr(0, carrageIdx);
+							// 		tmpClient->setBodyLen(ft_hex_atoi(hex));
+							// 		tmpClient->setChunkedFlag(BODY);
+							// 		if (tmpClient->getBodyLen() != 0)
+							// 			tmpClient->setBuffer(tmpClient->getBuffer().substr(carrageIdx + 2));
+							// 		else
+							// 			break ;
+							// 		ftLog("LEN", ft_itoa(tmpClient->getBodyLen()));
+							// 	}
+							// 	std::string sentence = tmpClient->getBuffer().substr(0, tmpClient->getBodyLen());
+							// 	tmpClient->setTempBuffer(tmpClient->getTempBuffer() + sentence);
+							// 	if (tmpClient->getBuffer().length() > tmpClient->getBodyLen())
+							// 	{
+							// 		ftLog("BUFFER", tmpClient->getBuffer());
+							// 		ftLog("TMP BUFFER", tmpClient->getTempBuffer());
+							// 		tmpClient->setBuffer(tmpClient->getBuffer().substr(tmpClient->getBodyLen() + 2));
+							// 		tmpClient->setChunkedFlag(LEN);
+							// 	}
+							// 	else
+							// 		tmpClient->setBuffer("");
+							// }
+							// if (tmpClient->getBodyLen() == 0)
+							// {
+							// 	ftLog("test", tmpClient->getTempBuffer());
+							// 	tmpClient->setBuffer(tmpClient->getTempBuffer());
+							// 	tmpClient->setStatus(RESPONSE_READY);
+							// }
 						}
 						// Content-Length인 경우 -> 들어온 애들을 모두 붙인 후에 substr(Content-Length) 후 전달
 						else if (tmpClient->getRequest().getHeader().count("Content-Length") == 1)
@@ -492,6 +536,7 @@ void Socket::runServer(struct timeval timeout)
 					Resource *tmpRsrc = dynamic_cast<Resource *>(pool[i]);
 					Client *clnt = dynamic_cast<Client *>(pool[tmpRsrc->getClientFd()]);
 					
+					ftLog("WRITELEN", clnt->getBuffer().length());
 					int writeLen = write(tmpRsrc->getFd(), clnt->getBuffer().c_str() + tmpRsrc->getPos(), clnt->getBuffer().length() - tmpRsrc->getPos());
 					if (writeLen == -1)
 						clearConnectedSocket(i);

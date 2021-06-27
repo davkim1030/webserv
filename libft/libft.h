@@ -96,6 +96,9 @@ int					ft_printf(const char *format, ...);
 unsigned long		ft_get_time(void);
 std::vector<std::string> splitSpaces(const std::string &str);
 void				ftLog(std::string key, std::string value);
+void				ftLog(std::string value);
+void				ftLog(std::string key, int value);
+void				ftLog(int value);
 std::string			ftToupperStr(const std::string &str);
 
 #endif

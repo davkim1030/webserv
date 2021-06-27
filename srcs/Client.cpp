@@ -8,7 +8,8 @@
  * fd 값들을 -1로 지정하여 초기화 하지 않으면 사용 못 하게 함
  */
 Client::Client() : IoObject(CLIENT), serverSocketFd(-1),
-		request(""), response(200, std::map<std::string, std::string>(), ""), pos(0)
+		request(""), response(200, std::map<std::string, std::string>(), ""), pos(0),
+		tempBuffer(""), bodyLen(0), chunkedFlag(LEN)
 {
 	lastReqMs = ft_get_time();
 }
@@ -21,7 +22,8 @@ Client::Client(const Client &other)
 	: IoObject(other.fd, other.buffer, other.status, CLIENT),
 	serverSocketFd(other.serverSocketFd), request(other.request),
 	response(other.response), pos(other.pos),
-	lastReqMs(other.lastReqMs)
+	lastReqMs(other.lastReqMs), tempBuffer(other.tempBuffer), bodyLen(other.bodyLen),
+	chunkedFlag(other.chunkedFlag)
 {
 }
 
@@ -33,7 +35,8 @@ Client::Client(const Client &other)
 Client::Client(int serverSocketFd, int fd)
 	: IoObject(fd, "", REQUEST_RECEIVING_HEADER, CLIENT),
 	serverSocketFd(serverSocketFd),
-	request(""), response(200, std::map<std::string, std::string>(), ""), pos(0)
+	request(""), response(200, std::map<std::string, std::string>(), ""), pos(0),
+	tempBuffer(""), bodyLen(0), chunkedFlag(LEN)
 {
 	lastReqMs = ft_get_time();
 }
@@ -58,6 +61,9 @@ Client &Client::operator=(const Client &other)
 		response = other.response;
 		pos = other.pos;
 		lastReqMs = other.lastReqMs;
+		tempBuffer = other.tempBuffer;
+		bodyLen = other.bodyLen;
+		chunkedFlag = other.chunkedFlag;
 	}
 	return *this;
 }
@@ -87,10 +93,22 @@ void	Client::setResponse(const Response &response)
 	this->response = response;
 }
 
-int		Client::getServerSocketFd()
+void	Client::setTempBuffer(std::string buffer)
 {
-	return (serverSocketFd);
+	this->tempBuffer = buffer;
 }
+
+void	Client::setBodyLen(size_t chunkedIndex)
+{
+	this->bodyLen = chunkedIndex;
+}
+
+void	Client::setChunkedFlag(ChunkedFlag chunkedFlag)
+{
+	this->chunkedFlag = chunkedFlag;
+}
+
+// getter
 
 Response	&Client::getResponse()
 {
@@ -116,6 +134,27 @@ unsigned long	Client::getLastReqMs()
 {
 	return (lastReqMs);
 }
+
+int		Client::getServerSocketFd()
+{
+	return (serverSocketFd);
+}
+
+std::string &Client::getTempBuffer()
+{
+	return (tempBuffer);
+}
+
+size_t		Client::getBodyLen()
+{
+	return (bodyLen);
+}
+
+ChunkedFlag	Client::getChunkedFlag()
+{
+	return (chunkedFlag);
+}
+
 
 /*
  * 현재 buffer 데이터로 HTTP Request Message의 header 부분이 추출 가능한지 확인

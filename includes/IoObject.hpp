@@ -34,8 +34,6 @@ class IoObject
 		std::string		buffer;	// 읽거나 쓸 데이터를 담아둔 버퍼
 		Status			status;	// 현재 리스폰스를 줄 수 있는지 상태를 저장
 		Type			type;	// 객체의 타입을 지정
-		std::string		tempBuffer; //chunked일 때 읽은 값을 저장할 임시 버퍼
-		size_t			chunkedIndex; //chunked일 때 읽은 값의 인덱스를 저장
 
 	public:
 		IoObject();
@@ -49,14 +47,12 @@ class IoObject
 		// getters
 		int			getFd();
 		const std::string	&getBuffer();
-		std::string	&getTempBuffer();
 		Status		getStatus();
 		Type		getType();
 
 		// setters
 		void		setFd(int fd);
 		void		setBuffer(std::string buffer);
-		void		setTempBuffer(std::string buffer);
 		void		setStatus(Status status);
 
 		// inheriting functions

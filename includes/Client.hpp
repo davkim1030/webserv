@@ -6,6 +6,12 @@
 # include "Response.hpp"
 # include "Server.hpp"
 
+enum	ChunkedFlag
+{
+	LEN,
+	BODY
+};
+
 /*
  * 서버에 연결된 하나의 클라이언트
  */
@@ -17,6 +23,9 @@ class Client : public IoObject
 		Response		response;		// 돌려줄 리스폰스
 		size_t			pos;		// 남은 바디 길이
 		unsigned long	lastReqMs;		// 마지막으로 통신한 시간
+		std::string		tempBuffer; //chunked일 때 읽은 값을 저장할 임시 버퍼
+		size_t			bodyLen; //chunked일 때 읽은 값의 인덱스를 저장
+		ChunkedFlag		chunkedFlag;	// 읽는게 바디인지 숫자인지
 
 	public:
 		Client();
@@ -32,6 +41,9 @@ class Client : public IoObject
 		void		setPos(size_t pos);
 		void		setLastReqMs(unsigned long lastReqMs);
 		void		setResponse(const Response &response);
+		void		setTempBuffer(std::string buffer);
+		void		setBodyLen(size_t chunkedIndex);
+		void		setChunkedFlag(ChunkedFlag chunkedFlag);
 
 		// getters
 		Server		getServer();
@@ -41,6 +53,9 @@ class Client : public IoObject
 		Status		getStatus();
 		size_t		getPos();
 		unsigned long	getLastReqMs();
+		size_t		getBodyLen();
+		std::string	&getTempBuffer();
+		ChunkedFlag	getChunkedFlag();
 
 		// Inherited Functions
 		IoObject	*clone();

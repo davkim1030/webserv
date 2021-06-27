@@ -13,7 +13,7 @@ pid        /var/run/nginx.pid; # 마스터 프로세스 ID 저장
 
 server {
 	server_name default_server;
-	listen 8082;
+	listen 8082 127.0.0.1;
 
 	location / {
 		root ./
