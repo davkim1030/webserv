@@ -90,8 +90,18 @@ Response ResponseHandler::makeResponse(void)
 		if (request.getMethod() == "HEAD")
 			makeHeadResponse();
 		if (request.getMethod() == "POST")
+		{
+			
+			// if (request.getHeader().count("request_max_body_size") == 1)
+			// {
+			// 	int maxSize = ft_atoi(request.getHeader()["request_max_body_size"].c_str());
+			// 		if (request.getRawBody().length() >= maxSize)
+			// 			makeErrorResponse(413, request.getHttpVersion());
+			// }	
+			// else
+				makeGetResponse(0);
 			// makePostResponse();
-			makeGetResponse(0);
+		}
 		if (request.getMethod() == "PUT")
 			makePutResponse();
 			// makeGetResponse(0);

@@ -45,7 +45,7 @@ class ResourceHandler : public ResponseMaker
 		void setReadFlag();
 		void setWriteFlag();
 		bool checkAllowMethod(void);
-		int CheckResourceType(void);
+		bool CheckResourceType(std::string);
 		int wasExist(void);
 		bool isAutoIndex(void);
 		bool isIndexFile(void);

@@ -190,7 +190,6 @@ Response ResponseMaker::makeErrorResponse(int httpStatus, std::string version)
 	addServerHeader();
 	addContentTypeHeader(".html");
 	addContentLengthHeader((int)body.length());
-	ftLog(httpStatus);
 	switch (httpStatus)
 	{
 		case NOT_FOUND:

@@ -123,7 +123,7 @@ int ResourceHandler::tryToPost()
 			return CHECK_SUCCES;
 		}
 		default :
-			return FORBIDDEN;
+			return CHECK_SUCCES;
 	}
 }
 
@@ -225,7 +225,7 @@ int ResourceHandler::checkGetMethodIndex(void)
 }
 
 //Request가 Resource를 필요로하는 타입인지 확인
-int ResourceHandler::CheckResourceType(void)
+bool ResourceHandler::CheckResourceType(std::string body)
 {
 	int stat;	
 	if (this->request.getMethod() == "GET" || this->request.getMethod() == "HEAD")
@@ -235,6 +235,7 @@ int ResourceHandler::CheckResourceType(void)
 			updateErrorStatus(clientFd, stat);
 			return false;
 		}
+		//오토인덱스가 아니면
 		if (this->autoIndex == false)
 		{
 			if ((stat = tryToRead()) != CHECK_SUCCES)
@@ -253,12 +254,14 @@ int ResourceHandler::CheckResourceType(void)
 			updateErrorStatus(clientFd, stat);
 			return false;
 		}
-		if (location.getOption("request_max_body_size") != "")
+		//chunked 0이거나 size가 0이면 오토인덱스, 인덱스플래그 꺼줌
+		if (body.size() != 0 &&
+		!(request.getHeader()["Transfer-Encoding"] == "chunked" && body.compare("0\r\n\r\n") == 0))
 		{
-			int maxSize = ft_atoi(location.getOption("request_max_body_size").c_str());
-			if (ft_atoi(request.getHeader()["Content-Length"].c_str()) > maxSize)
-				return (413);
+			this->autoIndex = false;
+			this->indexFileFlag = false;
 		}
+		//오토인덱스도 아니고 인덱스파일도 없으면
 		if (this->autoIndex == false && this->indexFileFlag == false)
 		{
 			if ((stat = tryToPost()) != CHECK_SUCCES)
@@ -268,6 +271,7 @@ int ResourceHandler::CheckResourceType(void)
 			}
 			setWriteFlag();
 		}
+		//오토인덱스가 아니고 인덱스파일이 존재하면
 		else
 		{
 			if ((stat = tryToRead()) != CHECK_SUCCES)

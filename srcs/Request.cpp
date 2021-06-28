@@ -182,7 +182,7 @@ std::string Request::getRawHeader(void) const {	return this->rawHeader;	}
 std::map<std::string, std::string> Request::getHeader(void) const {	return this->header; }
 
 /*
-* 가공되지 않은 바디 데이터를 취합니다.
+* 바디 데이터를 취합니다.
 */
 std::string Request::getRawBody(void) const {	return this->rawBody;	}
 

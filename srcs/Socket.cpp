@@ -287,6 +287,7 @@ void Socket::runServer(struct timeval timeout)
 					if (tmpClient->getStatus() == REQUEST_RECEIVING_HEADER && tmpClient->headerParsable())
 					{
 						tmpClient->setBuffer(tmpClient->getRequest().parseFirstLine(tmpClient->getBuffer()));	// 첫 줄 파싱
+						// ftLog("REQUEST", tmpClient->getBuffer());
 						std::map<std::string, std::string> header = Request::parseHeader(tmpClient->getBuffer());
 						tmpClient->getRequest().setHeader(header);
 						tmpClient->getRequest().setLocation(findLocation(*dynamic_cast<Server *>(pool[tmpClient->getServerSocketFd()]),
@@ -305,22 +306,14 @@ void Socket::runServer(struct timeval timeout)
 						{
 							// TODO: NormalResponse 안에서 호출해야 함
 							ResourceHandler resHan(tmpClient->getRequest(), tmpClient->getServer(), tmpClient->getRequest().getLocation(), i);
-							int maxSize = 0;
 							if (resHan.checkAllowMethod() == false)
 								continue ;
-							if ((maxSize = resHan.CheckResourceType()) == false)
+							if (resHan.CheckResourceType(tmpClient->getBuffer()) == false)
 								continue ;
-							if (resHan.isAutoIndex() == true || resHan.resourceFreeMethods() == true || maxSize == 413)
+							if (resHan.isAutoIndex() == true || resHan.resourceFreeMethods() == true)
 							{
 								Client *clnt = dynamic_cast<Client *>(pool[i]);
 								FD_SET(clnt->getFd(), &wfds);
-								if (maxSize == 413)
-								{
-									tmpClient->getResponse().setStatusCode(413);
-									tmpClient->setBuffer("");
-									tmpClient->setStatus(PROCESSING_ERROR);
-								}
-								continue ;
 							}
 							wasExist = resHan.wasExist();
 							if (tmpClient->getRequest().getMethod() == "POST" || tmpClient->getRequest().getMethod() == "PUT")
@@ -329,8 +322,6 @@ void Socket::runServer(struct timeval timeout)
 									tmpClient->getResponse().setStatusCode(200);
 								else if (wasExist == NOT_FOUND)
 									tmpClient->getResponse().setStatusCode(201);
-								else if (maxSize == 413)
-									tmpClient->getResponse().setStatusCode(413);
 							}
 						}
 					}
@@ -354,6 +345,7 @@ void Socket::runServer(struct timeval timeout)
 									if (len == 0)
 									{
 										tmpClient->setBuffer(tmpClient->getTempBuffer());
+										tmpClient->getRequest().setRawBody(tmpClient->getBuffer());
 										tmpClient->setStatus(RESPONSE_READY);
 										break ;
 									}
@@ -473,9 +465,9 @@ void Socket::runServer(struct timeval timeout)
 					Client *tmpClnt = dynamic_cast<Client *>(pool[i]);
 					if (tmpClnt->getStatus() == PROCESSING_ERROR)
 					{
+						std::cout << "ERROR RESPONSE OCCURED" << std::endl;
 						ResponseMaker resMaker(tmpClnt->getRequest(), tmpClnt->getServer(), tmpClnt->getRequest().getLocation());
 						Response r = resMaker.makeErrorResponse(tmpClnt->getResponse().getStatusCode(), tmpClnt->getRequest().getHttpVersion());
-						std::cout << "ERROR RESPONSE OCCURED" << r.getMessage() << std::endl;
 						write(i, r.getMessage().c_str(), r.getMessage().length());
 					}
 					else if (isCgi(tmpClnt->getRequest().getUri(), tmpClnt->getRequest().getLocation()))
@@ -514,9 +506,21 @@ void Socket::runServer(struct timeval timeout)
 				{
 					Resource *tmpRsrc = dynamic_cast<Resource *>(pool[i]);
 					Client *clnt = dynamic_cast<Client *>(pool[tmpRsrc->getClientFd()]);
-					
+
 					if (clnt->getStatus() != RESPONSE_READY)
 						continue ;
+					if (!clnt->getRequest().getLocation().getOption("request_max_body_size").empty())
+					{
+						int maxSize = ft_atoi(clnt->getRequest().getLocation().getOption("request_max_body_size").c_str());
+						if (clnt->getRequest().getRawBody().length() >= maxSize)
+						{
+							clnt->getResponse().setStatusCode(413);
+							clnt->setStatus(PROCESSING_ERROR);
+							clnt->setBuffer("");
+							FD_SET(clnt->getFd(), &wfds);
+							continue ;
+						}
+					}	
 					int writeLen = write(tmpRsrc->getFd(), clnt->getBuffer().c_str() + tmpRsrc->getPos(), clnt->getBuffer().length() - tmpRsrc->getPos());
 					if (writeLen == -1)
 						clearConnectedSocket(i);
