@@ -122,6 +122,14 @@ std::map<std::string, std::string> Request::parseHeader(std::string rawHeader)
 		if ((currHeader.find("\r\n")) == std::string::npos)
 			break ;
 	}
+
+	// std::map<std::string, std::string> head = header;
+
+	// std::cout << "========================================" << std::endl;
+	// for (std::map<std::string, std::string>::iterator it = head.begin(); it != head.end(); it++)
+	// 	std::cout << "first : {" << it->first << "} second : {" << it->second << "}" << std::endl;
+	// std::cout << "========================================" << std::endl;
+
 	return header;
 }
 

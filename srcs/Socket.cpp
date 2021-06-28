@@ -247,7 +247,7 @@ void Socket::runServer(struct timeval timeout)
 
 					ft_memset(&clientAddr, '\0', addrSize);
 					clientSocket = accept(i, (struct sockaddr *)&clientAddr, &addrSize);
-					std::cout << ">> Connection open fd: " << i << std::endl;
+					std::cout << ">> Connection open fd: " << clientSocket << std::endl;
 					if (clientSocket == -1)
 						throw AcceptException();
 					fcntl(clientSocket, F_SETFL, O_NONBLOCK);	// 해당 클라이언트 fd를 논블록으로 변경
@@ -305,20 +305,33 @@ void Socket::runServer(struct timeval timeout)
 						{
 							// TODO: NormalResponse 안에서 호출해야 함
 							ResourceHandler resHan(tmpClient->getRequest(), tmpClient->getServer(), tmpClient->getRequest().getLocation(), i);
+							int maxSize = 0;
 							if (resHan.checkAllowMethod() == false)
 								continue ;
-							if (resHan.CheckResourceType() == false)
+							if ((maxSize = resHan.CheckResourceType()) == false)
 								continue ;
-							if (resHan.isAutoIndex() == true || resHan.resourceFreeMethods() == true)
+							if (resHan.isAutoIndex() == true || resHan.resourceFreeMethods() == true || maxSize == 413)
 							{
 								Client *clnt = dynamic_cast<Client *>(pool[i]);
 								FD_SET(clnt->getFd(), &wfds);
+								if (maxSize == 413)
+								{
+									tmpClient->getResponse().setStatusCode(413);
+									tmpClient->setBuffer("");
+									tmpClient->setStatus(PROCESSING_ERROR);
+								}
 								continue ;
 							}
 							wasExist = resHan.wasExist();
 							if (tmpClient->getRequest().getMethod() == "POST" || tmpClient->getRequest().getMethod() == "PUT")
+							{
 								if (wasExist == ISFILE)
 									tmpClient->getResponse().setStatusCode(200);
+								else if (wasExist == NOT_FOUND)
+									tmpClient->getResponse().setStatusCode(201);
+								else if (maxSize == 413)
+									tmpClient->getResponse().setStatusCode(413);
+							}
 						}
 					}
 					// chunked/content-length 처리해서 바디 파싱 가능한지 확인
@@ -341,7 +354,6 @@ void Socket::runServer(struct timeval timeout)
 									if (len == 0)
 									{
 										tmpClient->setBuffer(tmpClient->getTempBuffer());
-										ftLog("BUFFERLEN", tmpClient->getBuffer().length());
 										tmpClient->setStatus(RESPONSE_READY);
 										break ;
 									}
@@ -366,41 +378,6 @@ void Socket::runServer(struct timeval timeout)
 								}
 								carrageIdx = tmpClient->getBuffer().find("\r\n");
 							}
-
-							// size_t carrageIdx;
-							// while (tmpClient->getChunkedFlag() == BODY && tmpClient->getBodyLen() <= tmpClient->getBuffer().length())
-							// {
-							// 	if (tmpClient->getChunkedFlag() == LEN)
-							// 	{
-							// 		if ((carrageIdx = tmpClient->getBuffer().find("\r\n")) == std::string::npos)
-							// 			break ;
-							// 		std::string hex = tmpClient->getBuffer().substr(0, carrageIdx);
-							// 		tmpClient->setBodyLen(ft_hex_atoi(hex));
-							// 		tmpClient->setChunkedFlag(BODY);
-							// 		if (tmpClient->getBodyLen() != 0)
-							// 			tmpClient->setBuffer(tmpClient->getBuffer().substr(carrageIdx + 2));
-							// 		else
-							// 			break ;
-							// 		ftLog("LEN", ft_itoa(tmpClient->getBodyLen()));
-							// 	}
-							// 	std::string sentence = tmpClient->getBuffer().substr(0, tmpClient->getBodyLen());
-							// 	tmpClient->setTempBuffer(tmpClient->getTempBuffer() + sentence);
-							// 	if (tmpClient->getBuffer().length() > tmpClient->getBodyLen())
-							// 	{
-							// 		ftLog("BUFFER", tmpClient->getBuffer());
-							// 		ftLog("TMP BUFFER", tmpClient->getTempBuffer());
-							// 		tmpClient->setBuffer(tmpClient->getBuffer().substr(tmpClient->getBodyLen() + 2));
-							// 		tmpClient->setChunkedFlag(LEN);
-							// 	}
-							// 	else
-							// 		tmpClient->setBuffer("");
-							// }
-							// if (tmpClient->getBodyLen() == 0)
-							// {
-							// 	ftLog("test", tmpClient->getTempBuffer());
-							// 	tmpClient->setBuffer(tmpClient->getTempBuffer());
-							// 	tmpClient->setStatus(RESPONSE_READY);
-							// }
 						}
 						// Content-Length인 경우 -> 들어온 애들을 모두 붙인 후에 substr(Content-Length) 후 전달
 						else if (tmpClient->getRequest().getHeader().count("Content-Length") == 1)
@@ -480,6 +457,7 @@ void Socket::runServer(struct timeval timeout)
 						FD_CLR(i, &rfds);
 						FD_SET(tmpCgi->getClientFd(), &wfds);
 						clearConnectedSocket(i);
+						pool[tmpCgi->getClientFd()]->setStatus(CGI_READY);
 					}
 					else
 					{
@@ -502,7 +480,8 @@ void Socket::runServer(struct timeval timeout)
 					}
 					else if (isCgi(tmpClnt->getRequest().getUri(), tmpClnt->getRequest().getLocation()))
 					{
-						//길이 체크하면서 계속 돌도록 해줘야함
+						if (tmpClnt->getStatus() != CGI_READY)
+							continue ;
 						int writeLen = write(i, tmpClnt->getBuffer().c_str() + tmpClnt->getPos(), tmpClnt->getBuffer().length() - tmpClnt->getPos());
 						if (tmpClnt->getPos() + writeLen >= tmpClnt->getBuffer().length())
 						{
@@ -536,7 +515,8 @@ void Socket::runServer(struct timeval timeout)
 					Resource *tmpRsrc = dynamic_cast<Resource *>(pool[i]);
 					Client *clnt = dynamic_cast<Client *>(pool[tmpRsrc->getClientFd()]);
 					
-					ftLog("WRITELEN", clnt->getBuffer().length());
+					if (clnt->getStatus() != RESPONSE_READY)
+						continue ;
 					int writeLen = write(tmpRsrc->getFd(), clnt->getBuffer().c_str() + tmpRsrc->getPos(), clnt->getBuffer().length() - tmpRsrc->getPos());
 					if (writeLen == -1)
 						clearConnectedSocket(i);
@@ -547,6 +527,7 @@ void Socket::runServer(struct timeval timeout)
 						else
 						{
 							FD_SET(clnt->getFd(), &wfds);
+							pool[tmpRsrc->getClientFd()]->setBuffer("");
 							clearConnectedSocket(i);
 						}
 					}
@@ -557,6 +538,8 @@ void Socket::runServer(struct timeval timeout)
 					CgiWriter *tmpCgi = dynamic_cast<CgiWriter *>(pool[i]);
 					std::string body = pool[tmpCgi->getClientFd()]->getBuffer();
 
+					if (pool[tmpCgi->getClientFd()]->getStatus() != RESPONSE_READY)
+						continue ;
 					int writeLen = write(tmpCgi->getFd(), body.c_str() + tmpCgi->getPos(), body.length() - tmpCgi->getPos());
 					if (writeLen == -1)
 						clearConnectedSocket(i);

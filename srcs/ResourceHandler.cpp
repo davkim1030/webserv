@@ -4,7 +4,7 @@
 // ResourceHandler::ResourceHandler(){}
 
 ResourceHandler::ResourceHandler(const Request& request, const Server& server, const Location& location, int clientFd)
-: ResponseMaker(request, server, location), clientFd(clientFd), exist(-1), autoIndex(false){
+: ResponseMaker(request, server, location), clientFd(clientFd), exist(-1), autoIndex(false), indexFileFlag(false){
 	this->resourcePath = parseResourcePath(request.getUri());
 }
 
@@ -19,6 +19,7 @@ ResourceHandler::ResourceHandler(const ResourceHandler& other)
 	this->clientFd = other.clientFd;
 	this->exist = other.exist;
 	this->autoIndex = other.autoIndex;
+	this->indexFileFlag = other.indexFileFlag;
 }
 
 ResourceHandler &ResourceHandler::operator=(const ResourceHandler& other)
@@ -33,6 +34,7 @@ ResourceHandler &ResourceHandler::operator=(const ResourceHandler& other)
 	this->clientFd = other.clientFd;
 	this->exist = other.exist;
 	this->autoIndex = other.autoIndex;
+	this->indexFileFlag = other.indexFileFlag;
 	return *this;
 }
 
@@ -44,6 +46,7 @@ bool ResourceHandler::checkAllowMethod(void)
 	if (!location.getOption("allow_method").empty() && request.getMethod() != "GET" && request.getMethod() != "HEAD")
 	{
 		std::string allow = location.getOption("allow_method");
+
 		if (allow.find(request.getMethod()) == std::string::npos)
 		{
 			updateErrorStatus(clientFd, METHOD_NOT_ALLOWED);
@@ -165,6 +168,7 @@ int ResourceHandler::wasExist(void)
 //fd를 fd풀에 등록 후 읽기 fdset flag 설정
 void ResourceHandler::setReadFlag()
 {
+	ftLog(fd);
 	Socket::getInstance()->getPool()[fd] = new Resource(fd, clientFd);
 	Socket::getInstance()->updateFds(fd, FD_READ);
 }
@@ -194,7 +198,7 @@ int ResourceHandler::checkGetMethodIndex(void)
 		if (this->resourcePath[this->resourcePath.length() - 1] != '/')
 			this->resourcePath += '/';
 
-		bool indexFileFlag = false;
+		indexFileFlag = false;
 		if (!location.getOption("index").empty())
 		{
 			std::vector<std::string> indexFile = splitSpaces(location.getOption("index"));
@@ -222,7 +226,7 @@ int ResourceHandler::checkGetMethodIndex(void)
 }
 
 //Request가 Resource를 필요로하는 타입인지 확인
-bool ResourceHandler::CheckResourceType(void)
+int ResourceHandler::CheckResourceType(void)
 {
 	int stat;	
 	if (this->request.getMethod() == "GET" || this->request.getMethod() == "HEAD")
@@ -245,12 +249,35 @@ bool ResourceHandler::CheckResourceType(void)
 	}
 	else if (request.getMethod() == "POST")
 	{
-		if ((stat = tryToPost()) != CHECK_SUCCES)
+		if ((stat = checkGetMethodIndex()) != CHECK_SUCCES)
 		{
 			updateErrorStatus(clientFd, stat);
 			return false;
 		}
-		setWriteFlag();
+		if (location.getOption("request_max_body_size") != "")
+		{
+			int maxSize = ft_atoi(location.getOption("request_max_body_size").c_str());
+			if (ft_atoi(request.getHeader()["Content-Length"].c_str()) > maxSize)
+				return (413);
+		}
+		if (this->autoIndex == false && this->indexFileFlag == false)
+		{
+			if ((stat = tryToPost()) != CHECK_SUCCES)
+			{
+				updateErrorStatus(clientFd, stat);
+				return false;
+			}
+			setWriteFlag();
+		}
+		else
+		{
+			if ((stat = tryToRead()) != CHECK_SUCCES)
+			{
+				updateErrorStatus(clientFd, stat);
+				return false;
+			}
+			setReadFlag();
+		}
 		return true;
 	}
 	else if (request.getMethod() == "PUT")
@@ -270,6 +297,10 @@ bool ResourceHandler::CheckResourceType(void)
 bool ResourceHandler::isAutoIndex(void)
 {
 	return this->autoIndex;
+}
+bool ResourceHandler::isIndexFile(void)
+{
+	return this->indexFileFlag;
 }
 
 //method가 resource 읽기/쓰기 필요로 하지 않는 타입인지 확인

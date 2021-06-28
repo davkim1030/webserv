@@ -67,7 +67,7 @@ Response ResponseHandler::makeResponse(void)
 {
 	try{
 		//location에서 uri를 찾지말고 uri에서 location을 찾아야합니다.
-		if (!location.getOption("allow_method").empty() && request.getMethod() != "GET" && request.getMethod() != "GET")
+		if (!location.getOption("allow_method").empty() && request.getMethod() != "GET" && request.getMethod() != "HEAD")
 		{
 			std::string allow = location.getOption("allow_method");
 			if (allow.find(request.getMethod()) == std::string::npos)
@@ -83,7 +83,6 @@ Response ResponseHandler::makeResponse(void)
 		else if (request.getMethod() == "CONNECT")
 			makeConnectResponse();
 		this->resourcePath = parseResourcePath(request.getUri());
-
 		if (checkPath(this->resourcePath) == NOT_FOUND && request.getMethod() != "PUT" && request.getMethod() != "POST")
 			makeErrorResponse(NOT_FOUND, request.getHttpVersion());
 		if (request.getMethod() == "GET")
@@ -91,9 +90,11 @@ Response ResponseHandler::makeResponse(void)
 		if (request.getMethod() == "HEAD")
 			makeHeadResponse();
 		if (request.getMethod() == "POST")
-			makePostResponse();
+			// makePostResponse();
+			makeGetResponse(0);
 		if (request.getMethod() == "PUT")
 			makePutResponse();
+			// makeGetResponse(0);
 		if (request.getMethod() == "DELETE")
 			makeDeleteResponse();
 	}

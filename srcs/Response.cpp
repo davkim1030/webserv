@@ -247,6 +247,130 @@ int     Response::getStatusCode()
 void    Response::setStatusCode(int statusCode)
 {
     this->statusCode = statusCode;
+    switch (statusCode)
+    {
+        case 0:
+            statusMessage = "";
+        case 100:
+            statusMessage = Response::_100;
+            break ;
+        case 101:
+            statusMessage = Response::_101;
+            break ;
+        case 200:
+            statusMessage = Response::_200;
+            break ;
+        case 201:
+            statusMessage = Response::_201;
+            break ;
+        case 202:
+            statusMessage = Response::_202;
+            break ;
+        case 203:
+            statusMessage = Response::_203;
+            break ;
+        case 204:
+            statusMessage = Response::_204;
+            break ;
+        case 205:
+            statusMessage = Response::_205;
+            break ;
+        case 206:
+            statusMessage = Response::_206;
+            break ;
+        case 300:
+            statusMessage = Response::_300;
+            break ;
+        case 301:
+            statusMessage = Response::_301;
+            break ;
+        case 302:
+            statusMessage = Response::_302;
+            break ;
+        case 303:
+            statusMessage = Response::_303;
+            break ;
+        case 304:
+            statusMessage = Response::_304;
+            break ;
+        case 305:
+            statusMessage = Response::_305;
+            break ;
+        case 307:
+            statusMessage = Response::_307;
+            break ;
+        case 400:
+            statusMessage = Response::_400;
+            break ;
+        case 401:
+            statusMessage = Response::_401;
+            break ;
+        case 402:
+            statusMessage = Response::_402;
+            break ;
+        case 403:
+            statusMessage = Response::_403;
+            break ;
+        case 404:
+            statusMessage = Response::_404;
+            break ;
+        case 405:
+            statusMessage = Response::_405;
+            break ;
+        case 406:
+            statusMessage = Response::_406;
+            break ;
+        case 407:
+            statusMessage = Response::_407;
+            break ;
+        case 408:
+            statusMessage = Response::_408;
+            break ;
+        case 409:
+            statusMessage = Response::_409;
+            break ;
+        case 410:
+            statusMessage = Response::_410;
+            break ;
+        case 411:
+            statusMessage = Response::_411;
+            break ;
+        case 412:
+            statusMessage = Response::_412;
+            break ;
+        case 413:
+            statusMessage = Response::_414;
+            break ;
+        case 415:
+            statusMessage = Response::_415;
+            break ;
+        case 416:
+            statusMessage = Response::_416;
+            break ;
+        case 417:
+            statusMessage = Response::_417;
+            break ;
+        case 500:
+            statusMessage = Response::_500;
+            break ;
+        case 501:
+            statusMessage = Response::_501;
+            break ;
+        case 502:
+            statusMessage = Response::_502;
+            break ;
+        case 503:
+            statusMessage = Response::_503;
+            break ;
+        case 504:
+            statusMessage = Response::_504;
+            break ;
+        case 505:
+            statusMessage = Response::_505;
+            break ;
+        default:
+            throw UnsupportedStatusCodeException();
+    }
 }
 
 const std::string    Response::_100 = "Continue";

@@ -101,6 +101,7 @@ bool	CgiResponse::makeVariable(int clientFd)
 
 	std::string filePath = location.getOption("root");
 	filePath = filePath.substr(0, filePath.length() - 1) + metaVariable["SCRIPT_NAME"];
+	
 
 	if (checkPath(filePath) == NOT_FOUND || checkPath(filePath) == ISDIR)
 	{
@@ -211,6 +212,7 @@ Response	CgiResponse::cgiResultParsing(std::string cgiResult)
 	std::string tmp;
 
 	tmp = cgiResult.substr(cgiResult.find("Status: ") + 8, 3);
+	// ftLog("tmp ", tmp);
 	statusCode = ft_atoi(tmp.c_str());
 	tmp = cgiResult.substr(cgiResult.find("\r\n") + 2);
 	while (tmp.compare(0, 2, "\r\n") != 0)

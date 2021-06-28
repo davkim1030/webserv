@@ -35,7 +35,7 @@ server {
 
 	location /put_test/ {
 		root ./test/put_test/
-		allow_methods GET PUT DELETE OPTIONS;
+		allow_method GET PUT DELETE OPTIONS;
 		autoindex on;
 		index index.html;
 	}
@@ -53,6 +53,16 @@ server {
 		root ./test/;
 		allow_method GET POST DELETE HEAD;
 		cgi_extension .bla .php .py .js
+		cgi_path ./test_sample/cgi_tester
+	}
+
+	location /post_body {
+		allow_method POST GET
+		root ./test/post_body/
+		request_max_body_size 100
+		autoindex on;
+		index index.html;
+		cgi_extension .bla .php .cpp
 		cgi_path ./test_sample/cgi_tester
 	}
 }
