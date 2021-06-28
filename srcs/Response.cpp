@@ -129,6 +129,9 @@ Response::Response(int statusCode, std::map<std::string, std::string> header,
             statusMessage = Response::_412;
             break ;
         case 413:
+            statusMessage = Response::_413;
+            break ;
+        case 414:
             statusMessage = Response::_414;
             break ;
         case 415:
@@ -339,6 +342,9 @@ void    Response::setStatusCode(int statusCode)
             statusMessage = Response::_412;
             break ;
         case 413:
+            statusMessage = Response::_413;
+            break ;
+        case 414:
             statusMessage = Response::_414;
             break ;
         case 415:

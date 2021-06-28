@@ -168,7 +168,6 @@ int ResourceHandler::wasExist(void)
 //fd를 fd풀에 등록 후 읽기 fdset flag 설정
 void ResourceHandler::setReadFlag()
 {
-	ftLog(fd);
 	Socket::getInstance()->getPool()[fd] = new Resource(fd, clientFd);
 	Socket::getInstance()->updateFds(fd, FD_READ);
 }

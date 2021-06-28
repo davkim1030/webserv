@@ -190,6 +190,7 @@ Response ResponseMaker::makeErrorResponse(int httpStatus, std::string version)
 	addServerHeader();
 	addContentTypeHeader(".html");
 	addContentLengthHeader((int)body.length());
+	ftLog(httpStatus);
 	switch (httpStatus)
 	{
 		case NOT_FOUND:
@@ -201,7 +202,7 @@ Response ResponseMaker::makeErrorResponse(int httpStatus, std::string version)
 		case METHOD_NOT_ALLOWED:
 			return Response(405, responseHeader, body, version);
 		default:
-			return Response(404, responseHeader, body, version);
+			return Response(httpStatus, responseHeader, body, version);
 	}
 }
 
