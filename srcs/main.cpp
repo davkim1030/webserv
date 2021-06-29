@@ -17,25 +17,15 @@ void	sigintHandler(int signo)
 
 int		main(int argc, char *argv[])
 {
-	// TODO: 루트 로케이션이 없으면 에러 처리 
-	// try
-	// {
-		if (argc >= 3)
-			throw ArgumentException();
-		// config 파일 파싱 및 서버 설정 초기화
-		Socket::getInstance()->initServer(argc, argv[1]);
-		signal(SIGINT, sigintHandler);
+	if (argc >= 3)
+		throw ArgumentException();
+	// config 파일 파싱 및 서버 설정 초기화
+	Socket::getInstance()->initServer(argc, argv[1]);
+	signal(SIGINT, sigintHandler);
 
-		struct timeval timeout;
-		timeout.tv_sec = 500000;
-		timeout.tv_usec = 0;
-		Socket::getInstance()->runServer(timeout);
-	// }
-	// catch(const std::exception& e)
-	// {
-	// 	std::cerr << e.what() << '\n';
-	// 	errno = 1;
-	// 	exit(1);
-	// }
+	struct timeval timeout;
+	timeout.tv_sec = 500000;
+	timeout.tv_usec = 0;
+	Socket::getInstance()->runServer(timeout);
 	return (0);
 }

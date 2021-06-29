@@ -133,7 +133,7 @@ Response::Response(int statusCode, std::map<std::string, std::string> header,
             break ;
         case 414:
             statusMessage = Response::_414;
-            break ;
+			break ;
         case 415:
             statusMessage = Response::_415;
             break ;
@@ -213,7 +213,13 @@ std::string Response::getMessage()
     result = version + " " + strTmp + " " + statusMessage + "\r\n";
     for (std::map<std::string, std::string>::iterator iter = header.begin();
         iter != header.end(); iter++)
-    result += iter->first + ": " + iter->second + "\r\n";
+        result += iter->first + ": " + iter->second + "\r\n";
+
+    // std::cout << "==================================" << std::endl;
+    // std::cout << result <<std::endl;
+    // std::cout << "===============end=================" << std::endl;
+
+
     result += "\r\n" + body;
     free(strTmp);
     return (result);

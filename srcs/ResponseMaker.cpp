@@ -200,6 +200,8 @@ Response ResponseMaker::makeErrorResponse(int httpStatus, std::string version)
 			return Response(403, responseHeader, body, version);
 		case METHOD_NOT_ALLOWED:
 			return Response(405, responseHeader, body, version);
+		case 413:
+			return Response(413, responseHeader, body, version);
 		default:
 			return Response(httpStatus, responseHeader, body, version);
 	}

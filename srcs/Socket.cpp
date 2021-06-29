@@ -344,9 +344,19 @@ void Socket::runServer(struct timeval timeout)
 									tmpClient->setBodyLen(len);
 									if (len == 0)
 									{
-										tmpClient->setBuffer(tmpClient->getTempBuffer());
-										tmpClient->getRequest().setRawBody(tmpClient->getBuffer());
-										tmpClient->setStatus(RESPONSE_READY);
+										std::string maxLen = tmpClient->getRequest().getLocation().getOption("request_max_body_size");
+										int requestMaxLen = maxLen == "" ? INT_MAX : ft_atoi(maxLen.c_str());
+										if (requestMaxLen < tmpClient->getTempBuffer().length())
+										{
+											tmpClient->getResponse().setStatusCode(413);
+											tmpClient->setBuffer("");
+											tmpClient->setStatus(PROCESSING_ERROR);
+										}
+										else
+										{
+											tmpClient->setBuffer(tmpClient->getTempBuffer());
+											tmpClient->setStatus(RESPONSE_READY);
+										}
 										break ;
 									}
 									if (tmpClient->getBuffer().length() >= carrageIdx + 2)
@@ -463,6 +473,8 @@ void Socket::runServer(struct timeval timeout)
 				if (pool[i]->getType() == CLIENT)
 				{
 					Client *tmpClnt = dynamic_cast<Client *>(pool[i]);
+					// if (FD_ISSET(i, &cpyRfds))
+					// 	continue ;
 					if (tmpClnt->getStatus() == PROCESSING_ERROR)
 					{
 						std::cout << "ERROR RESPONSE OCCURED" << std::endl;

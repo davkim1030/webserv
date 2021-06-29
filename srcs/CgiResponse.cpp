@@ -157,6 +157,7 @@ void CgiResponse::cgiResponse(int clientFd)
 	std::string tempFile = std::string(CGI_DIR) + std::string(CGI_PATH) + "_" + std::string(num);
 	free(num);
 	int fd_temp = open(tempFile.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0666);
+	fcntl(fd_temp, F_SETFL, O_NONBLOCK);	// 해당 클라이언트 fd를 논블록으로 변경
 	if (fd_temp == -1)
 		return updateErrorStatus(clientFd, 500);
 	if ((pid = fork()) == -1)
@@ -212,7 +213,6 @@ Response	CgiResponse::cgiResultParsing(std::string cgiResult)
 	std::string tmp;
 
 	tmp = cgiResult.substr(cgiResult.find("Status: ") + 8, 3);
-	// ftLog("tmp ", tmp);
 	statusCode = ft_atoi(tmp.c_str());
 	tmp = cgiResult.substr(cgiResult.find("\r\n") + 2);
 	while (tmp.compare(0, 2, "\r\n") != 0)

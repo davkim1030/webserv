@@ -77,7 +77,11 @@ int ResourceHandler::tryToOpen(int openFlag)
 	if (checkPath(this->resourcePath) == NOT_FOUND && request.getMethod() != "PUT" && request.getMethod() != "POST")
 		return (NOT_FOUND);
 	if ((this->fd = open(this->resourcePath.c_str(), openFlag)) < 0)
+	{
+		fcntl(fd, F_SETFL, O_NONBLOCK);	// 해당 클라이언트 fd를 논블록으로 변경
 		return (SERVER_ERR);
+	}
+	fcntl(fd, F_SETFL, O_NONBLOCK);	// 해당 클라이언트 fd를 논블록으로 변경
 	return (CHECK_SUCCES);
 }
 
@@ -103,7 +107,11 @@ int ResourceHandler::tryToPost()
 		case NOT_FOUND :
 		{
 			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0)
+			{
+				fcntl(fd, F_SETFL, O_NONBLOCK);	// 해당 클라이언트 fd를 논블록으로 변경
 				return (SERVER_ERR);
+			}
+			fcntl(fd, F_SETFL, O_NONBLOCK);	// 해당 클라이언트 fd를 논블록으로 변경
 			if (fstat(this->fd, &this->sb) < 0)
 			{
 				close(fd);
@@ -114,7 +122,11 @@ int ResourceHandler::tryToPost()
 		case ISFILE :
 		{
 			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_APPEND)) < 0)
+			{
+				fcntl(fd, F_SETFL, O_NONBLOCK);	// 해당 클라이언트 fd를 논블록으로 변경
 				return (SERVER_ERR);
+			}
+			fcntl(fd, F_SETFL, O_NONBLOCK);	// 해당 클라이언트 fd를 논블록으로 변경
 			if (fstat(this->fd, &this->sb) < 0)
 			{
 				close(fd);
@@ -135,7 +147,11 @@ int ResourceHandler::tryToPut()
 		case NOT_FOUND :
 		{
 			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0)
+			{
+				fcntl(fd, F_SETFL, O_NONBLOCK);	// 해당 클라이언트 fd를 논블록으로 변경
 				return (SERVER_ERR);
+			}
+			fcntl(fd, F_SETFL, O_NONBLOCK);	// 해당 클라이언트 fd를 논블록으로 변경
 			if (fstat(this->fd, &this->sb) < 0)
 			{
 				close(fd);
@@ -146,7 +162,11 @@ int ResourceHandler::tryToPut()
 		case ISFILE :
 		{
 			if ((fd = open(this->resourcePath.c_str(), O_WRONLY | O_TRUNC)) < 0)
+			{
+				fcntl(fd, F_SETFL, O_NONBLOCK);	// 해당 클라이언트 fd를 논블록으로 변경
 				return (SERVER_ERR);
+			}
+			fcntl(fd, F_SETFL, O_NONBLOCK);	// 해당 클라이언트 fd를 논블록으로 변경
 			if (fstat(this->fd, &this->sb) < 0)
 			{
 				close(fd);
@@ -227,7 +247,18 @@ int ResourceHandler::checkGetMethodIndex(void)
 //Request가 Resource를 필요로하는 타입인지 확인
 bool ResourceHandler::CheckResourceType(std::string body)
 {
-	int stat;	
+	int stat;
+
+	if (location.getOption("request_max_body_size") != "")
+	{
+		int maxSize = ft_atoi(location.getOption("request_max_body_size").c_str());
+		if (request.getHeader().count("Content-Length") == 1)
+		{
+			int contentLength = ft_atoi(request.getHeader()["Content-Length"].c_str());
+			if (contentLength > maxSize)
+				return (413);
+		}
+	}
 	if (this->request.getMethod() == "GET" || this->request.getMethod() == "HEAD")
 	{
 		if ((stat = checkGetMethodIndex()) != CHECK_SUCCES)
@@ -254,14 +285,6 @@ bool ResourceHandler::CheckResourceType(std::string body)
 			updateErrorStatus(clientFd, stat);
 			return false;
 		}
-		//chunked 0이거나 size가 0이면 오토인덱스, 인덱스플래그 꺼줌
-		if (body.size() != 0 &&
-		!(request.getHeader()["Transfer-Encoding"] == "chunked" && body.compare("0\r\n\r\n") == 0))
-		{
-			this->autoIndex = false;
-			this->indexFileFlag = false;
-		}
-		//오토인덱스도 아니고 인덱스파일도 없으면
 		if (this->autoIndex == false && this->indexFileFlag == false)
 		{
 			if ((stat = tryToPost()) != CHECK_SUCCES)
