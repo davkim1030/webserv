@@ -8,9 +8,8 @@
 class Location;
 
 /*
-	서버 클래스
-	관련 데이터 저장 및 서버 구동
-*/
+ * 서버 관련 데이터 저장 및 서버 구동
+ */
 class Server : public IoObject
 {
 	private:
@@ -48,7 +47,6 @@ class Server : public IoObject
 		int		sliceOptions();
 
 		// Inherited Functions
-		void	doRead();
-		void	doWrite();
+		IoObject	*clone();
 };
 #endif

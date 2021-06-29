@@ -1,4 +1,11 @@
+
 #include "Socket.hpp"
+#include "CgiResponse.hpp"
+#include "ResponseHandler.hpp"
+#include "CgiResource.hpp"
+#include "ResponseMaker.hpp"
+#include "ResourceHandler.hpp"
+
 
 // 싱글톤 사용을 위한 변수 선언
 Socket *Socket::instance;
@@ -11,6 +18,12 @@ Socket *Socket::getInstance()
 	if (instance == NULL)
 		instance = new Socket();
 	return (instance);
+}
+
+Socket::Socket(Socket const &so)
+: rfds(so.rfds), wfds(so.wfds), efds(so.efds), fdMax(so.fdMax),
+	serverConfig(so.serverConfig), pool(so.pool)
+{
 }
 
 /*
@@ -43,14 +56,14 @@ void	printFdsStatus(fd_set rfds, fd_set wfds, fd_set efds, int fdMax)
 	}
 	std::cout << std::endl;
 	std::cout << "@@@@@@@@@@@@@@@@@@@@@@" << std::endl;
-	usleep(100 * 1000);
+	usleep(1000);
 }
 
 /*
  * 기본 생성자
  * 객체의 모든 fd_set 타입 멤버 변수들의 비트 값을 모두 0으로 초기화 함
  */
-Socket::Socket() : fdMax(-1), serverConfig(ServerConfig())
+Socket::Socket() : fdMax(-1), serverConfig(ServerConfig()), pool(1024, NULL)
 {
 	FD_ZERO(&rfds);
 	FD_ZERO(&wfds);
@@ -62,7 +75,15 @@ Socket::Socket() : fdMax(-1), serverConfig(ServerConfig())
  */
 Socket::~Socket()
 {
-	delete instance;
+	for (std::vector<IoObject *>::iterator iter = pool.begin();
+			iter != pool.end(); iter++)
+	{
+		if (*iter != NULL)
+		{
+			close((*iter)->getFd());
+			delete *iter;
+		}
+	}
 }
 
 /*
@@ -116,7 +137,8 @@ void Socket::initServer(int argc, char *argv)
 {
 	std::map<std::string, int> tmp;
 
-	serverConfig.saveConfig(argc, argv);
+	serverConfig.saveConfig(argc, argv);		// 서버 컨피그 파싱
+	// 모든 서버 컨피그 파싱 값을 기반으로 서버 소켓 열고 데이터 생성
 	std::vector<Server>::iterator iter;
 	for (iter = serverConfig.getServers().begin();
 		iter != serverConfig.getServers().end(); iter++)
@@ -134,6 +156,9 @@ void Socket::initServer(int argc, char *argv)
 
 		struct sockaddr_in	serverAddr;							// 서버 소켓의 ip주소
 		iter->setFd(socket(PF_INET, SOCK_STREAM, 0));			// 소켓 fd 생성
+		int reuseAddr = 1;
+		// 이전 포트 사용하게 설정
+		setsockopt(iter->getFd(), SOL_SOCKET, SO_REUSEADDR, &reuseAddr, sizeof(int));
 		ft_memset(&serverAddr, '\0', sizeof(serverAddr));		// serverAddr 초기화
 		serverAddr.sin_family = AF_INET;						// IPv4 설정
 		serverAddr.sin_addr.s_addr = inet_addr(iter->getIp().c_str());	// ip 주소 설정
@@ -143,17 +168,17 @@ void Socket::initServer(int argc, char *argv)
 		if (bind(iter->getFd(), (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
 			throw BindException();
 		// 데이터를 받을 서버 소켓 열기
-		if (listen(iter->getFd(), serverConfig.getServers().size()) == -1)
+		if (listen(iter->getFd(), 200) == -1)
 			throw ListenException();
-		
+
 		std::cout << iter->getIp() << ":" << iter->getPort() << std::endl;
-		
+
 		// 생성한 서버 소켓 fd 값을 fd_set 변수들에 대해 설정
 		FD_SET(iter->getFd(), &rfds);
 		FD_SET(iter->getFd(), &wfds);
 		FD_SET(iter->getFd(), &efds);
 
-		servers[iter->getFd()] = *iter;	// Socket에서 관리할 서버 리스트에 위에서 생성한 서버 추가
+		pool[iter->getFd()] = new Server(*iter);
 		tmp[key] = iter->getFd();			// 중복 방지를 위해 tmp map에 추가
 
 		// select()로 감시할 fd의 최대값 업데이트
@@ -162,57 +187,76 @@ void Socket::initServer(int argc, char *argv)
 	}
 }
 
+int ft_hex_atoi(const std::string &str)
+{
+	int result = 0;
+	for (std::string::const_iterator iter = str.begin(); iter != str.end(); iter++)
+	{
+		if (*iter >= 'A' && *iter <= 'F')
+			result = (*iter - 'A' + 10) + result * 16;
+		else if (*iter >= 'a' && *iter <= 'f')
+			result = (*iter - 'a' + 10) + result * 16;
+		else if (*iter >= '0' && *iter <= '9')
+			result = (*iter - '0') + result * 16;
+		else break ;
+	}
+	return result;
+}
+
 /*
  * 실제 서버를 동작시키는 메인 로직
  * 꼭 initServer를 호출하여 서버 정보들 등록 후 동작 시켜야 함.
  * @param struct timeval timeout: 한 클라이언트에서 최대 대기할 시간(ms)
- * @param unsigned int bufferSize: 한 번에 읽을 데이터의 사이즈
  */
-void Socket::runServer(struct timeval timeout, unsigned int bufferSize)
+void Socket::runServer(struct timeval timeout)
 {
 	fd_set	cpyRfds;
 	fd_set	cpyWfds;
 	fd_set	cpyEfds;
-	int		fdNum;
+	int		fdNum;		// read/write/except 신호가 set된 fd의 개수
 	unsigned long	timeoutMs = timeout.tv_sec * 1000 + timeout.tv_usec / 1000;
 
 	// 메인 루프
 	while (1)
 	{
- 
 		// fds들의 데이터 유실 방지를 위해 복사
-		cpyRfds = rfds;
-		cpyWfds = wfds;
-		cpyEfds = efds;
+		cpyRfds = rfds;	// 0 0 0 1 0
+		cpyWfds = wfds;	// 0 0 0 0 1
+		cpyEfds = efds;	// 0 0 0 0 1 
 
-		// printFdsStatus(rfds, wfds, efds, fdMax);
 		// fd_set 변수의 0 ~ fdMax + 1까지 비트를 감시하여 읽기, 쓰기, 에러 요구가 일어났는지 확인
+		std::cout << "test select" << std::endl;
+		std::cout << "fdNum : {" << fdNum << "}" << std::endl;
+		std::cout << "fdMax : {" << fdMax << "}" << std::endl;
 		if ((fdNum = select(fdMax + 1, &cpyRfds, &cpyWfds, &cpyEfds, &timeout)) == -1)
 			throw SelectException();
 		if (fdNum == 0) // 처리할 요구가 없으면 다시 위로
 			continue ;
-		
-		// fd를 0부터 fdMax까지 반복하며 set된 플래그 값이 있는지 확인하여 처리		
+
+		// printFdsStatus(rfds, wfds, efds, fdMax);
+		// fd를 0부터 fdMax까지 반복하며 set된 플래그 값이 있는지 확인하여 처리
 		for (int i = 0; i < fdMax + 1; i++)
 		{
+			std::cout << fdMax << " " << i << std::endl;
+			if (pool[i] == NULL)
+				continue ;
 			if (FD_ISSET(i, &cpyRfds))	// read 요청이 온 경우
 			{
-				if (servers.find(i) != servers.end())	// 서버 소켓의 경우
+				// 서버 읽기(클라이언트 연결 생성)
+				if (pool[i]->getType() == SERVER)
 				{
+					int clientSocket;
 					struct sockaddr_in	clientAddr;
 					socklen_t	addrSize = sizeof(clientAddr);
 
-					// 주소 변수 데이터 초기화
 					ft_memset(&clientAddr, '\0', addrSize);
-					int clientSocket = accept(i, (struct sockaddr *)&clientAddr, &addrSize);
+					clientSocket = accept(i, (struct sockaddr *)&clientAddr, &addrSize);
+					std::cout << ">> Connection open fd: " << clientSocket << std::endl;
 					if (clientSocket == -1)
 						throw AcceptException();
-					std::cout << "Open client socket: " << clientSocket
-						<< ", port: " << servers[i].getPort() << std::endl;
 					fcntl(clientSocket, F_SETFL, O_NONBLOCK);	// 해당 클라이언트 fd를 논블록으로 변경
 					// 연결한 서버 소켓의 fd_set 비트 설정
 					FD_SET(clientSocket, &rfds);
-					FD_SET(clientSocket, &wfds);
 					FD_SET(clientSocket, &efds);
 					
 					// 감시할 fd 범위 조정
@@ -220,92 +264,339 @@ void Socket::runServer(struct timeval timeout, unsigned int bufferSize)
 						fdMax = clientSocket;
 					
 					// clients map에 관리하는 클라이언트 정보 등록
-					clients[clientSocket].setServerSocketFd(i);
-					clients[clientSocket].setFd(clientSocket);
-					clients[clientSocket].setLastReqMs(ft_get_time());
+					Client *tmpClient = new Client(i, clientSocket);
+					tmpClient->setLastReqMs(ft_get_time());
+					pool[clientSocket] = dynamic_cast<IoObject *>(tmpClient);
 				}
-				else						// 클라이언트 소켓
+				// 클라이언트 리퀘스트 받는 부분
+				else if (pool[i]->getType() == CLIENT)
 				{
-					int		len;				// 한 번의 read로 읽은 길이
-					bool	isReadable = false;	// 더 읽을 수 있는지
-					char	buf[bufferSize];	// read한 값 저장할 버퍼
+					int readLen;
+					char buf[IO_BUFFER_SIZE + 1];
+					Client *tmpClient = dynamic_cast<Client *>(pool[i]);
+					int wasExist = 0;
 
-					clients[i].setLastReqMs(ft_get_time());		// 마지막 연결 시간 업데이트
-					// TODO: 한 번에 한 번씩 읽어야만 나중에 문제 안 생김 !수정 필요!
-					while ((len = read(i, buf, bufferSize)) > 0)
+					ft_memset(buf, '\0', IO_BUFFER_SIZE + 1);
+					if ((readLen = read(i, buf, IO_BUFFER_SIZE)) > 0)
 					{
-						isReadable = true;
-						buf[len] = 0;
-						clients[i].getRequest().setRawRequest(clients[i].getRequest().getRawRequest() + buf);
+						buf[readLen] = '\0';
+						tmpClient->setBuffer(tmpClient->getBuffer() + buf);
+						tmpClient->setLastReqMs(ft_get_time());
 					}
-					// 현재 데이터를 받고 있고 rawRequest가 파싱이 가능(CRLF 존재)할 때
-					if (clients[i].getStatus() == REQUEST_RECEIVING && clients[i].getRequest().isParsable())
+					else if (readLen == 0)
 					{
-						// 리퀘스트 파싱
-						clients[i].getRequest().initRequest();
-						clients[i].getRequest().parseRequest();
-						std::string serverName = clients[i].getRequest().getHost();
-						size_t	idx;
-						if ((idx = serverName.find(':') ) != std::string::npos)
-							serverName = serverName.substr(0, idx);
-						// 클라이언트에 대해 리스폰스 생성
-						clients[i].setResponse(ResponseHandler(clients[i].getRequest(),
-							servers[clients[i].getServerSocketFd()]).makeResponse());
-						clients[i].getRequest().initRequest();
-						clients[i].setStatus(RESPONSE_READY);		// 현재 리스폰스 가능하다고 설정
+						clearConnectedSocket(i);
 					}
-					// 읽을게 없다면
-					if (isReadable == false)
+					else	// error case
 					{
-						clearConnectedSocket(i);		// 클라이언트와 연결 종료
-						if (len == 0)
-							std::cout << "Disconnected " << i << "in Server" << std::endl;
+						std::cerr << "client read error temporary" << std::endl;
+					}
+
+					// 헤더 파싱 가능한지 확인
+					if (tmpClient->getStatus() == REQUEST_RECEIVING_HEADER && tmpClient->headerParsable())
+					{
+						tmpClient->setBuffer(tmpClient->getRequest().parseFirstLine(tmpClient->getBuffer()));	// 첫 줄 파싱
+						// ftLog("REQUEST", tmpClient->getBuffer());
+						std::map<std::string, std::string> header = Request::parseHeader(tmpClient->getBuffer());
+						tmpClient->getRequest().setHeader(header);
+						tmpClient->getRequest().setLocation(findLocation(*dynamic_cast<Server *>(pool[tmpClient->getServerSocketFd()]),
+								tmpClient->getRequest().getUri()));
+						
+						tmpClient->setBuffer(tmpClient->getBuffer().substr(tmpClient->getBuffer().find("\r\n\r\n") + 4));
+						tmpClient->setStatus(REQUEST_RECEIVING_BODY);
+						// cgi 실행 해주기
+						if (isCgi(tmpClient->getRequest().getUri(), tmpClient->getRequest().getLocation()))
+						{
+							CgiResponse cgiResponse(tmpClient->getRequest(), tmpClient->getServer(), tmpClient->getRequest().getLocation());
+							if (cgiResponse.makeVariable(i))
+								cgiResponse.cgiResponse(i);
+						}
 						else
-							std::cout << "Error occured client " << i << "in Server" << std::endl;
+						{
+							// TODO: NormalResponse 안에서 호출해야 함
+							ResourceHandler resHan(tmpClient->getRequest(), tmpClient->getServer(), tmpClient->getRequest().getLocation(), i);
+							if (resHan.checkAllowMethod() == false)
+								continue ;
+							if (resHan.CheckResourceType(tmpClient->getBuffer()) == false)
+								continue ;
+							if (resHan.isAutoIndex() == true || resHan.resourceFreeMethods() == true)
+							{
+								Client *clnt = dynamic_cast<Client *>(pool[i]);
+								FD_SET(clnt->getFd(), &wfds);
+							}
+							wasExist = resHan.wasExist();
+							if (tmpClient->getRequest().getMethod() == "POST" || tmpClient->getRequest().getMethod() == "PUT")
+							{
+								if (wasExist == ISFILE)
+									tmpClient->getResponse().setStatusCode(200);
+								else if (wasExist == NOT_FOUND)
+									tmpClient->getResponse().setStatusCode(201);
+							}
+						}
+					}
+					// chunked/content-length 처리해서 바디 파싱 가능한지 확인
+					if (tmpClient->getStatus() == REQUEST_RECEIVING_BODY)
+					{
+						// Chunked일 경우  -> 모두 붙여서 전달
+						if (tmpClient->getRequest().getHeader().count("Transfer-Encoding") == 1 &&
+								tmpClient->getRequest().getHeader()["Transfer-Encoding"] == "chunked")
+						{
+							size_t	carrageIdx;
+							carrageIdx = tmpClient->getBuffer().find("\r\n");
+							while (true)
+							{
+								if (carrageIdx == std::string::npos)
+									break ;
+								if (tmpClient->getChunkedFlag() == LEN)
+								{
+									int len = ft_hex_atoi(tmpClient->getBuffer().substr(0, carrageIdx));
+									tmpClient->setBodyLen(len);
+									if (len == 0)
+									{
+										std::string maxLen = tmpClient->getRequest().getLocation().getOption("request_max_body_size");
+										int requestMaxLen = maxLen == "" ? INT_MAX : ft_atoi(maxLen.c_str());
+										if (requestMaxLen < tmpClient->getTempBuffer().length())
+										{
+											tmpClient->getResponse().setStatusCode(413);
+											tmpClient->setBuffer("");
+											tmpClient->setStatus(PROCESSING_ERROR);
+										}
+										else
+										{
+											tmpClient->setBuffer(tmpClient->getTempBuffer());
+											tmpClient->setStatus(RESPONSE_READY);
+										}
+										break ;
+									}
+									if (tmpClient->getBuffer().length() >= carrageIdx + 2)
+									{
+										tmpClient->setBuffer(tmpClient->getBuffer().substr(carrageIdx + 2));
+										tmpClient->setChunkedFlag(BODY);
+									}
+									else
+										break ;
+								}
+								else
+								{
+									if (tmpClient->getBuffer().length() >= tmpClient->getBodyLen() + 2)
+									{
+										tmpClient->setTempBuffer(tmpClient->getTempBuffer() + tmpClient->getBuffer().substr(0, tmpClient->getBodyLen()));
+										tmpClient->setChunkedFlag(LEN);
+										tmpClient->setBuffer(tmpClient->getBuffer().substr(tmpClient->getBodyLen() + 2));
+									}
+									else
+										break ;
+								}
+								carrageIdx = tmpClient->getBuffer().find("\r\n");
+							}
+						}
+						// Content-Length인 경우 -> 들어온 애들을 모두 붙인 후에 substr(Content-Length) 후 전달
+						else if (tmpClient->getRequest().getHeader().count("Content-Length") == 1)
+						{
+							int contentLength = ft_atoi(tmpClient->getRequest().getHeader()["Content-Length"].c_str());
+							if (tmpClient->getBuffer().length() >= (size_t)contentLength)
+								tmpClient->getRequest().setRawBody(tmpClient->getBuffer().substr(0, contentLength));
+							tmpClient->setStatus(RESPONSE_READY);
+						}
+						// Chunked, Content-Length 모두 없는 경우
+						else if (tmpClient->getRequest().getHeader().count("Content-Length") == 0)
+						{
+							tmpClient->getRequest().getHeader()["Content-Length"] = "0";
+							tmpClient->getRequest().setRawBody("");
+							tmpClient->setStatus(RESPONSE_READY);
+						}
+
+						// 리소스 타입판별 (normalResponse 반으로 쪼개기)'
+						// response ready function call
+					}
+				}
+				// 리소스 읽기 동작
+				else if (pool[i]->getType() == RESOURCE)
+				{
+					Resource *tmpRsrc = dynamic_cast<Resource *>(pool[i]);
+
+					char	buf[IO_BUFFER_SIZE + 1];
+					ft_memset(buf, '\0', IO_BUFFER_SIZE + 1);
+					size_t	readLen = read(tmpRsrc->getFd(), buf, IO_BUFFER_SIZE);
+					buf[readLen] = '\0';
+
+					if (readLen == -1)
+						handleError(tmpRsrc->getClientFd(), i, 500);
+					else if (readLen == 0)
+					{
+						pool[tmpRsrc->getClientFd()]->setBuffer(tmpRsrc->getBuffer());
+						FD_CLR(i, &rfds);
+						FD_SET(tmpRsrc->getClientFd(), &wfds);
+						clearConnectedSocket(i);
+					}
+					else
+					{
+						tmpRsrc->setBuffer(tmpRsrc->getBuffer() + buf);
+					}
+				}
+				// CGI 리소스 읽기
+				else if (pool[i]->getType() == CGI_RESOURCE)
+				{
+					CgiResource *tmpCgi = dynamic_cast<CgiResource *>(pool[i]);
+					int status;
+
+					if (waitpid(tmpCgi->getPid(), &status, WNOHANG) == 0)
+						continue ;
+					if (tmpCgi->isLseek() == false)
+					{
+						lseek(tmpCgi->getFd(), 0, SEEK_SET);
+						tmpCgi->setLseek();
+						struct stat sb;
+						char *num = ft_itoa(tmpCgi->getClientFd());
+						std::string filePath = std::string(CGI_DIR) + std::string(CGI_PATH) + "_" + std::string(num);
+						if (stat(filePath.c_str() ,&sb) == -1)
+							handleError(tmpCgi->getClientFd(), i, 404);
+						free(num);
+						tmpCgi->setFileSize(sb.st_size);
+					}
+
+					char buf[IO_BUFFER_SIZE + 1];
+					ft_memset(buf, '\0', IO_BUFFER_SIZE + 1);
+					int readLen = read(tmpCgi->getFd(), buf, IO_BUFFER_SIZE);
+					buf[readLen] = '\0';
+					if (readLen == -1)
+						handleError(tmpCgi->getClientFd(), i, 500);
+					else if (readLen == 0)
+					{
+						std::string msg = CgiResponse::cgiResultParsing(tmpCgi->getBuffer()).getMessage();
+						pool[tmpCgi->getClientFd()]->setBuffer(msg);
+						FD_CLR(i, &rfds);
+						FD_SET(tmpCgi->getClientFd(), &wfds);
+						clearConnectedSocket(i);
+						pool[tmpCgi->getClientFd()]->setStatus(CGI_READY);
+					}
+					else
+					{
+						tmpCgi->setBuffer(tmpCgi->getBuffer() + buf);
 					}
 				}
 			}
 			else if (FD_ISSET(i, &cpyWfds))	// write 요청이 온 경우
 			{
-				// 항상 클라이언트 소켓만 들어옴
-				// timeout 시간이 지났을 때
-				if (ft_get_time() - clients[i].getLastReqMs() > timeoutMs)
+				// 클라이언트 쓰기(리스폰스 주는 곳)
+				if (pool[i]->getType() == CLIENT)
 				{
-					clearConnectedSocket(i);
-					continue ;
+					Client *tmpClnt = dynamic_cast<Client *>(pool[i]);
+					if (ft_get_time() - tmpClnt->getLastReqMs() > timeoutMs)
+					{
+						ftLog("!!!!!!!");
+						clearConnectedSocket(i);
+					}
+					if (FD_ISSET(i, &cpyRfds))
+						continue ;
+					if (tmpClnt->getStatus() == PROCESSING_ERROR)
+					{
+						std::cout << "ERROR RESPONSE OCCURED" << std::endl;
+						ResponseMaker resMaker(tmpClnt->getRequest(), tmpClnt->getServer(), tmpClnt->getRequest().getLocation());
+						Response r = resMaker.makeErrorResponse(tmpClnt->getResponse().getStatusCode(), tmpClnt->getRequest().getHttpVersion());
+						write(i, r.getMessage().c_str(), r.getMessage().length());
+					}
+					else if (isCgi(tmpClnt->getRequest().getUri(), tmpClnt->getRequest().getLocation()))
+					{
+						if (tmpClnt->getStatus() != CGI_READY)
+							continue ;
+						int writeLen = write(i, tmpClnt->getBuffer().c_str() + tmpClnt->getPos(), tmpClnt->getBuffer().length() - tmpClnt->getPos());
+						if (tmpClnt->getPos() + writeLen >= tmpClnt->getBuffer().length())
+						{
+							// 파일 지워주기
+							char *num = ft_itoa(i);
+							std::string filePath = std::string(CGI_DIR) + std::string(CGI_PATH) + "_" + std::string(num);
+							// unlink(filePath.c_str());
+							free(num);
+						}
+						else
+						{
+							tmpClnt->setPos(tmpClnt->getPos() + writeLen);
+							continue;
+						}
+					}
+					else
+					{
+						//노말 리스폰스 만들고 쓰는 부분
+						ResponseHandler responseHandler(tmpClnt->getRequest(), tmpClnt->getServer(), tmpClnt->getRequest().getLocation(), tmpClnt->getBuffer());
+						Response res = responseHandler.makeResponse();
+						if (tmpClnt->getRequest().getMethod() == "POST" || tmpClnt->getRequest().getMethod() == "PUT")
+								res.setStatusCode(tmpClnt->getResponse().getStatusCode());
+						int writeLen = write(i, res.getMessage().c_str(), res.getMessage().length());
+					}
+					FD_CLR(i, &rfds);
+					FD_CLR(i, &wfds);
+					FD_CLR(i, &efds);
+
+					// clearConnectedSocket(i);
 				}
-				// response를 줄 준비가 되었다면
-				if (clients[i].getStatus() == RESPONSE_READY)
+				// 리소스 쓰기 (PUT, POST 등)
+				else if (pool[i]->getType() == RESOURCE)
 				{
-					// 해당 내용을 클라이언트 소켓 fd에 write
-					write(i, clients[i].getResponse().getMessage().c_str(), clients[i].getResponse().getMessage().size());
-					if (clients[i].getResponse().getLastResponse() == 401)
+					Resource *tmpRsrc = dynamic_cast<Resource *>(pool[i]);
+					Client *clnt = dynamic_cast<Client *>(pool[tmpRsrc->getClientFd()]);
+
+					if (clnt->getStatus() != RESPONSE_READY)
+						continue ;
+					if (!clnt->getRequest().getLocation().getOption("request_max_body_size").empty())
+					{
+						int maxSize = ft_atoi(clnt->getRequest().getLocation().getOption("request_max_body_size").c_str());
+						if (clnt->getRequest().getRawBody().length() >= maxSize)
+						{
+							clnt->getResponse().setStatusCode(413);
+							clnt->setStatus(PROCESSING_ERROR);
+							clnt->setBuffer("");
+							FD_SET(clnt->getFd(), &wfds);
+							continue ;
+						}
+					}	
+					int writeLen = write(tmpRsrc->getFd(), clnt->getBuffer().c_str() + tmpRsrc->getPos(), clnt->getBuffer().length() - tmpRsrc->getPos());
+					if (writeLen == -1)
 						clearConnectedSocket(i);
 					else
 					{
-						clients[i].getResponse().initResponse();
-						clients[i].setStatus(REQUEST_RECEIVING);
-						clearConnectedSocket(i);
+						if (tmpRsrc->getPos() + writeLen < clnt->getBuffer().length())
+							tmpRsrc->setPos(tmpRsrc->getPos() + writeLen);
+						else
+						{
+							FD_SET(clnt->getFd(), &wfds);
+							pool[tmpRsrc->getClientFd()]->setBuffer("");
+							clearConnectedSocket(i);
+						}
 					}
 				}
-				FD_CLR(i, &wfds);
+				// CGI에 Request body를 파이프로 넘겨주는 곳
+				else if (pool[i]->getType() == CGI)
+				{
+					CgiWriter *tmpCgi = dynamic_cast<CgiWriter *>(pool[i]);
+					std::string body = pool[tmpCgi->getClientFd()]->getBuffer();
+
+					if (pool[tmpCgi->getClientFd()]->getStatus() != RESPONSE_READY)
+						continue ;
+					int writeLen = write(tmpCgi->getFd(), body.c_str() + tmpCgi->getPos(), body.length() - tmpCgi->getPos());
+					if (writeLen == -1)
+						clearConnectedSocket(i);
+					else
+					{
+						if (tmpCgi->getPos() + writeLen < body.length())
+							tmpCgi->setPos(tmpCgi->getPos() + writeLen);
+						else
+							clearConnectedSocket(i);
+					}
+
+					/*
+						write를 해주는 경우 == body를 입력할 수 있는 경우
+						body가 준비되어있어야한다 or 들어오는대로 body를 넣어주는데 
+					*/
+
+				}
 			}
 			else if (FD_ISSET(i, &cpyEfds))	// except 요청이 온 경우
 			{
-				if (servers.count(i) == 1)
-				{
-					FD_CLR(i, &rfds);
-					FD_CLR(i, &efds);
-					close(i);
-					servers.erase(servers.find(i));
-				}
-				else
-				{
-					clearConnectedSocket(i);
-				}
+				clearConnectedSocket(i);
 			}
 		}
-		usleep(500);	// cpu 100% 점유 방지
+		usleep(50);	// cpu 100% 점유 방지
 	}
 }
 
@@ -319,10 +610,14 @@ void	Socket::clearConnectedSocket(int fd)
 	FD_CLR(fd, &wfds);
 	FD_CLR(fd, &efds);
 
-	close(fd);
-	clients.erase(clients.find(fd));
+	if (pool[fd] != NULL)
+	{
+		close(fd);
+		delete pool[fd];
+		pool[fd] = NULL;
+	}
 	updateFdMax();
-	std::cout << "Connection close fd: " << fd << std::endl;
+	std::cout << "<<Connection close fd: " << fd << std::endl;
 }
 
 /*
@@ -332,11 +627,80 @@ void	Socket::updateFdMax()
 {
 	int tmp = 2;
 
-	for (std::map<int, Client>::iterator iter = clients.begin();
-			iter != clients.end(); iter++)
-		tmp = std::max(tmp, iter->first);
-	for (std::map<int, Server>::iterator iter = servers.begin();
-			iter != servers.end(); iter++)
-		tmp = std::max(tmp, iter->first);
+	for (std::vector<IoObject *>::iterator iter = pool.begin();
+			iter != pool.end(); iter++)
+	{
+		if (*iter != NULL)
+			tmp = (*iter)->getFd();
+	}
 	fdMax = tmp;
+}
+
+std::vector<IoObject *> &Socket::getPool()
+{
+	return (pool);
+}
+
+/*
+ * request의 uri와 매칭되는 로케이션 반환
+ */
+Location Socket::findLocation(Server server, std::string uri)
+{
+	std::vector<Location> ser = server.getLocationVector();
+	Location res;
+
+	for (std::vector<Location>::iterator it = ser.begin(); it != ser.end(); it++)
+	{
+		std::string path = it->getPath();
+		std::string tempPath = path + '/';
+		if (uri.compare(0, path.length(), path) == 0 || uri.compare(0, tempPath.length(), tempPath) == 0)
+			res = *it;
+	}
+	return res;
+}
+
+// cgi 실행 여부 판단
+bool Socket::isCgi(std::string rawUri, Location location)
+{
+	std::string uri = rawUri.substr(location.getPath().length());
+	std::vector<std::string> ext = location.getCgiExtensionVector();
+
+	for (std::vector<std::string>::iterator it = ext.begin(); it != ext.end(); it++)
+	{
+		size_t index = uri.find(*it);
+		if (index != std::string::npos && uri.compare(index, it->length(), *it) == 0)
+		{
+			int queryIndex;
+			if ((queryIndex = uri.find('?')) != -1)
+				uri = uri.substr(0, queryIndex);
+			uri = uri.substr(index);
+			size_t pathIndex = uri.find('/');
+			if (pathIndex != std::string::npos)
+				uri = uri.substr(0, pathIndex);
+			if(uri.compare(0, it->length() + 1, *it) != 0)
+				return false;
+			return true;
+		}
+	}
+	return (false);
+}
+
+void Socket::updateFds(int fd, FdType fdType)
+{
+	if (fdType == FD_READ)
+		FD_SET(fd, &rfds);
+	else if (fdType == FD_WRITE)
+		FD_SET(fd, &wfds);
+	else
+		FD_SET(fd, &efds);
+	updateFdMax();
+}
+
+void	Socket::handleError(int clientFd, int selfFd, int statusCode)
+{
+	Client *clnt = dynamic_cast<Client *>(pool[clientFd]);
+	clnt->setStatus(PROCESSING_ERROR);
+	clnt->getResponse().setStatusCode(statusCode);
+	FD_SET(clnt->getFd(), &wfds);
+	clearConnectedSocket(selfFd);
 }

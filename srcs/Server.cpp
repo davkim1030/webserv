@@ -228,14 +228,8 @@ void Server::printItem()
 	std::cout << "==================================================" << std::endl;
 }
 
-void	Server::doRead()
+IoObject *Server::clone()
 {
-	int i = 1;
-	i++;
-}
-
-void	Server::doWrite()
-{
-	int i = 1;
-	i++;
+	IoObject *tmp = new Server(*this);
+	return tmp;
 }

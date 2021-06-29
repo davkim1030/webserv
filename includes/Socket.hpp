@@ -4,10 +4,19 @@
 # include "webserv.h"
 # include "Client.hpp"
 # include "Server.hpp"
+# include "Resource.hpp"
 # include "ServerConfig.hpp"
 # include "Location.hpp"
-# include "ResponseHandler.hpp"
 # include "Exception.hpp"
+# include <climits>
+
+// fd_set에 플래그를 세울 때 쓰는 타입
+enum FdType
+{
+	FD_READ,
+	FD_WRITE,
+	FD_EXCEPT
+};
 
 /*
  * 소켓 통신 서버
@@ -15,6 +24,7 @@
 class Socket
 {
 	private:
+		static const int IO_BUFFER_SIZE = 	USHRT_MAX;	// 버퍼가 한 번에 읽을 사이즈
 		fd_set	rfds;	// 읽기 fd set
 		fd_set	wfds;	// 쓰기 fd set
 		fd_set	efds;	// 예외 fd set
@@ -23,14 +33,14 @@ class Socket
 		ServerConfig	serverConfig;	// config 파일에서 읽을 서버 설정 값들
 
 		std::vector<IoObject *>	pool;	// Server, Client, Resource, CGI 객체들의 IO를 담당할 벡터
-		std::map<int, Server> servers;	// 프로그램에서 처리할 서버들 정보
-		std::map<int, Client> clients;	// 프로그램에 연결된 클라이언트 정보
 
 		Socket(Socket const &so);
 		Socket &operator=(Socket const &so);
 
 		void clearConnectedSocket(int fd);
-		void updateFdMax();
+		Location findLocation(Server server, std::string uri);
+		bool isCgi(std::string rawUri, Location location);
+
 
 		class SocketException : public std::exception
 		{
@@ -65,8 +75,13 @@ class Socket
 		Socket();
 		~Socket();
 
-		void runServer(struct timeval timeout, unsigned int bufferSize);
+		void runServer(struct timeval timeout);
 		static Socket *getInstance();
 		void initServer(int argc, char *argv);
+		void updateFdMax();
+		void updateFds(int fd, FdType fdType);
+		void handleError(int clientFd, int selfFd,  int statusCode);
+
+		std::vector<IoObject *> &getPool();
 };
 #endif

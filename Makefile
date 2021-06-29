@@ -8,8 +8,13 @@ SRC		=	main.cpp \
 			Exception.cpp \
 			Response.cpp \
 			Request.cpp \
+			Resource.cpp \
+			ResponseMaker.cpp \
+			ResourceHandler.cpp \
 			ResponseHandler.cpp \
-			ResponseHeader.cpp
+			CgiResponse.cpp \
+			CgiWriter.cpp \
+			CgiResource.cpp
 
 SRCDIR	=	./srcs/
 SRCS	=	$(addprefix $(SRCDIR), $(SRC))

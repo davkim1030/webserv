@@ -6,8 +6,11 @@
 // 클라이언트의 상태를 나타내는 enum
 enum Status
 {
-	REQUEST_RECEIVING,	// 리퀘스트를 수신중
-	RESPONSE_READY		// 리스폰스를 줄 준비가 됨
+	REQUEST_RECEIVING_HEADER,	// 헤더 리퀘스트를 수신중
+	REQUEST_RECEIVING_BODY,		// 바디 리퀘스트를 수신중
+	RESPONSE_READY,				// 리스폰스를 줄 준비가 됨
+	PROCESSING_ERROR,			// 처리 도중 에러를 만남
+	CGI_READY
 };
 
 // 오브젝트들의 타입을 지정
@@ -16,7 +19,9 @@ enum Type
 	NONE,				// 기본 값. 해당 값이면 에러
 	SERVER,				// 서버 타입
 	CLIENT,				// 클라이언트 타입
-	RESOURCE			// 리소스 타입
+	RESOURCE,			// 리소스 타입
+	CGI,				// CGI 타입
+	CGI_RESOURCE		// CGI 리소스
 };
 
 /*
@@ -27,9 +32,10 @@ class IoObject
 {
 	protected:
 		int				fd;		// 파일 또는 소켓 fd
-		std::string		buffer;	// 다 못 읽었을 경우 데이터를 들고 있을 버퍼
+		std::string		buffer;	// 읽거나 쓸 데이터를 담아둔 버퍼
 		Status			status;	// 현재 리스폰스를 줄 수 있는지 상태를 저장
-		Type			type;	// server, client, resource 중에 어떤 객체인지 지정
+		Type			type;	// 객체의 타입을 지정
+
 	public:
 		IoObject();
 		IoObject(Type type);
@@ -51,7 +57,6 @@ class IoObject
 		void		setStatus(Status status);
 
 		// inheriting functions
-		virtual void doRead() = 0;		// 하위 클래스가 읽기 작업을 하게 함
-		virtual void doWrite() = 0;		// 하위 클래스가 쓰기 작업을 하게 함
+		virtual IoObject *clone() = 0;
 };
 #endif

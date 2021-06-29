@@ -1,12 +1,15 @@
 #include "webserv.h"
 #include "Client.hpp"
+#include "Server.hpp"
+#include "Socket.hpp"
 
 /*
  * 클라이언트 클래스 기본 생성자
  * fd 값들을 -1로 지정하여 초기화 하지 않으면 사용 못 하게 함
  */
 Client::Client() : IoObject(CLIENT), serverSocketFd(-1),
-		request(""), response(200, std::map<std::string, std::string>(), "")
+		request(""), response(200, std::map<std::string, std::string>(), ""), pos(0),
+		tempBuffer(""), bodyLen(0), chunkedFlag(LEN)
 {
 	lastReqMs = ft_get_time();
 }
@@ -18,8 +21,9 @@ Client::Client() : IoObject(CLIENT), serverSocketFd(-1),
 Client::Client(const Client &other)
 	: IoObject(other.fd, other.buffer, other.status, CLIENT),
 	serverSocketFd(other.serverSocketFd), request(other.request),
-	response(other.response), remainBody(other.remainBody),
-	lastReqMs(other.lastReqMs)
+	response(other.response), pos(other.pos),
+	lastReqMs(other.lastReqMs), tempBuffer(other.tempBuffer), bodyLen(other.bodyLen),
+	chunkedFlag(other.chunkedFlag)
 {
 }
 
@@ -29,11 +33,11 @@ Client::Client(const Client &other)
  * @param: int socketFd: 클라이언트에 할당된 소켓 fd
  */
 Client::Client(int serverSocketFd, int fd)
-	: IoObject(fd, "", REQUEST_RECEIVING, CLIENT),
+	: IoObject(fd, "", REQUEST_RECEIVING_HEADER, CLIENT),
 	serverSocketFd(serverSocketFd),
-	request(""), response(200, std::map<std::string, std::string>(), "")
+	request(""), response(200, std::map<std::string, std::string>(), ""), pos(0),
+	tempBuffer(""), bodyLen(0), chunkedFlag(LEN)
 {
-	remainBody = 0;
 	lastReqMs = ft_get_time();
 }
 
@@ -55,8 +59,11 @@ Client &Client::operator=(const Client &other)
 		status = other.status;
 		request = other.request;
 		response = other.response;
-		remainBody = other.remainBody;
+		pos = other.pos;
 		lastReqMs = other.lastReqMs;
+		tempBuffer = other.tempBuffer;
+		bodyLen = other.bodyLen;
+		chunkedFlag = other.chunkedFlag;
 	}
 	return *this;
 }
@@ -71,9 +78,9 @@ void	Client::setStatus(Status status)
 	this->status = status;
 }
 
-void	Client::setRemainBody(long long remainBody)
+void	Client::setPos(size_t pos)
 {
-	this->remainBody = remainBody;
+	this->pos = pos;
 }
 
 void	Client::setLastReqMs(unsigned long lastReqMs)
@@ -86,10 +93,22 @@ void	Client::setResponse(const Response &response)
 	this->response = response;
 }
 
-int		Client::getServerSocketFd()
+void	Client::setTempBuffer(std::string buffer)
 {
-	return (serverSocketFd);
+	this->tempBuffer = buffer;
 }
+
+void	Client::setBodyLen(size_t chunkedIndex)
+{
+	this->bodyLen = chunkedIndex;
+}
+
+void	Client::setChunkedFlag(ChunkedFlag chunkedFlag)
+{
+	this->chunkedFlag = chunkedFlag;
+}
+
+// getter
 
 Response	&Client::getResponse()
 {
@@ -106,9 +125,9 @@ Status	Client::getStatus()
 	return (status);
 }
 
-long long	Client::getRemainBody()
+size_t	Client::getPos()
 {
-	return (remainBody);
+	return (pos);
 }
 
 unsigned long	Client::getLastReqMs()
@@ -116,14 +135,42 @@ unsigned long	Client::getLastReqMs()
 	return (lastReqMs);
 }
 
-void	Client::doRead()
+int		Client::getServerSocketFd()
 {
-	int i = 1;
-	i++;
+	return (serverSocketFd);
 }
 
-void	Client::doWrite()
+std::string &Client::getTempBuffer()
 {
-	int i = 1;
-	i++;
+	return (tempBuffer);
+}
+
+size_t		Client::getBodyLen()
+{
+	return (bodyLen);
+}
+
+ChunkedFlag	Client::getChunkedFlag()
+{
+	return (chunkedFlag);
+}
+
+
+/*
+ * 현재 buffer 데이터로 HTTP Request Message의 header 부분이 추출 가능한지 확인
+ * @return bool: 헤더가 다 들어왔는지
+ */
+bool	Client::headerParsable()
+{
+	return (buffer.find("\r\n\r\n") != std::string::npos);
+}
+IoObject *Client::clone()
+{
+	IoObject *tmp = new Client(*this);
+	return tmp;
+}
+
+Server Client::getServer()
+{
+	return *dynamic_cast<Server *>(Socket::getInstance()->getPool()[serverSocketFd]);
 }

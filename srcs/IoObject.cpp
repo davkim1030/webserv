@@ -1,12 +1,12 @@
 #include "IoObject.hpp"
 
 IoObject::IoObject()
-: fd(-1), buffer(), status(REQUEST_RECEIVING), type(NONE)
+: fd(-1), buffer(), status(REQUEST_RECEIVING_HEADER), type(NONE)
 {
 }
 
 IoObject::IoObject(Type type)
-: fd(-1), buffer(), status(REQUEST_RECEIVING), type(type)
+: fd(-1), buffer(), status(REQUEST_RECEIVING_HEADER), type(type)
 {
 }
 
@@ -22,14 +22,14 @@ IoObject::IoObject(const IoObject &other)
 
 IoObject &IoObject::operator=(IoObject const &other)
 {
-    if (this != &other)
-    {
-        this->fd = other.fd;
-        this->buffer = other.buffer;
-        this->status = other.status;
-        this->type = other.type;
-    }
-    return (*this);
+	if (this != &other)
+	{
+		this->fd = other.fd;
+		this->buffer = other.buffer;
+		this->status = other.status;
+		this->type = other.type;
+	}
+	return (*this);
 }
 
 IoObject::~IoObject()
@@ -40,37 +40,37 @@ IoObject::~IoObject()
 
 int IoObject::getFd()
 {
-    return (fd);
+	return (fd);
 }
 
 const std::string &IoObject::getBuffer()
 {
-    return (buffer);
+	return (buffer);
 }
 
 Status  IoObject::getStatus()
 {
-    return (status);
+	return (status);
 }
 
 Type  IoObject::getType()
 {
-    return (type);
+	return (type);
 }
 
 // setters
 
-void IoObject::setFd(int fd)
+void	IoObject::setFd(int fd)
 {
-    this->fd = fd;
+	this->fd = fd;
 }
 
-void IoObject::setBuffer(std::string buffer)
+void	IoObject::setBuffer(std::string buffer)
 {
-    this->buffer = buffer;
+	this->buffer = buffer;
 }
 
-void IoObject::setStatus(Status status)
+void	IoObject::setStatus(Status status)
 {
-    this->status = status;
+	this->status = status;
 }
