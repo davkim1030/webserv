@@ -24,8 +24,9 @@ int		main(int argc, char *argv[])
 	signal(SIGINT, sigintHandler);
 
 	struct timeval timeout;
-	timeout.tv_sec = 500000;
+	timeout.tv_sec = 5;
 	timeout.tv_usec = 0;
 	Socket::getInstance()->runServer(timeout);
+	ftLog("HI");
 	return (0);
 }

@@ -168,7 +168,7 @@ void Socket::initServer(int argc, char *argv)
 		if (bind(iter->getFd(), (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
 			throw BindException();
 		// 데이터를 받을 서버 소켓 열기
-		if (listen(iter->getFd(), serverConfig.getServers().size()) == -1)
+		if (listen(iter->getFd(), 200) == -1)
 			throw ListenException();
 
 		std::cout << iter->getIp() << ":" << iter->getPort() << std::endl;
@@ -214,7 +214,7 @@ void Socket::runServer(struct timeval timeout)
 	fd_set	cpyWfds;
 	fd_set	cpyEfds;
 	int		fdNum;		// read/write/except 신호가 set된 fd의 개수
-	// unsigned long	timeoutMs = timeout.tv_sec * 1000 + timeout.tv_usec / 1000;
+	unsigned long	timeoutMs = timeout.tv_sec * 1000 + timeout.tv_usec / 1000;
 
 	// 메인 루프
 	while (1)
@@ -225,6 +225,9 @@ void Socket::runServer(struct timeval timeout)
 		cpyEfds = efds;	// 0 0 0 0 1 
 
 		// fd_set 변수의 0 ~ fdMax + 1까지 비트를 감시하여 읽기, 쓰기, 에러 요구가 일어났는지 확인
+		std::cout << "test select" << std::endl;
+		std::cout << "fdNum : {" << fdNum << "}" << std::endl;
+		std::cout << "fdMax : {" << fdMax << "}" << std::endl;
 		if ((fdNum = select(fdMax + 1, &cpyRfds, &cpyWfds, &cpyEfds, &timeout)) == -1)
 			throw SelectException();
 		if (fdNum == 0) // 처리할 요구가 없으면 다시 위로
@@ -234,6 +237,7 @@ void Socket::runServer(struct timeval timeout)
 		// fd를 0부터 fdMax까지 반복하며 set된 플래그 값이 있는지 확인하여 처리
 		for (int i = 0; i < fdMax + 1; i++)
 		{
+			std::cout << fdMax << " " << i << std::endl;
 			if (pool[i] == NULL)
 				continue ;
 			if (FD_ISSET(i, &cpyRfds))	// read 요청이 온 경우
@@ -277,10 +281,15 @@ void Socket::runServer(struct timeval timeout)
 					{
 						buf[readLen] = '\0';
 						tmpClient->setBuffer(tmpClient->getBuffer() + buf);
+						tmpClient->setLastReqMs(ft_get_time());
+					}
+					else if (readLen == 0)
+					{
+						clearConnectedSocket(i);
 					}
 					else	// error case
 					{
-						clearConnectedSocket(i);
+						std::cerr << "client read error temporary" << std::endl;
 					}
 
 					// 헤더 파싱 가능한지 확인
@@ -473,8 +482,13 @@ void Socket::runServer(struct timeval timeout)
 				if (pool[i]->getType() == CLIENT)
 				{
 					Client *tmpClnt = dynamic_cast<Client *>(pool[i]);
-					// if (FD_ISSET(i, &cpyRfds))
-					// 	continue ;
+					if (ft_get_time() - tmpClnt->getLastReqMs() > timeoutMs)
+					{
+						ftLog("!!!!!!!");
+						clearConnectedSocket(i);
+					}
+					if (FD_ISSET(i, &cpyRfds))
+						continue ;
 					if (tmpClnt->getStatus() == PROCESSING_ERROR)
 					{
 						std::cout << "ERROR RESPONSE OCCURED" << std::endl;
@@ -500,7 +514,6 @@ void Socket::runServer(struct timeval timeout)
 							tmpClnt->setPos(tmpClnt->getPos() + writeLen);
 							continue;
 						}
-						
 					}
 					else
 					{
@@ -511,7 +524,11 @@ void Socket::runServer(struct timeval timeout)
 								res.setStatusCode(tmpClnt->getResponse().getStatusCode());
 						int writeLen = write(i, res.getMessage().c_str(), res.getMessage().length());
 					}
-					clearConnectedSocket(i);
+					FD_CLR(i, &rfds);
+					FD_CLR(i, &wfds);
+					FD_CLR(i, &efds);
+
+					// clearConnectedSocket(i);
 				}
 				// 리소스 쓰기 (PUT, POST 등)
 				else if (pool[i]->getType() == RESOURCE)
