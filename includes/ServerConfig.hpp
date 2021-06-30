@@ -30,6 +30,8 @@ class 	ServerConfig
 		void	saveConfig(int argc, char *path);
 		int		checkDuplicatePort();
 
+		std::string getOption(std::string const &key);
+
 		void	printItem();
 };
 

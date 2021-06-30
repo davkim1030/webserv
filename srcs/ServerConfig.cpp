@@ -184,3 +184,10 @@ void ServerConfig::printItem()
 	for (std::vector<Server>::iterator sit = server.begin(); sit != server.end(); sit++)
 		sit->printItem();
 }
+
+std::string ServerConfig::getOption(std::string const &key)
+{
+	if (option.count(key) == 0)
+		return "";
+	return option[key];
+}

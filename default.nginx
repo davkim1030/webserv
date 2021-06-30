@@ -3,7 +3,7 @@
 # ;와 # 뒤는 주석으로 처리됨
 
 user  nginx; # 유저 권한
-worker_processes  1; # 프로세스 실행 가능 수
+worker_processes  200; # 프로세스 실행 가능 수
 
 error_log  /var/log/nginx/error.log warn; # 에러 정보 저장
 pid        /var/run/nginx.pid; # 마스터 프로세스 ID 저장

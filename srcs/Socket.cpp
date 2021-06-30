@@ -168,7 +168,7 @@ void Socket::initServer(int argc, char *argv)
 		if (bind(iter->getFd(), (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
 			throw BindException();
 		// 데이터를 받을 서버 소켓 열기
-		if (listen(iter->getFd(), 200) == -1)
+		if (listen(iter->getFd(), ft_atoi(serverConfig.getOption("worker_processes").c_str())) == -1)
 			throw ListenException();
 
 		std::cout << iter->getIp() << ":" << iter->getPort() << std::endl;

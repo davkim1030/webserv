@@ -177,6 +177,8 @@ int Server::sliceOptions()
 */
 std::string Server::getOption(std::string const &key)
 {
+	if (option.count(key) == 0)
+		return "";
 	return option[key];
 }
 
