@@ -15,7 +15,7 @@ Resource::Resource()
  * 복사 생성자
  */
 Resource::Resource(const Resource &other)
-: IoObject(other.fd, other.buffer, other.status, RESOURCE), ioStatus(other.ioStatus), clientFd(other.clientFd), pos(other.pos)
+: IoObject(other), ioStatus(other.ioStatus), clientFd(other.clientFd), pos(other.pos)
 {
 }
 
@@ -45,7 +45,8 @@ Resource &Resource::operator=(const Resource &other)
 	if (this != &other)
 	{
 		fd = other.fd;
-		buffer = other.buffer;
+		readBuffer = other.readBuffer;
+		writeBuffer = other.writeBuffer;
 		status = other.status;
 		type = RESOURCE;
 		ioStatus = other.ioStatus;

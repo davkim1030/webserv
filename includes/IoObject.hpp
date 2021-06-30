@@ -6,6 +6,7 @@
 // 클라이언트의 상태를 나타내는 enum
 enum Status
 {
+	DISCONNECTED,					// 클라이언트 연결 끊김
 	REQUEST_RECEIVING_HEADER,	// 헤더 리퀘스트를 수신중
 	REQUEST_RECEIVING_BODY,		// 바디 리퀘스트를 수신중
 	RESPONSE_READY,				// 리스폰스를 줄 준비가 됨
@@ -32,7 +33,8 @@ class IoObject
 {
 	protected:
 		int				fd;		// 파일 또는 소켓 fd
-		std::string		buffer;	// 읽거나 쓸 데이터를 담아둔 버퍼
+		std::string		readBuffer;	// 읽거나 쓸 데이터를 담아둔 버퍼
+		std::string		writeBuffer;	// 읽거나 쓸 데이터를 담아둔 버퍼
 		Status			status;	// 현재 리스폰스를 줄 수 있는지 상태를 저장
 		Type			type;	// 객체의 타입을 지정
 
@@ -47,13 +49,15 @@ class IoObject
 
 		// getters
 		int			getFd();
-		const std::string	&getBuffer();
+		const std::string	&getWriteBuffer();
+		const std::string	&getReadBuffer();
 		Status		getStatus();
 		Type		getType();
 
 		// setters
 		void		setFd(int fd);
-		void		setBuffer(std::string buffer);
+		void		setWriteBuffer(std::string writeBuffer);
+		void		setReadBuffer(std::string readBuffer);
 		void		setStatus(Status status);
 
 		// inheriting functions

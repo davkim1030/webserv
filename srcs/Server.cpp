@@ -7,7 +7,7 @@ Server::Server() : IoObject(SERVER), port(-1)
 {}
 
 Server::Server(Server const &serv)
-	: IoObject(serv.fd, serv.buffer, serv.status, SERVER),
+	: IoObject(serv.fd, serv.readBuffer, serv.status, SERVER),
 	option(serv.option), location(serv.location),
 	ip(serv.ip), port(serv.port), serverName(serv.serverName)
 {}
@@ -16,15 +16,12 @@ Server &Server::operator=(Server const &serv)
 {
     if (this != &serv)
     {
+		IoObject::operator=(serv);
         option = serv.option;
         location = serv.location;
 		ip = serv.ip;
 		port = serv.port;
 		serverName = serv.serverName;
-		fd = serv.fd;
-		buffer = serv.buffer;
-		status = serv.status;
-		type = serv.type;
     }
     return *this;
 }

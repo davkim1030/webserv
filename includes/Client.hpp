@@ -5,11 +5,19 @@
 # include "Request.hpp"
 # include "Response.hpp"
 # include "Server.hpp"
+# include "webserv.h"
 
 enum	ChunkedFlag
 {
 	LEN,
 	BODY
+};
+
+enum	ReadStatus
+{
+	DISCONNECT,
+	REQUEST_DONE,
+	REQUEST_WAITING
 };
 
 /*
@@ -23,9 +31,10 @@ class Client : public IoObject
 		Response		response;		// 돌려줄 리스폰스
 		size_t			pos;		// 남은 바디 길이
 		unsigned long	lastReqMs;		// 마지막으로 통신한 시간
-		std::string		tempBuffer; //chunked일 때 읽은 값을 저장할 임시 버퍼
 		size_t			bodyLen; //chunked일 때 읽은 값의 인덱스를 저장
 		ChunkedFlag		chunkedFlag;	// 읽는게 바디인지 숫자인지
+
+		Location findLocation(Server server, std::string uri);
 
 	public:
 		Client();
@@ -41,7 +50,6 @@ class Client : public IoObject
 		void		setPos(size_t pos);
 		void		setLastReqMs(unsigned long lastReqMs);
 		void		setResponse(const Response &response);
-		void		setTempBuffer(std::string buffer);
 		void		setBodyLen(size_t chunkedIndex);
 		void		setChunkedFlag(ChunkedFlag chunkedFlag);
 
@@ -54,7 +62,6 @@ class Client : public IoObject
 		size_t		getPos();
 		unsigned long	getLastReqMs();
 		size_t		getBodyLen();
-		std::string	&getTempBuffer();
 		ChunkedFlag	getChunkedFlag();
 
 		// Inherited Functions
@@ -62,5 +69,8 @@ class Client : public IoObject
 
 		// member methods
 		bool	headerParsable();
+
+		Status		readRequestMessage(std::vector<IoObject *>	&pool, int currentFd);
+
 };
 #endif

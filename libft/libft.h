@@ -6,7 +6,7 @@
 /*   By: seohchoi <seohchoi@student.42seoul.kr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2020/02/25 11:39:22 by sunpark           #+#    #+#             */
-/*   Updated: 2021/06/25 03:52:48 by hyukim           ###   ########.fr       */
+/*   Updated: 2021/06/30 17:46:18 by seohchoi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -100,5 +100,7 @@ void				ftLog(std::string value);
 void				ftLog(std::string key, int value);
 void				ftLog(int value);
 std::string			ftToupperStr(const std::string &str);
+
+int					ft_hex_atoi(const std::string &str);
 
 #endif

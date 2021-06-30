@@ -187,22 +187,6 @@ void Socket::initServer(int argc, char *argv)
 	}
 }
 
-int ft_hex_atoi(const std::string &str)
-{
-	int result = 0;
-	for (std::string::const_iterator iter = str.begin(); iter != str.end(); iter++)
-	{
-		if (*iter >= 'A' && *iter <= 'F')
-			result = (*iter - 'A' + 10) + result * 16;
-		else if (*iter >= 'a' && *iter <= 'f')
-			result = (*iter - 'a' + 10) + result * 16;
-		else if (*iter >= '0' && *iter <= '9')
-			result = (*iter - '0') + result * 16;
-		else break ;
-	}
-	return result;
-}
-
 /*
  * 실제 서버를 동작시키는 메인 로직
  * 꼭 initServer를 호출하여 서버 정보들 등록 후 동작 시켜야 함.
@@ -216,22 +200,24 @@ void Socket::runServer(struct timeval timeout)
 
 	while (true)
 	{
-		cpyRfds = rfds;
-		cpyWfds = wfds;
-		cpyEfds = efds;
+		usleep(5); // cpu 점유율 낮추기
+
+		cpyRfds = this->rfds;
+		cpyWfds = this->wfds;
+		cpyEfds = this->efds;
 		int fdNum = 0;
-		if ((fdNum = select( fdMax + 1, &cpyRfds, &cpyWfds, &cpyEfds, &timeout)) == -1)
+		if ((fdNum = select( this->fdMax + 1, &cpyRfds, &cpyWfds, &cpyEfds, &timeout)) == -1)
 			throw SelectException();
 		if (fdNum == 0)
 			continue ;
-		for (int i = 0; i < fdMax + 1; i++)
+		for (int i = 0; i < this->fdMax + 1; i++)
 		{
-			if (FD_ISSET(i, &cpyRfds))
+			if (FD_ISSET(i, &cpyRfds)) // 읽기 요청
 				doReadFdset(i);
-			else if (FD_ISSET(i, &cpyWfds))
-				doWriteFdset(i);
-			else if (FD_ISSET(i, &cpyEfds))
-				doExceptFdset(i);
+			// else if (FD_ISSET(i, &cpyWfds)) // 쓰기 요청
+			// 	doWriteFdset(i);
+			// else if (FD_ISSET(i, &cpyEfds)) // 에러
+			// 	doExceptFdset(i);
 		}
 	}
 }
@@ -239,15 +225,68 @@ void Socket::runServer(struct timeval timeout)
 /*
  *
  */
-void	Socket::doReadFdset(int fd)
+void	Socket::doReadFdset(int currentFd)
 {
-	if (pool[fd]->getType() == SERVER)
+	if (pool[currentFd]->getType() == SERVER) // 서버일 때
+	{
+		int					clientSocketFd;
+		struct sockaddr_in	clientAddr;
+		socklen_t			clientAddrSize = sizeof(clientAddr);
 
-	else if (pool[fd]->getType() == CLIENT)
+		// 서버로 들어온 클라이언트 연결 허용
+		ft_memset(&clientAddr, '\0', clientAddrSize);
+		clientSocketFd = accept(currentFd, (struct sockaddr *)&clientAddr, &clientAddrSize); // 클라이언트 요청 받기
+		fcntl(clientSocketFd, F_SETFL, O_NONBLOCK);
 
-	else if (pool[fd]->getType() == RESOURCE)
+		// 새로 생긴 클라이언트 등록 및 pool에 추가
+		Client *tempClient = new Client(currentFd, clientSocketFd);
+		tempClient->setLastReqMs(ft_get_time());
+		pool[clientSocketFd] = dynamic_cast<IoObject *>(tempClient);
+
+
+		std::cout << "Connection Client Fd open {" << clientSocketFd << "}" << std::endl;
+		FD_SET(clientSocketFd, &this->rfds);
+		FD_SET(clientSocketFd, &this->wfds);
+		FD_SET(clientSocketFd, &this->efds);
+		if (this->fdMax < clientSocketFd)
+			this->fdMax = clientSocketFd;
+	}
+	else if (pool[currentFd]->getType() == CLIENT) // 클라이언트 일 때
+	{
+		// TODO: client read 자체가 client에서 이뤄지므로 client class로 넣을 수 있을듯 함
+		Client *tempClient = dynamic_cast<Client *>(pool[currentFd]);
+
+		std::cout << "client status : " << tempClient->getStatus() << std::endl;
+
+		Status readingStatus = tempClient->readRequestMessage(pool, currentFd);
+		tempClient->setStatus(readingStatus);
+		if (readingStatus == DISCONNECTED)
+			clearConnectedSocket(currentFd);
+		if (readingStatus == RESPONSE_READY)
+			prepareResponse(tempClient);
+		// request 메시지가 다 들어온 경우 response 메시지 만들기
+		// request가 header 인지 body 인지 확인 -> REQUEST_RECIEVING_HEAD && REQUEST_RECIEVING_BODY
+
+		std::cout << "client status : " << tempClient->getStatus() << std::endl;
+	}
+	else if (pool[currentFd]->getType() == RESOURCE) // 리소스일 때 리소스는 일반 리소스 & cgi 리소스로 분류
+	{
+
+	}
 }
+//open 검사
+//content-length검사
+//max-length검사
+//resource 404 검사
+// autoindex, index 파일 검사
+//allowed 검사
+void Socket::prepareResponse(Client *client)
+{
 
+	std::cout << "prepare in " << std::endl;
+	ftLog("test body", client->getWriteBuffer());
+	ftLog("read buffer", client->getReadBuffer());
+}
 
 /*
  * 연결된 클라이언트의 fd를 fd_set들에서 clear하고 연결을 close 함
@@ -290,23 +329,6 @@ std::vector<IoObject *> &Socket::getPool()
 	return (pool);
 }
 
-/*
- * request의 uri와 매칭되는 로케이션 반환
- */
-Location Socket::findLocation(Server server, std::string uri)
-{
-	std::vector<Location> ser = server.getLocationVector();
-	Location res;
-
-	for (std::vector<Location>::iterator it = ser.begin(); it != ser.end(); it++)
-	{
-		std::string path = it->getPath();
-		std::string tempPath = path + '/';
-		if (uri.compare(0, path.length(), path) == 0 || uri.compare(0, tempPath.length(), tempPath) == 0)
-			res = *it;
-	}
-	return res;
-}
 
 // cgi 실행 여부 판단
 bool Socket::isCgi(std::string rawUri, Location location)
