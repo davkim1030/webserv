@@ -219,7 +219,7 @@ Status		Client::readRequestMessage(std::vector<IoObject *>	&pool, int currentFd)
 							if (this->readBuffer.length() >= carrageIdx + 4)
 								this->readBuffer = this->readBuffer.substr(carrageIdx + 4);
 							else
-								this->readBuffer = "";
+								this->readBuffer.clear();
 							return RESPONSE_READY;
 						}
 						if (this->readBuffer.length() >= carrageIdx + 2)
@@ -248,6 +248,10 @@ Status		Client::readRequestMessage(std::vector<IoObject *>	&pool, int currentFd)
 				if (this->readBuffer.length() >= (size_t)contentLength)
 				{
 					this->writeBuffer = this->readBuffer.substr(0, contentLength);
+					if (this->readBuffer.length() >= (size_t)contentLength + 4)
+						this->readBuffer = this->readBuffer.substr(contentLength + 4);
+					else
+						this->readBuffer.clear();
 					return RESPONSE_READY;
 				}
 				else

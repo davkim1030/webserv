@@ -7,15 +7,6 @@
 # include "Location.hpp"
 # include "Server.hpp"
 
-# define NOT_FOUND 404
-# define SERVER_ERR 500
-# define FORBIDDEN 403
-# define METHOD_NOT_ALLOWED 405
-# define NOT_EXIST 0
-# define ISFILE 1
-# define ISDIR 2
-# define HEAD_METHOD 3
-
 /*
  * 리스폰스를 만들어주는 추상 클래스
  */

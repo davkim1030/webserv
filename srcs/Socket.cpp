@@ -263,7 +263,19 @@ void	Socket::doReadFdset(int currentFd)
 		if (readingStatus == DISCONNECTED)
 			clearConnectedSocket(currentFd);
 		if (readingStatus == RESPONSE_READY)
-			prepareResponse(tempClient);
+		{
+			switch (prepareResponse(tempClient))
+			case METHOD_NOT_ALLOWED :
+			makeErrorResponse(METHOD_NOT_ALLOWED);
+
+			case : 
+			makeErrorResponse(401);
+
+			default
+			
+
+		}
+
 		// request 메시지가 다 들어온 경우 response 메시지 만들기
 		// request가 header 인지 body 인지 확인 -> REQUEST_RECIEVING_HEAD && REQUEST_RECIEVING_BODY
 
@@ -274,18 +286,33 @@ void	Socket::doReadFdset(int currentFd)
 
 	}
 }
-//open 검사
-//content-length검사
-//max-length검사
-//resource 404 검사
-// autoindex, index 파일 검사
-//allowed 검사
+//1. allowed 검사
+//2. max-length검사
+//3. autoindex, index 파일 검사
+//4. resource 404 검사 (stat)
+//-----------------------------------------
+// open 검사
+//-------------------------------------------
 void Socket::prepareResponse(Client *client)
 {
 
 	std::cout << "prepare in " << std::endl;
 	ftLog("test body", client->getWriteBuffer());
 	ftLog("read buffer", client->getReadBuffer());
+
+	
+	// if (!location.getOption("allow_method").empty() && request.getMethod() != "GET" && request.getMethod() != "HEAD")
+	// {
+	// 	std::string allow = location.getOption("allow_method");
+
+	// 	if (allow.find(request.getMethod()) == std::string::npos)
+	// 	{
+	// 		updateErrorStatus(clientFd, METHOD_NOT_ALLOWED);
+	// 		return (false);
+	// 	}
+	// }
+	// return (true);
+	
 }
 
 /*
